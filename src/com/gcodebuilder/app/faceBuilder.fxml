@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<GridPane alignment="center" hgap="10" vgap="10" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.FaceBuilderController">
+   <children>
+      <Label text="Units:" GridPane.halignment="RIGHT">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <ComboBox fx:id="unitSelector" maxWidth="1.7976931348623157E308" prefWidth="150.0" visibleRowCount="2" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" />
+      <Label text="X:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="2">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font></Label>
+      <Label layoutX="39.0" layoutY="343.0" text="Tool Width:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="toolWidthInput" layoutX="128.0" layoutY="100.0" text="0.25" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <TextField text="0" GridPane.columnIndex="1" GridPane.rowIndex="2" fx:id="xInput" />
+      <Label text="Y:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="3">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="yInput" text="0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <Label text="Width:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="4">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="widthInput" text="10" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <Label text="Height:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="5">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="heightInput" text="10" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+      <Label layoutX="20.0" layoutY="183.0" text="Depth:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="6">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="depthInput" layoutX="128.0" layoutY="62.0" text="0.125" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+      <Label layoutX="20.0" layoutY="223.0" text="Top of Material:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="7">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="topOfMaterialInput" layoutX="128.0" layoutY="258.0" text="0" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+      <Label layoutX="20.0" layoutY="263.0" text="Step Down:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="8">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="stepDownInput" layoutX="128.0" layoutY="298.0" text="0.1" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+      <Label layoutX="33.0" layoutY="303.0" text="Step Over (%):" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="9">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="stepOverInput" layoutX="128.0" layoutY="338.0" text="40" GridPane.columnIndex="1" GridPane.rowIndex="9" />
+      <Label layoutX="29.0" layoutY="383.0" text="Feed Rate:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="10">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="feedRateInput" text="30" GridPane.columnIndex="1" GridPane.rowIndex="10"/>
+      <Label layoutX="29.0" layoutY="383.0" text="Plunge Rate:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="11">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="plungeRateInput" text="30" GridPane.columnIndex="1" GridPane.rowIndex="11"/>
+      <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#generateGCode" text="Generate GCode" GridPane.columnSpan="2" GridPane.rowIndex="12" />
+   </children>
+   <columnConstraints>
+      <ColumnConstraints />
+      <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+   </rowConstraints>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
+</GridPane>
