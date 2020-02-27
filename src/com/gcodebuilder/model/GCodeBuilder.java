@@ -1,6 +1,5 @@
 package com.gcodebuilder.model;
 
-import com.sun.management.GcInfo;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -35,6 +34,11 @@ public class GCodeBuilder {
         return this;
     }
 
+    public GCodeProgram build() {
+        endLine();
+        return new GCodeProgram(lines);
+    }
+
     private <T extends GCodeWord> T emitOnModeChange(T currentMode, T newMode) {
         if (newMode != currentMode) {
             add(newMode);
@@ -60,6 +64,10 @@ public class GCodeBuilder {
     public GCodeBuilder distanceMode(DistanceMode distanceMode) {
         this.distanceMode = emitOnModeChange(this.distanceMode, distanceMode);
         return this;
+    }
+
+    public GCodeBuilder feedRate(int feedRate) {
+        return add(new FeedRate(feedRate));
     }
 
     public GCodeBuilder X(double value) {

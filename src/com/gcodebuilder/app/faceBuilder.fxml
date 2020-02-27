@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<GridPane alignment="center" hgap="10" vgap="10" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.FaceBuilderController">
+<GridPane alignment="center" hgap="10" vgap="10" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.FaceBuilderController" fx:id="rootPane">
    <children>
       <Label text="Units:" GridPane.halignment="RIGHT">
          <font>
@@ -36,49 +36,61 @@
          </font>
       </Label>
       <TextField fx:id="widthInput" text="10" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-      <Label text="Height:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="5">
+      <Label text="Length:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="5">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </Label>
-      <TextField fx:id="heightInput" text="10" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+      <TextField fx:id="lengthInput" text="10" GridPane.columnIndex="1" GridPane.rowIndex="5" />
       <Label layoutX="20.0" layoutY="183.0" text="Depth:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="6">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </Label>
       <TextField fx:id="depthInput" layoutX="128.0" layoutY="62.0" text="0.125" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-      <Label layoutX="20.0" layoutY="223.0" text="Top of Material:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="7">
+      <Label layoutX="20.0" layoutY="223.0" text="Stock Surface:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="7">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </Label>
-      <TextField fx:id="topOfMaterialInput" layoutX="128.0" layoutY="258.0" text="0" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-      <Label layoutX="20.0" layoutY="263.0" text="Step Down:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="8">
+      <TextField fx:id="stockSurfaceInput" layoutX="128.0" layoutY="258.0" text="0" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+      <Label layoutX="29.0" layoutY="383.0" text="Safety Height:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="8">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </Label>
-      <TextField fx:id="stepDownInput" layoutX="128.0" layoutY="298.0" text="0.1" GridPane.columnIndex="1" GridPane.rowIndex="8" />
-      <Label layoutX="33.0" layoutY="303.0" text="Step Over (%):" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="9">
+      <TextField fx:id="safetyHeightInput" text="0.5" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+      <Label layoutX="20.0" layoutY="263.0" text="Step Down:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="9">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </Label>
-      <TextField fx:id="stepOverInput" layoutX="128.0" layoutY="338.0" text="40" GridPane.columnIndex="1" GridPane.rowIndex="9" />
-      <Label layoutX="29.0" layoutY="383.0" text="Feed Rate:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="10">
+      <TextField fx:id="stepDownInput" layoutX="128.0" layoutY="298.0" text="0.1" GridPane.columnIndex="1" GridPane.rowIndex="9" />
+      <Label layoutX="33.0" layoutY="303.0" text="Step Over (%):" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="10">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </Label>
-      <TextField fx:id="feedRateInput" text="30" GridPane.columnIndex="1" GridPane.rowIndex="10"/>
-      <Label layoutX="29.0" layoutY="383.0" text="Plunge Rate:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="11">
+      <TextField fx:id="stepOverInput" layoutX="128.0" layoutY="338.0" text="40" GridPane.columnIndex="1" GridPane.rowIndex="10" />
+      <Label layoutX="29.0" layoutY="383.0" text="Border Width (%):" textAlignment="RIGHT" GridPane.rowIndex="11">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </Label>
-      <TextField fx:id="plungeRateInput" text="30" GridPane.columnIndex="1" GridPane.rowIndex="11"/>
-      <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#generateGCode" text="Generate GCode" GridPane.columnSpan="2" GridPane.rowIndex="12" />
+      <TextField fx:id="borderWidthInput" layoutX="177.0" layoutY="378.0" text="15" GridPane.columnIndex="1" GridPane.rowIndex="11" />
+      <Label layoutX="29.0" layoutY="383.0" text="Feed Rate:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="12">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="feedRateInput" text="30" GridPane.columnIndex="1" GridPane.rowIndex="12" />
+      <Label layoutX="29.0" layoutY="383.0" text="Plunge Rate:" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="13">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </Label>
+      <TextField fx:id="plungeRateInput" text="30" GridPane.columnIndex="1" GridPane.rowIndex="13" />
+      <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#generateGCode" text="Generate GCode" GridPane.columnSpan="2" GridPane.rowIndex="14" />
    </children>
    <columnConstraints>
       <ColumnConstraints />
@@ -87,15 +99,17 @@
    <rowConstraints>
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
       <RowConstraints />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
-      <RowConstraints minHeight="10.0" prefHeight="30.0" />
    </rowConstraints>
    <padding>
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

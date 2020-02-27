@@ -1,6 +1,7 @@
 package com.gcodebuilder.model;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,6 +23,12 @@ public class GCodeProgram {
     }
 
     public void print(PrintStream out) {
+        for (GCodeLine line : lines) {
+            out.println(line.toString());
+        }
+    }
+
+    public void print(PrintWriter out) {
         for (GCodeLine line : lines) {
             out.println(line.toString());
         }
