@@ -10,10 +10,13 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        Parent root = FXMLLoader.load(getClass().getResource("faceBuilder.fxml"));
-        primaryStage.setTitle("GCode Facing Program Builder");
+        //Parent root = FXMLLoader.load(getClass().getResource("faceBuilder.fxml"));
+        //primaryStage.setTitle("GCode Facing Program Builder");
+        Parent root = FXMLLoader.load(getClass().getResource("pathBuilder.fxml"));
+        primaryStage.setTitle("GCode Path Builder");
         primaryStage.setScene(new Scene(root));
-        primaryStage.setResizable(false);
+        //primaryStage.setResizable(false);
+        primaryStage.setResizable(true);
         primaryStage.show();
     }
 
