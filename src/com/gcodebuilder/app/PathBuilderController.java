@@ -1,5 +1,7 @@
 package com.gcodebuilder.app;
 
+import com.gcodebuilder.geometry.Segment2D;
+import com.sun.javafx.scene.paint.GradientUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
@@ -8,6 +10,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class PathBuilderController {
@@ -45,6 +48,10 @@ public class PathBuilderController {
     private void drawLine(Point2D fromPoint, Point2D toPoint) {
         ctx.strokeLine(fromPoint.getX(), fromPoint.getY(),
                 toPoint.getX(), toPoint.getY());
+    }
+
+    private void drawLine(Segment2D segment) {
+        drawLine(segment.getFrom(), segment.getTo());
     }
 
     private Point2D firstPoint() {
@@ -120,8 +127,12 @@ public class PathBuilderController {
                 sinAngle*vec.getX() + cosAngle*vec.getY());
     }
 
-    private static Point2D rotate90(Point2D vec) {
+    private static Point2D rotateLeft90(Point2D vec) {
         return new Point2D(-vec.getY(), vec.getX());
+    }
+
+    private static Point2D rotateRight90(Point2D vec) {
+        return new Point2D(vec.getY(), -vec.getX());
     }
 
     private static double unitVecToAngle(Point2D unitVec) {
@@ -132,20 +143,19 @@ public class PathBuilderController {
         return angle;
     }
 
-    private Point2D findInsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double halfWidth) {
-        double pOffset = halfWidth / Math.tan(halfAngle);
-        Point2D orthoVec = rotate90(lineVec);
-        return thisPoint.add(lineVec.multiply(pOffset)).add(orthoVec.multiply(halfWidth));
+    private Point2D findInsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double toolRadius) {
+        double pOffset = toolRadius / Math.tan(halfAngle);
+        Point2D orthoVec = rotateLeft90(lineVec);
+        return thisPoint.add(lineVec.multiply(pOffset)).add(orthoVec.multiply(toolRadius));
     }
 
-    private Point2D findOutsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double halfWidth) {
-        Point2D cornerVec = rotate(lineVec, halfAngle).multiply(halfWidth);
+    private Point2D findOutsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double toolRadius) {
+        Point2D cornerVec = rotate(lineVec, halfAngle).multiply(toolRadius);
         return thisPoint.add(cornerVec);
     }
 
-    private Point2D findCorner(Point2D prevPoint, Point2D thisPoint, Point2D nextPoint, double toolWidth) {
+    private Point2D findCorner(Point2D prevPoint, Point2D thisPoint, Point2D nextPoint, double toolRadius) {
         Point2D insideCorner, outsideCorner;
-        double halfWidth = toolWidth / 2;
 
         Point2D vecToPrev = prevPoint.subtract(thisPoint).normalize();
         double angleToPrev = unitVecToAngle(vecToPrev);
@@ -171,22 +181,46 @@ public class PathBuilderController {
 
         if (firstAngle < Math.PI) {
             // inside corner first
-            insideCorner = findInsideCorner(thisPoint, smallVec, firstAngle / 2, halfWidth);
-            outsideCorner = findOutsideCorner(thisPoint, largeVec, secondAngle / 2, halfWidth);
+            insideCorner = findInsideCorner(thisPoint, smallVec, firstAngle / 2, toolRadius);
+            outsideCorner = findOutsideCorner(thisPoint, largeVec, secondAngle / 2, toolRadius);
         } else if (firstAngle > Math.PI) {
             // outside corner first
-            outsideCorner = findOutsideCorner(thisPoint, smallVec, firstAngle / 2, halfWidth);
-            insideCorner = findInsideCorner(thisPoint, largeVec, secondAngle / 2, halfWidth);
+            outsideCorner = findOutsideCorner(thisPoint, smallVec, firstAngle / 2, toolRadius);
+            insideCorner = findInsideCorner(thisPoint, largeVec, secondAngle / 2, toolRadius);
         } else {
             // straight line
-            insideCorner = thisPoint.add(rotate90(smallVec).multiply(halfWidth));
-            outsideCorner = thisPoint.add(rotate90(largeVec).multiply(halfWidth));
+            insideCorner = thisPoint.add(rotateLeft90(smallVec).multiply(toolRadius));
+            outsideCorner = thisPoint.add(rotateLeft90(largeVec).multiply(toolRadius));
         }
 
         if (isPointInPath(insideCorner)) {
             return insideCorner;
         } else {
             return outsideCorner;
+        }
+    }
+
+    private void drawCorner(Point2D prevPoint, Point2D thisPoint, Point2D nextPoint, double toolRadius) {
+        Point2D cornerPoint = findCorner(prevPoint, thisPoint, nextPoint, toolRadius);
+        drawCircle(cornerPoint, toolRadius);
+    }
+
+    private static Segment2D moveLineSegment(Point2D fromPoint, Point2D toPoint, Point2D offset) {
+        return Segment2D.of(fromPoint.add(offset), toPoint.add(offset));
+    }
+
+    private List<Segment2D> computePossibleToolpaths(Point2D fromPoint, Point2D toPoint, double toolRadius) {
+        Point2D lineVec = toPoint.subtract(fromPoint).normalize();
+        Point2D leftOffset = rotateLeft90(lineVec).multiply(toolRadius);
+        Point2D rightOffset = rotateRight90(lineVec).multiply(toolRadius);
+        return Arrays.asList(moveLineSegment(fromPoint, toPoint, leftOffset),
+                moveLineSegment(fromPoint, toPoint, rightOffset));
+    }
+
+    private void drawPossibleToolpaths(Point2D fromPoint, Point2D toPoint, double toolRadius) {
+        List<Segment2D> segments = computePossibleToolpaths(fromPoint, toPoint, toolRadius);
+        for (Segment2D segment : segments) {
+            drawLine(segment);
         }
     }
 
@@ -204,8 +238,8 @@ public class PathBuilderController {
 
                 drawPoint(thisPoint);
                 drawLine(prevPoint, thisPoint);
-                Point2D cornerPoint = findCorner(prevPoint, thisPoint, nextPoint, TOOL_WIDTH);
-                drawCircle(cornerPoint, TOOL_WIDTH/2);
+                //drawCorner(prevPoint, thisPoint, nextPoint, TOOL_WIDTH/2);
+                drawPossibleToolpaths(thisPoint, nextPoint, TOOL_WIDTH/2);
             }
         } else {
             Point2D prevPoint = null;
