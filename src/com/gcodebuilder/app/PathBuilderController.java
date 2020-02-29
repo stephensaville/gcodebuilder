@@ -129,14 +129,11 @@ public class PathBuilderController {
         if (unitVec.getY() < 0) {
             angle = 2*Math.PI - angle;
         }
-        System.out.print(String.format(" unitVec(%f, %f) -> angle(%f)",
-                unitVec.getX(), unitVec.getY(), angle));
         return angle;
     }
 
     private Point2D findInsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double halfWidth) {
         double pOffset = halfWidth / Math.tan(halfAngle);
-        System.out.print(String.format(" pOffset=%f", pOffset));
         Point2D orthoVec = rotate90(lineVec);
         return thisPoint.add(lineVec.multiply(pOffset)).add(orthoVec.multiply(halfWidth));
     }
@@ -147,8 +144,6 @@ public class PathBuilderController {
     }
 
     private Point2D findCorner(Point2D prevPoint, Point2D thisPoint, Point2D nextPoint, double toolWidth) {
-        System.out.print(String.format("thisPoint=(%f, %f)", thisPoint.getX(), thisPoint.getY()));
-
         Point2D insideCorner, outsideCorner;
         double halfWidth = toolWidth / 2;
 
@@ -157,8 +152,6 @@ public class PathBuilderController {
 
         Point2D vecToNext = nextPoint.subtract(thisPoint).normalize();
         double angleToNext = unitVecToAngle(vecToNext);
-
-        System.out.print(String.format(" angleToPrev=%f angleToNext=%f", angleToPrev, angleToNext));
 
         double smallAngle, largeAngle;
         Point2D smallVec, largeVec;
@@ -176,16 +169,11 @@ public class PathBuilderController {
         double firstAngle = largeAngle - smallAngle;
         double secondAngle = 2*Math.PI - firstAngle;
 
-        System.out.print(String.format(" smallAngle=%f largeAngle=%f firstAngle=%f secondAngle=%f",
-                smallAngle, largeAngle, firstAngle, secondAngle));
-
         if (firstAngle < Math.PI) {
             // inside corner first
-            System.out.print(" inside");
             insideCorner = findInsideCorner(thisPoint, smallVec, firstAngle / 2, halfWidth);
             outsideCorner = findOutsideCorner(thisPoint, largeVec, secondAngle / 2, halfWidth);
         } else if (firstAngle > Math.PI) {
-            System.out.print(" outside");
             // outside corner first
             outsideCorner = findOutsideCorner(thisPoint, smallVec, firstAngle / 2, halfWidth);
             insideCorner = findInsideCorner(thisPoint, largeVec, secondAngle / 2, halfWidth);
@@ -194,9 +182,6 @@ public class PathBuilderController {
             insideCorner = thisPoint.add(rotate90(smallVec).multiply(halfWidth));
             outsideCorner = thisPoint.add(rotate90(largeVec).multiply(halfWidth));
         }
-
-        System.out.println(String.format(" insideCorner=(%f, %f) outsideCorner=(%f, %f)",
-                insideCorner.getX(), insideCorner.getY(), outsideCorner.getX(), outsideCorner.getY()));
 
         if (isPointInPath(insideCorner)) {
             return insideCorner;
