@@ -1,6 +1,5 @@
 package com.gcodebuilder.app;
 
-import com.sun.javafx.scene.paint.GradientUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
@@ -13,6 +12,8 @@ import java.util.List;
 
 public class PathBuilderController {
     private static final double POINT_RADIUS = 5;
+    private static final double TOOL_WIDTH = 20;
+    private static final double TRACE_STEP = 5;
 
     @FXML private BorderPane rootPane;
     @FXML private Canvas pathCanvas;
@@ -33,10 +34,12 @@ public class PathBuilderController {
         ctx = pathCanvas.getGraphicsContext2D();
     }
 
-    private void drawPoint(Point2D point) {
-        ctx.fillOval(point.getX() - POINT_RADIUS,
-                point.getY() - POINT_RADIUS,
-                POINT_RADIUS*2, POINT_RADIUS*2);
+    private void drawCircle(Point2D point, double radius) {
+        ctx.fillOval(point.getX() - radius, point.getY() - radius, radius*2, radius*2);
+    }
+
+    private void drawPoint(Point2D point2D) {
+        drawCircle(point2D, POINT_RADIUS);
     }
 
     private void drawLine(Point2D fromPoint, Point2D toPoint) {
@@ -81,31 +84,153 @@ public class PathBuilderController {
         return pointInPath;
     }
 
+    private void drawTrace(Point2D fromPoint, Point2D toPoint, Point2D offsetVec) {
+        double lineLength = fromPoint.distance(toPoint);
+        double step = Math.max(TRACE_STEP / lineLength, 0.0001);
+        for (double v = 0; v <= 1; v += step) {
+            Point2D point = fromPoint.interpolate(toPoint, v).add(offsetVec);
+            if (isPointInPath(point)) {
+                drawPoint(point);
+            }
+        }
+    }
+
+    private void tracePath(Point2D fromPoint, Point2D toPoint) {
+        Point2D midPoint = toPoint.midpoint(fromPoint);
+        Point2D vec = toPoint.subtract(fromPoint).normalize();
+        Point2D lVec = new Point2D(-vec.getY(), vec.getX()).multiply(2*POINT_RADIUS);
+        Point2D rVec = new Point2D(vec.getY(), -vec.getX()).multiply(2*POINT_RADIUS);
+        Point2D lPoint = midPoint.add(lVec);
+        if (isPointInPath(lPoint)) {
+            drawPoint(lPoint);
+            drawTrace(fromPoint, toPoint, lVec);
+        }
+        Point2D rPoint = midPoint.add(rVec);
+        if (isPointInPath(rPoint)) {
+            drawPoint(rPoint);
+            drawTrace(fromPoint, toPoint, rVec);
+        }
+    }
+
+    // rotate vector by angle expressed in radians
+    private static Point2D rotate(Point2D vec, double angle) {
+        double sinAngle = Math.sin(angle);
+        double cosAngle = Math.cos(angle);
+        return new Point2D(cosAngle*vec.getX() - sinAngle*vec.getY(),
+                sinAngle*vec.getX() + cosAngle*vec.getY());
+    }
+
+    private static Point2D rotate90(Point2D vec) {
+        return new Point2D(-vec.getY(), vec.getX());
+    }
+
+    private static double unitVecToAngle(Point2D unitVec) {
+        double angle = Math.acos(unitVec.getX());
+        if (unitVec.getY() < 0) {
+            angle = 2*Math.PI - angle;
+        }
+        System.out.print(String.format(" unitVec(%f, %f) -> angle(%f)",
+                unitVec.getX(), unitVec.getY(), angle));
+        return angle;
+    }
+
+    private Point2D findInsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double halfWidth) {
+        double pOffset = halfWidth / Math.tan(halfAngle);
+        System.out.print(String.format(" pOffset=%f", pOffset));
+        Point2D orthoVec = rotate90(lineVec);
+        return thisPoint.add(lineVec.multiply(pOffset)).add(orthoVec.multiply(halfWidth));
+    }
+
+    private Point2D findOutsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double halfWidth) {
+        Point2D cornerVec = rotate(lineVec, halfAngle).multiply(halfWidth);
+        return thisPoint.add(cornerVec);
+    }
+
+    private Point2D findCorner(Point2D prevPoint, Point2D thisPoint, Point2D nextPoint, double toolWidth) {
+        System.out.print(String.format("thisPoint=(%f, %f)", thisPoint.getX(), thisPoint.getY()));
+
+        Point2D insideCorner, outsideCorner;
+        double halfWidth = toolWidth / 2;
+
+        Point2D vecToPrev = prevPoint.subtract(thisPoint).normalize();
+        double angleToPrev = unitVecToAngle(vecToPrev);
+
+        Point2D vecToNext = nextPoint.subtract(thisPoint).normalize();
+        double angleToNext = unitVecToAngle(vecToNext);
+
+        System.out.print(String.format(" angleToPrev=%f angleToNext=%f", angleToPrev, angleToNext));
+
+        double smallAngle, largeAngle;
+        Point2D smallVec, largeVec;
+        if (angleToPrev < angleToNext) {
+            smallAngle = angleToPrev;
+            smallVec = vecToPrev;
+            largeAngle = angleToNext;
+            largeVec = vecToNext;
+        } else {
+            smallAngle = angleToNext;
+            smallVec = vecToNext;
+            largeAngle = angleToPrev;
+            largeVec = vecToPrev;
+        }
+        double firstAngle = largeAngle - smallAngle;
+        double secondAngle = 2*Math.PI - firstAngle;
+
+        System.out.print(String.format(" smallAngle=%f largeAngle=%f firstAngle=%f secondAngle=%f",
+                smallAngle, largeAngle, firstAngle, secondAngle));
+
+        if (firstAngle < Math.PI) {
+            // inside corner first
+            System.out.print(" inside");
+            insideCorner = findInsideCorner(thisPoint, smallVec, firstAngle / 2, halfWidth);
+            outsideCorner = findOutsideCorner(thisPoint, largeVec, secondAngle / 2, halfWidth);
+        } else if (firstAngle > Math.PI) {
+            System.out.print(" outside");
+            // outside corner first
+            outsideCorner = findOutsideCorner(thisPoint, smallVec, firstAngle / 2, halfWidth);
+            insideCorner = findInsideCorner(thisPoint, largeVec, secondAngle / 2, halfWidth);
+        } else {
+            // straight line
+            insideCorner = thisPoint.add(rotate90(smallVec).multiply(halfWidth));
+            outsideCorner = thisPoint.add(rotate90(largeVec).multiply(halfWidth));
+        }
+
+        System.out.println(String.format(" insideCorner=(%f, %f) outsideCorner=(%f, %f)",
+                insideCorner.getX(), insideCorner.getY(), outsideCorner.getX(), outsideCorner.getY()));
+
+        if (isPointInPath(insideCorner)) {
+            return insideCorner;
+        } else {
+            return outsideCorner;
+        }
+    }
+
     private void redrawPath() {
+        System.out.println("redrawPath");
+
         ctx.clearRect(0, 0, pathCanvas.getWidth(), pathCanvas.getHeight());
 
-        Point2D prevPoint = pathClosed ? lastPoint() : null;
-        for (Point2D point : points) {
-            drawPoint(point);
-            if (prevPoint != null) {
-                drawLine(prevPoint, point);
+        if (pathClosed) {
+            int nPoints = points.size();
+            for (int i = 0; i < nPoints; ++i) {
+                Point2D prevPoint = points.get((i+nPoints-1) % nPoints);
+                Point2D thisPoint = points.get(i);
+                Point2D nextPoint = points.get((i+1) % nPoints);
 
-                if (pathClosed) {
-                    Point2D midPoint = point.midpoint(prevPoint);
-                    Point2D vec = point.subtract(prevPoint).normalize();
-                    Point2D lVec = new Point2D(-vec.getY(), vec.getX());
-                    Point2D rVec = new Point2D(vec.getY(), -vec.getX());
-                    Point2D lPoint = midPoint.add(lVec.multiply(2 * POINT_RADIUS));
-                    if (isPointInPath(lPoint)) {
-                        drawPoint(lPoint);
-                    }
-                    Point2D rPoint = midPoint.add(rVec.multiply(2 * POINT_RADIUS));
-                    if (isPointInPath(rPoint)) {
-                        drawPoint(rPoint);
-                    }
-                }
+                drawPoint(thisPoint);
+                drawLine(prevPoint, thisPoint);
+                Point2D cornerPoint = findCorner(prevPoint, thisPoint, nextPoint, TOOL_WIDTH);
+                drawCircle(cornerPoint, TOOL_WIDTH/2);
             }
-            prevPoint = point;
+        } else {
+            Point2D prevPoint = null;
+            for (Point2D point : points) {
+                drawPoint(point);
+                if (prevPoint != null) {
+                    drawLine(prevPoint, point);
+                }
+                prevPoint = point;
+            }
         }
     }
 
