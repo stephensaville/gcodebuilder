@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.gcodebuilder.canvas.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.DrawingWindowController">
+   <bottom>
+      <HBox spacing="5.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label text="Unit:">
+               <HBox.margin>
+                  <Insets left="10.0" />
+               </HBox.margin>
+               <padding>
+                  <Insets top="4.0" />
+               </padding></Label>
+            <ChoiceBox fx:id="unitCtl" prefWidth="60.0" />
+            <Label text="Zoom:">
+               <padding>
+                  <Insets left="10.0" top="4.0" />
+               </padding></Label>
+            <Spinner fx:id="zoomCtl" editable="true" prefWidth="100.0" />
+            <Label text="Grid Spacing:">
+               <padding>
+                  <Insets left="10.0" top="4.0" />
+               </padding>
+            </Label>
+            <Spinner fx:id="gridSpacingCtl" editable="true" prefWidth="100.0" />
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </HBox>
+   </bottom>
+   <center>
+      <AnchorPane BorderPane.alignment="CENTER">
+         <children>
+           <GCodeCanvas fx:id="canvas" height="600.0" width="800.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+            <ScrollBar fx:id="hScrollBar" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="17.0" />
+            <ScrollBar fx:id="vScrollBar" orientation="VERTICAL" AnchorPane.bottomAnchor="17.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+         </children>
+      </AnchorPane>
+   </center>
+
+</BorderPane>
