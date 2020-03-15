@@ -1,42 +1,56 @@
 package com.gcodebuilder.canvas;
 
-import com.gcodebuilder.model.UnitMode;
+import com.gcodebuilder.app.GridSettings;
+import javafx.beans.property.ReadOnlyProperty;
+import javafx.beans.property.adapter.ReadOnlyJavaBeanObjectProperty;
+import javafx.beans.property.adapter.ReadOnlyJavaBeanObjectPropertyBuilder;
+import javafx.geometry.Bounds;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.transform.Affine;
+import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.stage.Screen;
 import lombok.Getter;
+import lombok.Setter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class GCodeCanvas extends Canvas {
-    private static final Paint GRID_PAINT = Color.color(0.4, 0.4, 0.4, 0.6);
-    private static final Paint X_AXIS_PAINT = Color.GREEN;
-    private static final Paint Y_AXIS_PAINT = Color.RED;
+    private static final Logger log = LogManager.getLogger(GCodeCanvas.class);
 
-    @Getter
-    private UnitMode unitMode = UnitMode.INCH;
+    @Getter @Setter
+    private GridSettings settings = new GridSettings();
 
-    @Getter
+    @Getter @Setter
     private double zoom = 1;
 
-    @Getter
+    @Getter @Setter
     private double originX = 0;
 
-    @Getter
+    @Getter @Setter
     private double originY = 0;
-
-    @Getter
-    private double gridSpacing = 1;
 
     private double canvasWidth = 0;
     private double canvasHeight = 0;
 
+    @Getter
+    private Rectangle2D originArea;
+    private final ReadOnlyJavaBeanObjectProperty<Rectangle2D> originAreaProperty;
+
     public GCodeCanvas() {
+        this(0,0);
     }
 
     public GCodeCanvas(double width, double height) {
         super(width, height);
+        try {
+            originAreaProperty = ReadOnlyJavaBeanObjectPropertyBuilder
+                    .<Rectangle2D>create().bean(this).name("originArea").build();
+            updateOriginArea(getPixelsPerUnit(), width, height);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -47,53 +61,70 @@ public class GCodeCanvas extends Canvas {
     @Override
     public void resize(double width, double height) {
         super.resize(width, height);
-        System.out.println(String.format("resize(%f,%f)", width, height));
+        log.info(String.format("resize(%f,%f)", width, height));
         if (width != canvasWidth || height != canvasHeight) {
-            updateGrid();
+            refreshGrid();
         }
     }
 
-    public void setUnitMode(UnitMode unitMode) {
-        this.unitMode = unitMode;
-        updateGrid();
-    }
-
-    public void setZoom(double zoom) {
-        this.zoom = zoom;
-        updateGrid();
-    }
-
-    public void setOriginX(double originX) {
-        this.originX = originX;
-        updateGrid();
-    }
-
-    public void setOriginY(double originY) {
-        this.originY = originY;
-        updateGrid();
-    }
-
-    public void setGridSpacing(double gridSpacing) {
-        this.gridSpacing = gridSpacing;
-        updateGrid();
-    }
-
     public double getPixelsPerUnit() {
-        return zoom * Screen.getPrimary().getDpi() / unitMode.getUnitsPerInch();
+        return zoom * Screen.getPrimary().getDpi() / settings.getUnits().getUnitsPerInch();
     }
 
-    private void updateGrid() {
+    private boolean applyGridLineSettings(GraphicsContext ctx, int gridIndex, double pixelsPerUnit,
+                                          double pixelsPerGridLine) {
+        if (gridIndex % settings.getMinorGridDivision() == 0) {
+            // major grid line
+            ctx.setLineWidth(settings.getMajorGridLineWidth() / pixelsPerUnit);
+            ctx.setStroke(settings.getMajorGridPaint());
+            return pixelsPerGridLine * settings.getMinorGridDivision() > settings.getMinPixelsPerGridLine();
+        } else {
+            // minor grid line
+            ctx.setLineWidth(settings.getMinorGridLineWidth() / pixelsPerUnit);
+            ctx.setStroke(settings.getMinorGridPaint());
+            return pixelsPerGridLine > settings.getMinPixelsPerGridLine();
+        }
+    }
+
+    private void updateOriginArea(double pixelsPerUnit, double width, double height) {
+        Rectangle2D drawingArea = settings.getDrawingArea();
+        double minOriginX = width - pixelsPerUnit * drawingArea.getMaxX();
+        double maxOriginX = - pixelsPerUnit * drawingArea.getMinX();
+        if (minOriginX > maxOriginX) {
+            minOriginX = maxOriginX = width / 2;
+        }
+        double minOriginY = height + pixelsPerUnit * drawingArea.getMinY();
+        double maxOriginY = pixelsPerUnit * drawingArea.getMaxY();
+        if (minOriginY > maxOriginY) {
+            minOriginY = maxOriginY = height / 2;
+        }
+        log.info("minOriginX={} maxOriginX={} minOriginY={} maxOriginY={}",
+                minOriginX, maxOriginX, minOriginY, maxOriginY);
+        originArea = new Rectangle2D(minOriginX, minOriginY, maxOriginX - minOriginX, maxOriginY - minOriginY);
+        originX = Math.max(minOriginX, Math.min(maxOriginX, originX));
+        originY = Math.max(minOriginY, Math.min(maxOriginY, originY));
+        originAreaProperty.fireValueChangedEvent();
+    }
+
+    public ReadOnlyProperty<Rectangle2D> originAreaProperty() {
+        return originAreaProperty;
+    }
+
+    public void refreshGrid() {
         double pixelsPerUnit = getPixelsPerUnit();
         canvasWidth = getWidth();
         canvasHeight = getHeight();
-        double pixelsPerGridLine = pixelsPerUnit * gridSpacing;
-        int hGridStart = -(int)(originX / pixelsPerGridLine);
-        int hGridStop = (int)((canvasWidth - originX) / pixelsPerGridLine);
-        int vGridStart = -(int)((canvasHeight - originY) / pixelsPerGridLine);
-        int vGridStop = (int)(originY / pixelsPerGridLine);
+        updateOriginArea(getPixelsPerUnit(), canvasWidth, canvasHeight);
 
-        System.out.println(String.format("START updateGrid: pixelsPerUnit=%f canvasWidth=%f canvasHeight=%f pixelsPerGridLine=%f hGrid=[%d,%d] vGrid=[%d,%d]",
-                pixelsPerUnit, canvasWidth, canvasHeight, pixelsPerGridLine, hGridStart, hGridStop, vGridStart, vGridStop));
+        double gridSpacing = settings.getMajorGridSpacing() / settings.getMinorGridDivision();
+        double pixelsPerGridLine = pixelsPerUnit * gridSpacing;
+        int xGridMinIndex = -(int)(originX / pixelsPerGridLine);
+        int xGridMaxIndex = (int)((canvasWidth - originX) / pixelsPerGridLine);
+        int yGridMinIndex = -(int)((canvasHeight - originY) / pixelsPerGridLine);
+        int yGridMaxIndex = (int)(originY / pixelsPerGridLine);
+
+        log.info(String.format("START refreshGrid: pixelsPerUnit=%f canvasWidth=%f canvasHeight=%f pixelsPerGridLine=%f hGrid=[%d,%d] vGrid=[%d,%d]",
+                pixelsPerUnit, canvasWidth, canvasHeight, pixelsPerGridLine, xGridMinIndex, xGridMaxIndex, yGridMinIndex, yGridMaxIndex));
 
         // clear screen
         GraphicsContext ctx = getGraphicsContext2D();
@@ -102,24 +133,34 @@ public class GCodeCanvas extends Canvas {
 
         // set grid transform
         ctx.setTransform(pixelsPerUnit, 0, 0, -pixelsPerUnit, originX, originY);
+        Bounds visibleBounds = getBoundsInLocal();
+        try {
+            visibleBounds = ctx.getTransform().inverseTransform(visibleBounds);
+        } catch (NonInvertibleTransformException ex) {
+
+        }
 
         // draw grid
-        ctx.setStroke(GRID_PAINT);
-        ctx.setLineWidth(0.5 / pixelsPerUnit);
-        for (int hGridIndex = hGridStart; hGridIndex <= hGridStop; hGridIndex++) {
-            ctx.strokeLine(hGridIndex*gridSpacing, (vGridStart- 1)*gridSpacing, hGridIndex*gridSpacing, (vGridStop+1)*gridSpacing);
+        for (int xGridIndex = xGridMinIndex; xGridIndex <= xGridMaxIndex; xGridIndex++) {
+            if (applyGridLineSettings(ctx, xGridIndex, pixelsPerUnit, pixelsPerGridLine)) {
+                double xGridPos = xGridIndex * gridSpacing;
+                ctx.strokeLine(xGridPos, visibleBounds.getMinY(), xGridPos, visibleBounds.getMaxY());
+            }
         }
-        for (int vGridIndex = vGridStart; vGridIndex <= vGridStop; vGridIndex++) {
-            ctx.strokeLine((hGridStart-1)*gridSpacing, vGridIndex*gridSpacing, (hGridStop+1)*gridSpacing, vGridIndex*gridSpacing);
+        for (int yGridIndex = yGridMinIndex; yGridIndex <= yGridMaxIndex; yGridIndex++) {
+            if (applyGridLineSettings(ctx, yGridIndex, pixelsPerUnit, pixelsPerGridLine)) {
+                double yGridPos = yGridIndex * gridSpacing;
+                ctx.strokeLine(visibleBounds.getMinX(), yGridPos, visibleBounds.getMaxX(), yGridPos);
+            }
         }
 
         // draw axes
-        ctx.setLineWidth(3 / pixelsPerUnit);
-        ctx.setStroke(X_AXIS_PAINT);
-        ctx.strokeLine(0, 0, gridSpacing * 2, 0);
-        ctx.setStroke(Y_AXIS_PAINT);
-        ctx.strokeLine(0, 0, 0, gridSpacing * 2);
+        ctx.setLineWidth(settings.getAxisLineWidth() / pixelsPerUnit);
+        ctx.setStroke(settings.getXAxisPaint());
+        ctx.strokeLine(visibleBounds.getMinX(), 0, visibleBounds.getMaxX(), 0);
+        ctx.setStroke(settings.getYAxisPaint());
+        ctx.strokeLine(0, visibleBounds.getMinY(), 0, visibleBounds.getMaxY());
 
-        System.out.println("END updateGrid");
+        log.info("END updateGrid");
     }
 }

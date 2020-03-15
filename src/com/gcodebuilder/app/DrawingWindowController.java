@@ -12,16 +12,13 @@ import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.BorderPane;
-import javafx.stage.Screen;
 
 public class DrawingWindowController {
 
-    private static final double MIN_ZOOM = 1;
+    private static final double MIN_ZOOM = 1.5625;
     private static final double MAX_ZOOM = 6400;
-    private static final double MAX_GRID_WIDTH_INCHES = 32;
-    private static final double MIN_GRID_SPACING = 0.01;
-    private static final double MAX_GRID_SPACING = 10;
-    private static final double GRID_SPACING_INCREMENT = 0.1;
+    private static final double MIN_GRID_SPACING = 0.0625;
+    private static final double MAX_GRID_SPACING = 32;
 
     @FXML
     private BorderPane rootPane;
@@ -49,53 +46,62 @@ public class DrawingWindowController {
         unitCtl.getItems().addAll(UnitMode.values());
         unitCtl.setValue(UnitMode.INCH);
         unitCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
-            canvas.setUnitMode(newValue);
+            if (newValue != canvas.getSettings().getUnits()) {
+                canvas.getSettings().setUnits(newValue);
+                canvas.refreshGrid();
+            }
         });
 
-        SpinnerValueFactory.DoubleSpinnerValueFactory zoomValueFactory =
-                new SpinnerValueFactory.DoubleSpinnerValueFactory(
-                        MIN_ZOOM, MAX_ZOOM, canvas.getZoom()*100.0, 100.0) {
-
-                    @Override
-                    public void decrement(int i) {
-                        setValue(getValue() * Math.pow(2, -i));
-                    }
-
-                    @Override
-                    public void increment(int i) {
-                        setValue(getValue() * Math.pow(2, i));
-                    }
-                };
+        SpinnerValueFactory<Double> zoomValueFactory =
+                new ExponentialSpinnerValueFactory(MIN_ZOOM, MAX_ZOOM, canvas.getZoom()*100);
+        zoomValueFactory.setConverter(new DoubleStringConverterWithPrecision(4));
         zoomCtl.setValueFactory(zoomValueFactory);
         zoomCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
-            canvas.setZoom(newValue/100);
+            double newZoom = newValue/100;
+            if (newZoom != canvas.getZoom()) {
+                canvas.setZoom(newValue / 100);
+                canvas.refreshGrid();
+            }
         });
 
-        gridSpacingCtl.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(
-                MIN_GRID_SPACING, MAX_GRID_SPACING, 1.0, GRID_SPACING_INCREMENT));
+        SpinnerValueFactory<Double> gridSpacingValueFactory =
+                new ExponentialSpinnerValueFactory(MIN_GRID_SPACING, MAX_GRID_SPACING,
+                        canvas.getSettings().getMajorGridSpacing());
+        gridSpacingValueFactory.setConverter(new DoubleStringConverterWithPrecision(4));
+        gridSpacingCtl.setValueFactory(gridSpacingValueFactory);
         gridSpacingCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
-            canvas.setGridSpacing(newValue);
+            if (newValue != canvas.getSettings().getMajorGridSpacing()) {
+                canvas.getSettings().setMajorGridSpacing(newValue);
+                canvas.refreshGrid();
+            }
         });
 
-        double dpi = Screen.getPrimary().getDpi();
-        double maxScreenWidth = MAX_GRID_WIDTH_INCHES * dpi;
-
-        hScrollBar.setMin(-maxScreenWidth);
-        hScrollBar.setMax(maxScreenWidth);
         hScrollBar.setUnitIncrement(1);
         hScrollBar.setBlockIncrement(10);
-        hScrollBar.setValue(0);
         hScrollBar.valueProperty().addListener((obs, oldValue, newValue) -> {
-            canvas.setOriginX(newValue.doubleValue());
+            if (newValue.doubleValue() != canvas.getOriginX()) {
+                canvas.setOriginX(newValue.doubleValue());
+                canvas.refreshGrid();
+            }
         });
 
-        vScrollBar.setMin(-maxScreenWidth);
-        vScrollBar.setMax(maxScreenWidth);
         vScrollBar.setUnitIncrement(1);
         vScrollBar.setBlockIncrement(10);
         vScrollBar.valueProperty().addListener((obs, oldValue, newValue) -> {
-            canvas.setOriginY(newValue.doubleValue());
+            if (newValue.doubleValue() != canvas.getOriginY()) {
+                canvas.setOriginY(newValue.doubleValue());
+                canvas.refreshGrid();
+            }
         });
+    }
+
+    private void updateScrollBars(Rectangle2D originArea) {
+        hScrollBar.setMin(originArea.getMinX());
+        hScrollBar.setMax(originArea.getMaxX());
+        hScrollBar.setValue(canvas.getOriginX());
+        vScrollBar.setMin(originArea.getMinY());
+        vScrollBar.setMax(originArea.getMaxY());
+        vScrollBar.setValue(canvas.getOriginY());
     }
 
     private double measureHeight(Node child) {
@@ -135,8 +141,14 @@ public class DrawingWindowController {
                 .subtract(measureHeight(hScrollBar));
         canvas.heightProperty().bind(heightBinding);
 
+        updateScrollBars(canvas.getOriginArea());
+
         hScrollBar.setValue(canvas.getWidth()/2);
         vScrollBar.setValue(canvas.getHeight()/2);
+
+        canvas.originAreaProperty().addListener((obs, oldValue, newValue) -> {
+            updateScrollBars(newValue);
+        });
     }
 
 
