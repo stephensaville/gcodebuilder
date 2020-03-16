@@ -1,6 +1,7 @@
 package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Rectangle;
+import com.gcodebuilder.geometry.Shape;
 import javafx.geometry.Rectangle2D;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,24 +23,27 @@ public class RectangleTool implements Tool {
     }
 
     @Override
-    public void down(InteractionEvent event) {
-        Rectangle currentShape = new Rectangle(eventToRect(event));
-        event.getDrawing().add(currentShape);
-        event.getDrawing().setCurrentShape(currentShape);
+    public Shape down(InteractionEvent event) {
+        Rectangle currentShape = (Rectangle)event.getShape();
+        if (currentShape == null) {
+            currentShape = new Rectangle(Rectangle2D.EMPTY);
+        }
+        return currentShape;
+    }
+
+    private void updateRect(InteractionEvent event) {
+        Rectangle currentShape = (Rectangle)event.getShape();
+        boolean changed = currentShape.moveHandle(event.getHandle(), event);
+        event.getDrawing().setDirty(changed);
     }
 
     @Override
     public void drag(InteractionEvent event) {
-        Rectangle currentShape = (Rectangle)event.getDrawing().getCurrentShape();
-        boolean changed = currentShape.updateRect(eventToRect(event));
-        event.getDrawing().setDirty(changed);
+        updateRect(event);
     }
 
     @Override
     public void up(InteractionEvent event) {
-        Rectangle currentShape = (Rectangle)event.getDrawing().getCurrentShape();
-        boolean changed = currentShape.updateRect(eventToRect(event));
-        event.getDrawing().setDirty(changed);
-        event.getDrawing().setCurrentShape(null);
+        updateRect(event);
     }
 }

@@ -1,6 +1,7 @@
 package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Drawing;
+import com.gcodebuilder.geometry.Shape;
 import javafx.scene.input.InputEvent;
 import lombok.Data;
 
@@ -12,4 +13,6 @@ public class InteractionEvent {
     private final double y;
     private final double startX;
     private final double startY;
+    private final Shape shape;
+    private final Enum<?> handle;
 }

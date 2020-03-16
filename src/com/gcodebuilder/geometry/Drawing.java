@@ -13,9 +13,6 @@ public class Drawing implements Drawable {
     private final List<Shape> shapes = new ArrayList<>();
 
     @Getter @Setter
-    private Shape currentShape;
-
-    @Getter @Setter
     private boolean dirty = true;
 
     public void add(Shape shape) {
