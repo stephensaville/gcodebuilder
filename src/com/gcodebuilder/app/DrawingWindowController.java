@@ -59,14 +59,13 @@ public class DrawingWindowController {
     private ToggleButton circleToolBtn;
 
     private RectangleTool rectangleTool = new RectangleTool();
-    private Tool selectedTool = rectangleTool;
+    private Tool currentTool = rectangleTool;
 
     private Drawing drawing = new Drawing();
 
     private Point2D startPoint = new Point2D(0, 0);
     private Shape currentShape;
     private Enum<?> currentHandle;
-    private Tool currentTool;
 
     @FXML
     public void initialize() {
@@ -181,11 +180,11 @@ public class DrawingWindowController {
     }
 
     public void selectRectangleTool() {
-        selectedTool = rectangleTool;
+        currentTool = rectangleTool;
     }
 
     public void selectCircleTool() {
-        selectedTool = null;
+        currentTool = null;
     }
 
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
@@ -194,12 +193,10 @@ public class DrawingWindowController {
             startPoint = gridPoint;
             currentShape = null;
             currentHandle = null;
-            currentTool = selectedTool;
             for (Shape shape : drawing.getShapes()) {
                 currentHandle = shape.getHandle(gridPoint);
                 if (currentHandle != null) {
                     currentShape = shape;
-                    currentTool = shape.getEditingTool();
                     break;
                 }
             }
@@ -219,30 +216,33 @@ public class DrawingWindowController {
 
     public void mousePressOnCanvas(MouseEvent event) {
         InteractionEvent toolEvent = makeToolEvent(event, true);
-        if (currentTool != null) {
-            Shape newShape = currentTool.down(toolEvent);
-            if (newShape != currentShape) {
-                drawing.add(newShape);
-                currentShape = newShape;
-                currentHandle = newShape.getDefaultHandle();
-            }
-            refreshDrawingWhenDirty();
+        if (currentHandle == null && currentTool != null) {
+            currentShape = currentTool.down(toolEvent);
         }
+        refreshDrawingWhenDirty();
     }
 
     public void mouseDragOnCanvas(MouseEvent event) {
         InteractionEvent toolEvent = makeToolEvent(event, false);
-        if (currentTool != null) {
+        if (currentHandle != null) {
+            if (currentShape.moveHandle(currentHandle, toolEvent)) {
+                drawing.setDirty(true);
+            }
+        } else if (currentTool != null) {
             currentTool.drag(toolEvent);
-            refreshDrawingWhenDirty();
         }
+        refreshDrawingWhenDirty();
     }
 
     public void mouseReleaseOnCanvas(MouseEvent event) {
         InteractionEvent toolEvent = makeToolEvent(event, false);
-        if (currentTool != null) {
+        if (currentHandle != null) {
+            if (currentShape.moveHandle(currentHandle, toolEvent)) {
+                drawing.setDirty(true);
+            }
+        } else if (currentTool != null) {
             currentTool.up(toolEvent);
-            refreshDrawingWhenDirty();
         }
+        refreshDrawingWhenDirty();
     }
 }

@@ -9,11 +9,6 @@ import org.apache.logging.log4j.Logger;
 public class RectangleTool implements Tool {
     private static final Logger log = LogManager.getLogger(RectangleTool.class);
 
-    private static final RectangleTool INSTANCE = new RectangleTool();
-    public static RectangleTool instance() {
-        return INSTANCE;
-    }
-
     private static Rectangle2D eventToRect(InteractionEvent event) {
         double minX = Math.min(event.getX(), event.getStartX());
         double minY = Math.min(event.getY(), event.getStartY());
@@ -24,17 +19,16 @@ public class RectangleTool implements Tool {
 
     @Override
     public Shape down(InteractionEvent event) {
-        Rectangle currentShape = (Rectangle)event.getShape();
-        if (currentShape == null) {
-            currentShape = new Rectangle(Rectangle2D.EMPTY);
-        }
-        return currentShape;
+        Rectangle newShape = new Rectangle(eventToRect(event));
+        event.getDrawing().add(newShape);
+        return newShape;
     }
 
     private void updateRect(InteractionEvent event) {
         Rectangle currentShape = (Rectangle)event.getShape();
-        boolean changed = currentShape.moveHandle(event.getHandle(), event);
-        event.getDrawing().setDirty(changed);
+        if (currentShape.updateRect(eventToRect(event))) {
+            event.getDrawing().setDirty(true);
+        }
     }
 
     @Override

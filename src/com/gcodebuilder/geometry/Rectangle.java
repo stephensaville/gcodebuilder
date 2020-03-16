@@ -15,15 +15,6 @@ public class Rectangle extends Shape {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
     public enum Handle {
-        DEFAULT {
-            public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                return new Rectangle2D(
-                        Math.min(event.getX(), event.getStartX()),
-                        Math.min(event.getY(), event.getStartY()),
-                        Math.abs(event.getX() - event.getStartX()),
-                        Math.abs(event.getY() - event.getStartY()));
-            }
-        },
         BOTTOM_LEFT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
                 double minX = Math.min(event.getX(), rect.getMaxX());
@@ -131,18 +122,8 @@ public class Rectangle extends Shape {
     }
 
     @Override
-    public Enum<?> getDefaultHandle() {
-        return Handle.DEFAULT;
-    }
-
-    @Override
     public boolean moveHandle(Enum<?> handle, InteractionEvent event) {
         return updateRect(((Handle)handle).move(rect, event));
-    }
-
-    @Override
-    public Tool getEditingTool() {
-        return RectangleTool.instance();
     }
 
     @Override
