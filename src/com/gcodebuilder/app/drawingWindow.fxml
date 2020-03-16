@@ -4,6 +4,8 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
 
 <BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.DrawingWindowController">
    <bottom>
@@ -37,11 +39,39 @@
    <center>
       <AnchorPane BorderPane.alignment="CENTER">
          <children>
-           <GCodeCanvas fx:id="canvas" height="600.0" width="800.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+           <GCodeCanvas fx:id="canvas" height="600.0" onMouseDragged="#mouseDragOnCanvas" onMousePressed="#mousePressOnCanvas" onMouseReleased="#mouseReleaseOnCanvas" width="800.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
             <ScrollBar fx:id="hScrollBar" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="17.0" />
             <ScrollBar fx:id="vScrollBar" orientation="VERTICAL" AnchorPane.bottomAnchor="17.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
          </children>
       </AnchorPane>
    </center>
+   <left>
+      <TilePane hgap="4.0" prefColumns="1" vgap="4.0" BorderPane.alignment="CENTER">
+         <children>
+            <ToggleButton fx:id="rectangleToolBtn" contentDisplay="TOP" mnemonicParsing="false" onAction="#selectRectangleTool" prefHeight="48.0" prefWidth="48.0" selected="true">
+               <graphic>
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#46648c" height="24.0" stroke="BLACK" strokeType="INSIDE" width="24.0" />
+               </graphic>
+               <font>
+                  <Font size="10.0" />
+               </font>
+               <toggleGroup>
+                  <ToggleGroup fx:id="tools" />
+               </toggleGroup>
+            </ToggleButton>
+            <ToggleButton fx:id="circleToolBtn" contentDisplay="TOP" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onAction="#selectCircleTool" prefHeight="48.0" prefWidth="48.0" toggleGroup="$tools">
+               <font>
+                  <Font size="10.0" />
+               </font>
+               <graphic>
+                  <Circle fill="#46648c" radius="12.0" stroke="BLACK" strokeType="INSIDE" />
+               </graphic>
+            </ToggleButton>
+         </children>
+         <BorderPane.margin>
+            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+         </BorderPane.margin>
+      </TilePane>
+   </left>
 
 </BorderPane>

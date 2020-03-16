@@ -5,9 +5,11 @@ import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.adapter.ReadOnlyJavaBeanObjectProperty;
 import javafx.beans.property.adapter.ReadOnlyJavaBeanObjectPropertyBuilder;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.stage.Screen;
@@ -15,6 +17,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GCodeCanvas extends Canvas {
     private static final Logger log = LogManager.getLogger(GCodeCanvas.class);
@@ -37,6 +42,17 @@ public class GCodeCanvas extends Canvas {
     @Getter
     private Rectangle2D originArea;
     private final ReadOnlyJavaBeanObjectProperty<Rectangle2D> originAreaProperty;
+
+    private static final Affine IDENTITY_TRANSFORM = new Affine();
+
+    @Getter
+    private final Affine gridToScreen = new Affine();
+
+    @Getter
+    private final Affine screenToGrid = new Affine();
+
+    @Getter
+    private final List<Drawable> drawables = new ArrayList<>();
 
     public GCodeCanvas() {
         this(0,0);
@@ -63,7 +79,7 @@ public class GCodeCanvas extends Canvas {
         super.resize(width, height);
         log.info(String.format("resize(%f,%f)", width, height));
         if (width != canvasWidth || height != canvasHeight) {
-            refreshGrid();
+            refresh();
         }
     }
 
@@ -98,8 +114,6 @@ public class GCodeCanvas extends Canvas {
         if (minOriginY > maxOriginY) {
             minOriginY = maxOriginY = height / 2;
         }
-        log.info("minOriginX={} maxOriginX={} minOriginY={} maxOriginY={}",
-                minOriginX, maxOriginX, minOriginY, maxOriginY);
         originArea = new Rectangle2D(minOriginX, minOriginY, maxOriginX - minOriginX, maxOriginY - minOriginY);
         originX = Math.max(minOriginX, Math.min(maxOriginX, originX));
         originY = Math.max(minOriginY, Math.min(maxOriginY, originY));
@@ -110,7 +124,7 @@ public class GCodeCanvas extends Canvas {
         return originAreaProperty;
     }
 
-    public void refreshGrid() {
+    public void refresh() {
         double pixelsPerUnit = getPixelsPerUnit();
         canvasWidth = getWidth();
         canvasHeight = getHeight();
@@ -128,11 +142,13 @@ public class GCodeCanvas extends Canvas {
 
         // clear screen
         GraphicsContext ctx = getGraphicsContext2D();
-        ctx.setTransform(new Affine());
+        ctx.setTransform(IDENTITY_TRANSFORM);
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
         // set grid transform
-        ctx.setTransform(pixelsPerUnit, 0, 0, -pixelsPerUnit, originX, originY);
+        gridToScreen.setToTransform(pixelsPerUnit, 0, originX, 0, -pixelsPerUnit, originY);
+        screenToGrid.setToTransform(1/pixelsPerUnit, 0, -originX/pixelsPerUnit, 0, -1/pixelsPerUnit, originY/pixelsPerUnit);
+        ctx.setTransform(gridToScreen);
         Bounds visibleBounds = getBoundsInLocal();
         try {
             visibleBounds = ctx.getTransform().inverseTransform(visibleBounds);
@@ -161,6 +177,27 @@ public class GCodeCanvas extends Canvas {
         ctx.setStroke(settings.getYAxisPaint());
         ctx.strokeLine(0, visibleBounds.getMinY(), 0, visibleBounds.getMaxY());
 
+        for (Drawable drawable : drawables) {
+            if (drawable != null && drawable.isVisible()) {
+                drawable.draw(ctx, pixelsPerUnit);
+            }
+        }
+
         log.info("END updateGrid");
+    }
+
+    public Point2D snapToGrid(double x, double y) {
+        double gridSpacing = settings.getMajorGridSpacing() / settings.getMinorGridDivision();
+        return new Point2D(Math.rint(x / gridSpacing)*gridSpacing,
+                Math.rint(y / gridSpacing)*gridSpacing);
+    }
+
+    public Point2D mouseToGrid(MouseEvent event, boolean snapToGrid) {
+        Point2D gridPoint = screenToGrid.transform(event.getX(), event.getY());
+        if (snapToGrid) {
+            return snapToGrid(gridPoint.getX(), gridPoint.getY());
+        } else {
+            return gridPoint;
+        }
     }
 }
