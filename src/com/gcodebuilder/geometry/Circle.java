@@ -1,7 +1,6 @@
 package com.gcodebuilder.geometry;
 
 import com.gcodebuilder.app.tools.InteractionEvent;
-import com.sun.javafx.scene.paint.GradientUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -28,6 +27,7 @@ public class Circle extends Shape<Circle.Handle> {
 
     @Data
     public class Handle {
+        private final Point2D originalCenter;
         private boolean moved = false;
     }
 
@@ -75,13 +75,13 @@ public class Circle extends Shape<Circle.Handle> {
     public Handle getHandle(Point2D point, Point2D mousePoint, double pixelsPerUnit) {
         double distanceToCenter = center.distance(mousePoint);
         if (Math.abs(distanceToCenter - radius)*pixelsPerUnit < HANDLE_RADIUS) {
-            return new Handle();
+            return new Handle(center);
         }
         return null;
     }
 
     @Override
-    public boolean moveHandle(Handle handle, InteractionEvent event) {
+    public boolean edit(Handle handle, InteractionEvent event) {
         boolean moved = handle.isMoved();
         if (!moved && !event.getPoint().equals(event.getStartPoint())) {
             handle.setMoved(true);
@@ -92,6 +92,13 @@ public class Circle extends Shape<Circle.Handle> {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public boolean move(Handle handle, InteractionEvent event) {
+        Point2D delta = event.getPoint().subtract(event.getStartPoint());
+        Point2D movedCenter = handle.getOriginalCenter().add(delta);
+        return updateCenter(movedCenter);
     }
 
     @Override

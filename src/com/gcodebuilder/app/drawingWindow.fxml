@@ -48,7 +48,7 @@
    <left>
       <TilePane hgap="4.0" prefColumns="1" vgap="4.0" BorderPane.alignment="CENTER">
          <children>
-            <ToggleButton fx:id="rectangleToolBtn" contentDisplay="TOP" mnemonicParsing="false" onAction="#selectRectangleTool" prefHeight="48.0" prefWidth="48.0" selected="true">
+            <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectRectangleTool" prefHeight="48.0" prefWidth="48.0" selected="true">
                <graphic>
                   <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#46648c" height="24.0" stroke="BLACK" strokeType="INSIDE" width="24.0" />
                </graphic>
@@ -59,13 +59,23 @@
                   <ToggleGroup fx:id="tools" />
                </toggleGroup>
             </ToggleButton>
-            <ToggleButton fx:id="circleToolBtn" contentDisplay="TOP" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onAction="#selectCircleTool" prefHeight="48.0" prefWidth="48.0" toggleGroup="$tools">
+            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onAction="#selectCircleTool" prefHeight="48.0" prefWidth="48.0" toggleGroup="$tools">
                <font>
                   <Font size="10.0" />
                </font>
                <graphic>
                   <Circle fill="#46648c" radius="12.0" stroke="BLACK" strokeType="INSIDE" />
                </graphic>
+            </ToggleButton>
+            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="62.0" mnemonicParsing="false" onAction="#selectEditTool" prefHeight="48.0" prefWidth="48.0" text="EDIT" toggleGroup="$tools">
+               <font>
+                  <Font size="10.0" />
+               </font>
+            </ToggleButton>
+            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="114.0" mnemonicParsing="false" onAction="#selectMoveTool" prefHeight="48.0" prefWidth="48.0" text="MOVE" toggleGroup="$tools">
+               <font>
+                  <Font size="10.0" />
+               </font>
             </ToggleButton>
          </children>
          <BorderPane.margin>

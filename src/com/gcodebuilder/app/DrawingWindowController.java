@@ -1,7 +1,9 @@
 package com.gcodebuilder.app;
 
 import com.gcodebuilder.app.tools.CircleTool;
+import com.gcodebuilder.app.tools.EditTool;
 import com.gcodebuilder.app.tools.InteractionEvent;
+import com.gcodebuilder.app.tools.MoveTool;
 import com.gcodebuilder.app.tools.RectangleTool;
 import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.canvas.GCodeCanvas;
@@ -53,14 +55,10 @@ public class DrawingWindowController {
     @FXML
     private ScrollBar vScrollBar;
 
-    @FXML
-    private ToggleButton rectangleToolBtn;
-
-    @FXML
-    private ToggleButton circleToolBtn;
-
     private RectangleTool rectangleTool = new RectangleTool();
     private CircleTool circleTool = new CircleTool();
+    private EditTool editTool = new EditTool();
+    private MoveTool moveTool = new MoveTool();
     private Tool currentTool = rectangleTool;
 
     private Drawing drawing = new Drawing();
@@ -190,6 +188,14 @@ public class DrawingWindowController {
         currentTool = circleTool;
     }
 
+    public void selectEditTool() {
+        currentTool = editTool;
+    }
+
+    public void selectMoveTool() {
+        currentTool = moveTool;
+    }
+
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
         Point2D point = canvas.mouseToGrid(event, true);
         Point2D mousePoint = canvas.mouseToGrid(event, false);
@@ -221,7 +227,7 @@ public class DrawingWindowController {
 
     public void mousePressOnCanvas(MouseEvent event) {
         InteractionEvent toolEvent = makeToolEvent(event, true);
-        if (currentHandle == null && currentTool != null) {
+        if (currentTool != null) {
             currentShape = currentTool.down(toolEvent);
         }
         refreshDrawingWhenDirty();
@@ -229,11 +235,7 @@ public class DrawingWindowController {
 
     public void mouseDragOnCanvas(MouseEvent event) {
         InteractionEvent toolEvent = makeToolEvent(event, false);
-        if (currentHandle != null) {
-            if (currentShape.moveHandle(currentHandle, toolEvent)) {
-                drawing.setDirty(true);
-            }
-        } else if (currentTool != null) {
+        if (currentTool != null) {
             currentTool.drag(toolEvent);
         }
         refreshDrawingWhenDirty();
@@ -241,11 +243,7 @@ public class DrawingWindowController {
 
     public void mouseReleaseOnCanvas(MouseEvent event) {
         InteractionEvent toolEvent = makeToolEvent(event, false);
-        if (currentHandle != null) {
-            if (currentShape.moveHandle(currentHandle, toolEvent)) {
-                drawing.setDirty(true);
-            }
-        } else if (currentTool != null) {
+        if (currentTool != null) {
             currentTool.up(toolEvent);
         }
         refreshDrawingWhenDirty();

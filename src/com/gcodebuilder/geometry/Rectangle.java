@@ -5,6 +5,7 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import lombok.Data;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 public class Rectangle extends Shape<Rectangle.Handle> {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
-    public enum Handle {
+    public enum HandleType {
         BOTTOM_LEFT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
                 double minX = Math.min(event.getPoint().getX(), rect.getMaxX());
@@ -69,6 +70,12 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         public abstract Rectangle2D move(Rectangle2D rect, InteractionEvent event);
     }
 
+    @Data
+    public class Handle {
+        private final HandleType type;
+        private final Rectangle2D original;
+    }
+
     @Getter
     private Rectangle2D rect;
 
@@ -95,33 +102,49 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         double y = point.getY();
         double minY = rect.getMinY();
         double maxY = rect.getMaxY();
+        HandleType type = null;
         if (x == minX) {
             if (y == minY) {
-                return Handle.BOTTOM_LEFT;
+                type = HandleType.BOTTOM_LEFT;
             } else if (y == maxY) {
-                return Handle.TOP_LEFT;
+                type = HandleType.TOP_LEFT;
             } else if (y > minY && y < maxY) {
-                return Handle.LEFT;
+                type = HandleType.LEFT;
             }
         } else if (x == maxX) {
             if (y == minY) {
-                return Handle.BOTTOM_RIGHT;
+                type = HandleType.BOTTOM_RIGHT;
             } else if (y == maxY) {
-                return Handle.TOP_RIGHT;
+                type = HandleType.TOP_RIGHT;
             } else if (y > minY && y < maxY) {
-                return Handle.RIGHT;
+                type = HandleType.RIGHT;
             }
         } else if (y == minY && x > minX && x < maxX) {
-            return Handle.BOTTOM;
+            type = HandleType.BOTTOM;
         } else if (y == maxY && x > minX && x < maxX) {
-            return Handle.TOP;
+            type = HandleType.TOP;
         }
-        return null;
+        if (type != null) {
+            return new Handle(type, rect);
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public boolean moveHandle(Handle handle, InteractionEvent event) {
-        return update(handle.move(rect, event));
+    public boolean edit(Handle handle, InteractionEvent event) {
+        return update(handle.getType().move(rect, event));
+    }
+
+    @Override
+    public boolean move(Handle handle, InteractionEvent event) {
+        Point2D delta = event.getPoint().subtract(event.getStartPoint());
+        Rectangle2D movedRect = new Rectangle2D(
+                handle.getOriginal().getMinX() + delta.getX(),
+                handle.getOriginal().getMinY() + delta.getY(),
+                handle.getOriginal().getWidth(),
+                handle.getOriginal().getHeight());
+        return update(movedRect);
     }
 
     @Override
