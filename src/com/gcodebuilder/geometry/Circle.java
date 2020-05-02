@@ -1,10 +1,12 @@
 package com.gcodebuilder.geometry;
 
 import com.gcodebuilder.app.tools.InteractionEvent;
+import com.sun.javafx.scene.paint.GradientUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,28 +20,23 @@ import org.apache.logging.log4j.Logger;
 public class Circle extends Shape<Circle.Handle> {
     private static final Logger log = LogManager.getLogger(Circle.class);
 
-    private double centerX;
-    private double centerY;
+    private static final int LINE_WIDTH = 2;
+    private static final int HANDLE_RADIUS = 5;
+
+    private Point2D center;
     private double radius;
 
+    @Data
     public class Handle {
-
+        private boolean moved = false;
     }
 
     public double getMinX() {
-        return centerX - radius;
-    }
-
-    public double getMaxX() {
-        return centerX + radius;
+        return center.getX() - radius;
     }
 
     public double getMinY() {
-        return centerY - radius;
-    }
-
-    public double getMaxY() {
-        return centerY + radius;
+        return center.getY() - radius;
     }
 
     public double getWidth() {
@@ -50,29 +47,34 @@ public class Circle extends Shape<Circle.Handle> {
         return radius * 2;
     }
 
-    public boolean update(double centerX, double centerY, double radius) {
-        boolean updated = false;
-        if (this.centerX != centerX) {
-            this.centerX = centerX;
-            updated = true;
+    public boolean updateCenter(Point2D newCenter) {
+        if (!center.equals(newCenter)) {
+            center = newCenter;
+            return true;
+        } else {
+            return false;
         }
-        if (this.centerY != centerY) {
-            this.centerY = centerY;
-            updated = true;
+    }
+
+    public boolean updateRadius(double newRadius) {
+        if (radius != newRadius) {
+            radius = newRadius;
+            return true;
+        } else {
+            return false;
         }
-        if (this.radius != radius) {
-            this.radius = radius;
-            updated = true;
-        }
+    }
+
+    public boolean update(Point2D newCenter, double newRadius) {
+        boolean updated = updateCenter(newCenter);
+        updated = updateRadius(newRadius) || updated;
         return updated;
     }
 
     @Override
-    public Handle getHandle(Point2D gridPoint) {
-        double distanceToCenter = gridPoint.distance(centerX, centerY);
-        log.info(String.format("Measured distance: %f to center: (%f,%f) of circle with radius: %f",
-                distanceToCenter, centerX, centerY, radius));
-        if (distanceToCenter == radius) {
+    public Handle getHandle(Point2D point, Point2D mousePoint, double pixelsPerUnit) {
+        double distanceToCenter = center.distance(mousePoint);
+        if (Math.abs(distanceToCenter - radius)*pixelsPerUnit < HANDLE_RADIUS) {
             return new Handle();
         }
         return null;
@@ -80,14 +82,23 @@ public class Circle extends Shape<Circle.Handle> {
 
     @Override
     public boolean moveHandle(Handle handle, InteractionEvent event) {
-        return false;
+        boolean moved = handle.isMoved();
+        if (!moved && !event.getPoint().equals(event.getStartPoint())) {
+            handle.setMoved(true);
+            moved = true;
+        }
+        if (moved) {
+            return update(center, center.distance(event.getPoint()));
+        } else {
+            return false;
+        }
     }
 
     @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit) {
         if (radius > 0) {
-            log.info(String.format("Drawing circle: centerX=%f centerY=%f radius=%f", centerX, centerY, radius));
-            ctx.setLineWidth(2 / pixelsPerUnit);
+            log.info(String.format("Drawing circle: center=%s radius=%f", center, radius));
+            ctx.setLineWidth(LINE_WIDTH / pixelsPerUnit);
             ctx.setStroke(Color.BLACK);
             ctx.strokeOval(getMinX(), getMinY(), getWidth(), getHeight());
         }

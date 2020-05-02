@@ -65,7 +65,8 @@ public class DrawingWindowController {
 
     private Drawing drawing = new Drawing();
 
-    private Point2D startPoint = new Point2D(0, 0);
+    private Point2D startPoint = Point2D.ZERO;
+    private Point2D mouseStartPoint = Point2D.ZERO;
     private Shape currentShape;
     private Object currentHandle;
 
@@ -190,13 +191,15 @@ public class DrawingWindowController {
     }
 
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
-        Point2D gridPoint = canvas.mouseToGrid(event, true);
+        Point2D point = canvas.mouseToGrid(event, true);
+        Point2D mousePoint = canvas.mouseToGrid(event, false);
         if (restart) {
-            startPoint = gridPoint;
+            startPoint = point;
+            mouseStartPoint = mousePoint;
             currentShape = null;
             currentHandle = null;
             for (Shape shape : drawing.getShapes()) {
-                currentHandle = shape.getHandle(gridPoint);
+                currentHandle = shape.getHandle(point, mousePoint, canvas.getPixelsPerUnit());
                 if (currentHandle != null) {
                     currentShape = shape;
                     break;
@@ -205,8 +208,8 @@ public class DrawingWindowController {
         }
         return new InteractionEvent(
                 drawing, event,
-                gridPoint.getX(), gridPoint.getY(),
-                startPoint.getX(), startPoint.getY(),
+                point, startPoint,
+                mousePoint, mouseStartPoint,
                 currentShape, currentHandle);
     }
 

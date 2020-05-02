@@ -10,10 +10,10 @@ public class RectangleTool implements Tool {
     private static final Logger log = LogManager.getLogger(RectangleTool.class);
 
     private static Rectangle2D eventToRect(InteractionEvent event) {
-        double minX = Math.min(event.getX(), event.getStartX());
-        double minY = Math.min(event.getY(), event.getStartY());
-        double width = Math.abs(event.getX() - event.getStartX());
-        double height = Math.abs(event.getY() - event.getStartY());
+        double minX = Math.min(event.getPoint().getX(), event.getStartPoint().getX());
+        double minY = Math.min(event.getPoint().getY(), event.getStartPoint().getY());
+        double width = Math.abs(event.getPoint().getX() - event.getStartPoint().getX());
+        double height = Math.abs(event.getPoint().getY() - event.getStartPoint().getY());
         return new Rectangle2D(minX, minY, width, height);
     }
 
@@ -26,7 +26,7 @@ public class RectangleTool implements Tool {
 
     private Rectangle updateRect(InteractionEvent event) {
         Rectangle currentShape = (Rectangle)event.getShape();
-        if (currentShape.updateRect(eventToRect(event))) {
+        if (currentShape.update(eventToRect(event))) {
             event.getDrawing().setDirty(true);
         }
         return currentShape;

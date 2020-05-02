@@ -15,53 +15,53 @@ public class Rectangle extends Shape<Rectangle.Handle> {
     public enum Handle {
         BOTTOM_LEFT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double minX = Math.min(event.getX(), rect.getMaxX());
-                double minY = Math.min(event.getY(), rect.getMaxY());
+                double minX = Math.min(event.getPoint().getX(), rect.getMaxX());
+                double minY = Math.min(event.getPoint().getY(), rect.getMaxY());
                 return new Rectangle2D(minX, minY, rect.getMaxX() - minX, rect.getMaxY() - minY);
             }
         },
         LEFT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double minX = Math.min(event.getX(), rect.getMaxX());
+                double minX = Math.min(event.getPoint().getX(), rect.getMaxX());
                 return new Rectangle2D(minX, rect.getMinY(), rect.getMaxX() - minX, rect.getHeight());
             }
         },
         TOP_LEFT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double minX = Math.min(event.getX(), rect.getMaxX());
-                double maxY = Math.max(event.getY(), rect.getMinY());
+                double minX = Math.min(event.getPoint().getX(), rect.getMaxX());
+                double maxY = Math.max(event.getPoint().getY(), rect.getMinY());
                 return new Rectangle2D(minX, rect.getMinY(), rect.getMaxX() - minX, maxY - rect.getMinY());
             }
         },
         TOP {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double maxY = Math.max(event.getY(), rect.getMinY());
+                double maxY = Math.max(event.getPoint().getY(), rect.getMinY());
                 return new Rectangle2D(rect.getMinX(), rect.getMinY(), rect.getWidth(), maxY - rect.getMinY());
             }
         },
         TOP_RIGHT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double maxX = Math.max(event.getX(), rect.getMinX());
-                double maxY = Math.max(event.getY(), rect.getMinY());
+                double maxX = Math.max(event.getPoint().getX(), rect.getMinX());
+                double maxY = Math.max(event.getPoint().getY(), rect.getMinY());
                 return new Rectangle2D(rect.getMinX(), rect.getMinY(), maxX - rect.getMinX(), maxY - rect.getMinY());
             }
         },
         RIGHT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double maxX = Math.max(event.getX(), rect.getMinX());
+                double maxX = Math.max(event.getPoint().getX(), rect.getMinX());
                 return new Rectangle2D(rect.getMinX(), rect.getMinY(), maxX - rect.getMinX(), rect.getHeight());
             }
         },
         BOTTOM_RIGHT {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double maxX = Math.max(event.getX(), rect.getMinX());
-                double minY = Math.min(event.getY(), rect.getMaxY());
+                double maxX = Math.max(event.getPoint().getX(), rect.getMinX());
+                double minY = Math.min(event.getPoint().getY(), rect.getMaxY());
                 return new Rectangle2D(rect.getMinX(), minY, maxX - rect.getMinX(), rect.getMaxY() - minY);
             }
         },
         BOTTOM {
             public Rectangle2D move(Rectangle2D rect, InteractionEvent event) {
-                double minY = Math.min(event.getY(), rect.getMaxY());
+                double minY = Math.min(event.getPoint().getY(), rect.getMaxY());
                 return new Rectangle2D(rect.getMinX(), minY, rect.getWidth(), rect.getMaxY() - minY);
             }
         };
@@ -77,7 +77,7 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         log.info("Rectangle created: {}", rect);
     }
 
-    public boolean updateRect(Rectangle2D rect) {
+    public boolean update(Rectangle2D rect) {
         if (!rect.equals(this.rect)) {
             this.rect = rect;
             log.info("Rectangle updated: {}", rect);
@@ -87,12 +87,12 @@ public class Rectangle extends Shape<Rectangle.Handle> {
     }
 
     @Override
-    public Handle getHandle(Point2D gridPoint) {
+    public Handle getHandle(Point2D point, Point2D mousePoint, double pixelsPerUnit) {
         if (rect == null) return null;
-        double x = gridPoint.getX();
+        double x = point.getX();
         double minX = rect.getMinX();
         double maxX = rect.getMaxX();
-        double y = gridPoint.getY();
+        double y = point.getY();
         double minY = rect.getMinY();
         double maxY = rect.getMaxY();
         if (x == minX) {
@@ -121,7 +121,7 @@ public class Rectangle extends Shape<Rectangle.Handle> {
 
     @Override
     public boolean moveHandle(Handle handle, InteractionEvent event) {
-        return updateRect(handle.move(rect, event));
+        return update(handle.move(rect, event));
     }
 
     @Override
