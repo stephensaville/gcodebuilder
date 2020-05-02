@@ -21,7 +21,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +47,10 @@ public class DrawingWindowController {
     private Spinner<Double> zoomCtl;
 
     @FXML
-    private Spinner<Double> gridSpacingCtl;
+    private Spinner<Double> majorGridCtl;
+
+    @FXML
+    private Spinner<Integer> minorGridCtl;
 
     @FXML
     private ScrollBar hScrollBar;
@@ -97,10 +99,21 @@ public class DrawingWindowController {
                 new ExponentialSpinnerValueFactory(MIN_GRID_SPACING, MAX_GRID_SPACING,
                         canvas.getSettings().getMajorGridSpacing());
         gridSpacingValueFactory.setConverter(new DoubleStringConverterWithPrecision(4));
-        gridSpacingCtl.setValueFactory(gridSpacingValueFactory);
-        gridSpacingCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
+        majorGridCtl.setValueFactory(gridSpacingValueFactory);
+        majorGridCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
             if (newValue != canvas.getSettings().getMajorGridSpacing()) {
                 canvas.getSettings().setMajorGridSpacing(newValue);
+                canvas.refresh();
+            }
+        });
+
+        SpinnerValueFactory<Integer> minorGridValueFactory =
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                        1, 100, canvas.getSettings().getMinorGridDivision(), 1);
+        minorGridCtl.setValueFactory(minorGridValueFactory);
+        minorGridCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue != canvas.getSettings().getMinorGridDivision()) {
+                canvas.getSettings().setMinorGridDivision(newValue);
                 canvas.refresh();
             }
         });

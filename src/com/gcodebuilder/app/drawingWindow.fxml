@@ -24,12 +24,18 @@
                   <Insets left="10.0" top="4.0" />
                </padding></Label>
             <Spinner fx:id="zoomCtl" editable="true" prefWidth="100.0" />
-            <Label text="Grid Spacing:">
+            <Label text="Major Grid:">
                <padding>
                   <Insets left="10.0" top="4.0" />
                </padding>
             </Label>
-            <Spinner fx:id="gridSpacingCtl" editable="true" prefWidth="100.0" />
+            <Spinner fx:id="majorGridCtl" editable="true" prefWidth="100.0" />
+            <Label layoutX="288.0" layoutY="15.0" text="Minor Grid:">
+               <padding>
+                  <Insets left="10.0" top="4.0" />
+               </padding>
+            </Label>
+            <Spinner fx:id="minorGridCtl" editable="true" layoutX="431.0" layoutY="15.0" prefWidth="100.0" />
          </children>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
