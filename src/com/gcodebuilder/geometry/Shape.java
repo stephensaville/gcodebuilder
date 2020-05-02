@@ -4,7 +4,7 @@ import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.canvas.Drawable;
 import javafx.geometry.Point2D;
 
-public abstract class Shape implements Drawable {
-    public abstract Enum<?> getHandle(Point2D gridPoint);
-    public abstract boolean moveHandle(Enum<?> handle, InteractionEvent event);
+public abstract class Shape<H> implements Drawable {
+    public abstract H getHandle(Point2D gridPoint);
+    public abstract boolean moveHandle(H handle, InteractionEvent event);
 }

@@ -1,5 +1,6 @@
 package com.gcodebuilder.app;
 
+import com.gcodebuilder.app.tools.CircleTool;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.app.tools.RectangleTool;
 import com.gcodebuilder.app.tools.Tool;
@@ -59,13 +60,14 @@ public class DrawingWindowController {
     private ToggleButton circleToolBtn;
 
     private RectangleTool rectangleTool = new RectangleTool();
+    private CircleTool circleTool = new CircleTool();
     private Tool currentTool = rectangleTool;
 
     private Drawing drawing = new Drawing();
 
     private Point2D startPoint = new Point2D(0, 0);
     private Shape currentShape;
-    private Enum<?> currentHandle;
+    private Object currentHandle;
 
     @FXML
     public void initialize() {
@@ -184,7 +186,7 @@ public class DrawingWindowController {
     }
 
     public void selectCircleTool() {
-        currentTool = null;
+        currentTool = circleTool;
     }
 
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {

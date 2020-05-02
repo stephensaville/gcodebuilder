@@ -14,5 +14,5 @@ public class InteractionEvent {
     private final double startX;
     private final double startY;
     private final Shape shape;
-    private final Enum<?> handle;
+    private final Object handle;
 }

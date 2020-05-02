@@ -1,8 +1,6 @@
 package com.gcodebuilder.geometry;
 
 import com.gcodebuilder.app.tools.InteractionEvent;
-import com.gcodebuilder.app.tools.RectangleTool;
-import com.gcodebuilder.app.tools.Tool;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
@@ -11,7 +9,7 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Rectangle extends Shape {
+public class Rectangle extends Shape<Rectangle.Handle> {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
     public enum Handle {
@@ -122,8 +120,8 @@ public class Rectangle extends Shape {
     }
 
     @Override
-    public boolean moveHandle(Enum<?> handle, InteractionEvent event) {
-        return updateRect(((Handle)handle).move(rect, event));
+    public boolean moveHandle(Handle handle, InteractionEvent event) {
+        return updateRect(handle.move(rect, event));
     }
 
     @Override

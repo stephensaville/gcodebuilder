@@ -24,11 +24,12 @@ public class RectangleTool implements Tool {
         return newShape;
     }
 
-    private void updateRect(InteractionEvent event) {
+    private Rectangle updateRect(InteractionEvent event) {
         Rectangle currentShape = (Rectangle)event.getShape();
         if (currentShape.updateRect(eventToRect(event))) {
             event.getDrawing().setDirty(true);
         }
+        return currentShape;
     }
 
     @Override
@@ -38,6 +39,10 @@ public class RectangleTool implements Tool {
 
     @Override
     public void up(InteractionEvent event) {
-        updateRect(event);
+        Rectangle shape = updateRect(event);
+        Rectangle2D rect = shape.getRect();
+        if (rect.getWidth() == 0 && rect.getHeight() == 0) {
+            event.getDrawing().remove(shape);
+        }
     }
 }
