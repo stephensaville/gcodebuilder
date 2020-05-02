@@ -2,6 +2,7 @@ package com.gcodebuilder.app;
 
 import com.gcodebuilder.app.tools.CircleTool;
 import com.gcodebuilder.app.tools.EditTool;
+import com.gcodebuilder.app.tools.EraseTool;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.app.tools.MoveTool;
 import com.gcodebuilder.app.tools.RectangleTool;
@@ -59,6 +60,7 @@ public class DrawingWindowController {
     private CircleTool circleTool = new CircleTool();
     private EditTool editTool = new EditTool();
     private MoveTool moveTool = new MoveTool();
+    private EraseTool eraseTool = new EraseTool();
     private Tool currentTool = rectangleTool;
 
     private Drawing drawing = new Drawing();
@@ -194,6 +196,10 @@ public class DrawingWindowController {
 
     public void selectMoveTool() {
         currentTool = moveTool;
+    }
+
+    public void selectEraseTool() {
+        currentTool = eraseTool;
     }
 
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
