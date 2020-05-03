@@ -1,9 +1,8 @@
 package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Rectangle;
-import com.gcodebuilder.geometry.Shape;
 
-public class RectangleTool implements Tool {
+public class RectangleTool extends ShapeTool<Rectangle> {
     @FunctionalInterface
     private interface RectangleFunction<T> {
         T apply(double minX, double minY, double width, double height);
@@ -17,31 +16,17 @@ public class RectangleTool implements Tool {
         return function.apply(minX, minY, width, height);
     }
 
-    @Override
-    public Shape down(InteractionEvent event) {
-        Rectangle newShape = eventToRect(event, Rectangle::new);
-        event.getDrawing().add(newShape);
-        return newShape;
-    }
-
-    private Rectangle updateRect(InteractionEvent event) {
-        Rectangle currentShape = (Rectangle)event.getShape();
-        if (eventToRect(event, currentShape::update)) {
-            event.getDrawing().setDirty(true);
-        }
-        return currentShape;
+    public RectangleTool() {
+        super(Rectangle.class);
     }
 
     @Override
-    public void drag(InteractionEvent event) {
-        updateRect(event);
+    protected Rectangle createShape(InteractionEvent event) {
+        return eventToRect(event, Rectangle::new);
     }
 
     @Override
-    public void up(InteractionEvent event) {
-        Rectangle shape = updateRect(event);
-        if (!shape.isVisible()) {
-            event.getDrawing().remove(shape);
-        }
+    protected boolean updateShape(InteractionEvent event, Rectangle currentShape) {
+        return eventToRect(event, currentShape::update);
     }
 }

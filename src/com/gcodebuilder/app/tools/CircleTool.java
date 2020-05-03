@@ -1,10 +1,9 @@
 package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Circle;
-import com.gcodebuilder.geometry.Shape;
 import javafx.geometry.Point2D;
 
-public class CircleTool implements Tool {
+public class CircleTool extends ShapeTool<Circle> {
     @FunctionalInterface
     private interface CircleFunction<T> {
         T apply(Point2D center, double radius);
@@ -16,31 +15,17 @@ public class CircleTool implements Tool {
         return function.apply(center, radius);
     }
 
-    @Override
-    public Shape down(InteractionEvent event) {
-        Circle newShape = eventToCircle(event, Circle::new);
-        event.getDrawing().add(newShape);
-        return newShape;
-    }
-
-    private Circle updateCircle(InteractionEvent event) {
-        Circle shape = (Circle)event.getShape();
-        if (eventToCircle(event, shape::update)) {
-            event.getDrawing().setDirty(true);
-        }
-        return shape;
+    public CircleTool() {
+        super(Circle.class);
     }
 
     @Override
-    public void drag(InteractionEvent event) {
-        updateCircle(event);
+    protected Circle createShape(InteractionEvent event) {
+        return eventToCircle(event, Circle::new);
     }
 
     @Override
-    public void up(InteractionEvent event) {
-        Circle shape = updateCircle(event);
-        if (!shape.isVisible()) {
-            event.getDrawing().remove(shape);
-        }
+    protected boolean updateShape(InteractionEvent event, Circle currentShape) {
+        return eventToCircle(event, currentShape::update);
     }
 }
