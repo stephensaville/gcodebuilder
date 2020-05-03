@@ -81,13 +81,15 @@ public class Rectangle extends Shape<Rectangle.Handle> {
 
     public Rectangle(Rectangle2D rect) {
         this.rect = rect;
-        log.info("Rectangle created: {}", rect);
+        log.debug("new Rectangle(minX={}, minY={}, width={}, height={})",
+                rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
     }
 
     public boolean update(Rectangle2D rect) {
         if (!rect.equals(this.rect)) {
             this.rect = rect;
-            log.info("Rectangle updated: {}", rect);
+            log.debug("update(minX={}, minY={}, width={}, height={})",
+                    rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
             return true;
         }
         return false;
@@ -150,7 +152,8 @@ public class Rectangle extends Shape<Rectangle.Handle> {
     @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit) {
         if (rect != null) {
-            log.info("Drawing rectangle: {}", rect);
+            log.debug("draw(minX={}, minY={}, width={}, height={})",
+                    rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
             ctx.setLineWidth(2 / pixelsPerUnit);
             ctx.setStroke(Color.BLACK);
             ctx.strokeRect(rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());

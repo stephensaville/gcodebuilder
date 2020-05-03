@@ -77,7 +77,7 @@ public class GCodeCanvas extends Canvas {
     @Override
     public void resize(double width, double height) {
         super.resize(width, height);
-        log.info(String.format("resize(%f,%f)", width, height));
+        log.debug("resize({}, {})", width, height);
         if (width != canvasWidth || height != canvasHeight) {
             refresh();
         }
@@ -137,8 +137,8 @@ public class GCodeCanvas extends Canvas {
         int yGridMinIndex = -(int)((canvasHeight - originY) / pixelsPerGridLine);
         int yGridMaxIndex = (int)(originY / pixelsPerGridLine);
 
-        log.info(String.format("START refreshGrid: pixelsPerUnit=%f canvasWidth=%f canvasHeight=%f pixelsPerGridLine=%f hGrid=[%d,%d] vGrid=[%d,%d]",
-                pixelsPerUnit, canvasWidth, canvasHeight, pixelsPerGridLine, xGridMinIndex, xGridMaxIndex, yGridMinIndex, yGridMaxIndex));
+        log.debug("refresh(pixelsPerUnit={} canvasWidth={} canvasHeight={} pixelsPerGridLine={} hGrid=[{},{}] vGrid=[{},{}])",
+                pixelsPerUnit, canvasWidth, canvasHeight, pixelsPerGridLine, xGridMinIndex, xGridMaxIndex, yGridMinIndex, yGridMaxIndex);
 
         // clear screen
         GraphicsContext ctx = getGraphicsContext2D();
@@ -182,8 +182,6 @@ public class GCodeCanvas extends Canvas {
                 drawable.draw(ctx, pixelsPerUnit);
             }
         }
-
-        log.info("END updateGrid");
     }
 
     public Point2D snapToGrid(double x, double y) {

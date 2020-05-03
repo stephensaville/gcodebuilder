@@ -14,8 +14,6 @@ import org.apache.logging.log4j.Logger;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
 public class Circle extends Shape<Circle.Handle> {
     private static final Logger log = LogManager.getLogger(Circle.class);
 
@@ -29,6 +27,12 @@ public class Circle extends Shape<Circle.Handle> {
     public class Handle {
         private final Point2D originalCenter;
         private boolean moved = false;
+    }
+
+    public Circle(Point2D center, double radius) {
+        log.debug("new Circle(center=({},{}) radius={})", center.getX(), center.getY(), radius);
+        this.center = center;
+        this.radius = radius;
     }
 
     public double getMinX() {
@@ -68,6 +72,9 @@ public class Circle extends Shape<Circle.Handle> {
     public boolean update(Point2D newCenter, double newRadius) {
         boolean updated = updateCenter(newCenter);
         updated = updateRadius(newRadius) || updated;
+        if (updated) {
+            log.debug("update(center=({},{}) radius={})", center.getX(), center.getY(), radius);
+        }
         return updated;
     }
 
@@ -104,7 +111,7 @@ public class Circle extends Shape<Circle.Handle> {
     @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit) {
         if (radius > 0) {
-            log.info(String.format("Drawing circle: center=%s radius=%f", center, radius));
+            log.debug("draw(center=({},{}) radius={})", center.getX(), center.getY(), radius);
             ctx.setLineWidth(LINE_WIDTH / pixelsPerUnit);
             ctx.setStroke(Color.BLACK);
             ctx.strokeOval(getMinX(), getMinY(), getWidth(), getHeight());
