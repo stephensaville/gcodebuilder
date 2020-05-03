@@ -1,19 +1,22 @@
 package com.gcodebuilder.geometry;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Getter
 @Setter
+@EqualsAndHashCode
 public class Circle extends Shape<Circle.Handle> {
     private static final Logger log = LogManager.getLogger(Circle.class);
 
@@ -29,24 +32,36 @@ public class Circle extends Shape<Circle.Handle> {
         private boolean moved = false;
     }
 
-    public Circle(Point2D center, double radius) {
-        log.debug("new Circle(center=({},{}) radius={})", center.getX(), center.getY(), radius);
+    @JsonCreator
+    public Circle(@JsonProperty("center") Point center,
+                  @JsonProperty("radius") double radius) {
         this.center = center;
         this.radius = radius;
+        log.debug("new {}", this);
     }
 
+    public Circle(Point2D center, double radius) {
+        this.center = center;
+        this.radius = radius;
+        log.debug("new {}", this);
+    }
+
+    @JsonIgnore
     public double getMinX() {
         return center.getX() - radius;
     }
 
+    @JsonIgnore
     public double getMinY() {
         return center.getY() - radius;
     }
 
+    @JsonIgnore
     public double getWidth() {
         return radius * 2;
     }
 
+    @JsonIgnore
     public double getHeight() {
         return radius * 2;
     }
@@ -73,7 +88,7 @@ public class Circle extends Shape<Circle.Handle> {
         boolean updated = updateCenter(newCenter);
         updated = updateRadius(newRadius) || updated;
         if (updated) {
-            log.debug("update(center=({},{}) radius={})", center.getX(), center.getY(), radius);
+            log.debug("update {}", this);
         }
         return updated;
     }
@@ -111,10 +126,16 @@ public class Circle extends Shape<Circle.Handle> {
     @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit) {
         if (radius > 0) {
-            log.debug("draw(center=({},{}) radius={})", center.getX(), center.getY(), radius);
+            log.debug("draw {}", this);
             ctx.setLineWidth(LINE_WIDTH / pixelsPerUnit);
             ctx.setStroke(Color.BLACK);
             ctx.strokeOval(getMinX(), getMinY(), getWidth(), getHeight());
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Circle(center=(%f, %f), radius=%f)",
+                center.getX(), center.getY(), radius);
     }
 }

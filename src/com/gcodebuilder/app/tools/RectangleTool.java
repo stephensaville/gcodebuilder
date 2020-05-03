@@ -2,31 +2,31 @@ package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Rectangle;
 import com.gcodebuilder.geometry.Shape;
-import javafx.geometry.Rectangle2D;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class RectangleTool implements Tool {
-    private static final Logger log = LogManager.getLogger(RectangleTool.class);
+    @FunctionalInterface
+    private interface RectangleFunction<T> {
+        T apply(double minX, double minY, double width, double height);
+    }
 
-    private static Rectangle2D eventToRect(InteractionEvent event) {
+    private static <T> T eventToRect(InteractionEvent event, RectangleFunction<T> function) {
         double minX = Math.min(event.getPoint().getX(), event.getStartPoint().getX());
         double minY = Math.min(event.getPoint().getY(), event.getStartPoint().getY());
         double width = Math.abs(event.getPoint().getX() - event.getStartPoint().getX());
         double height = Math.abs(event.getPoint().getY() - event.getStartPoint().getY());
-        return new Rectangle2D(minX, minY, width, height);
+        return function.apply(minX, minY, width, height);
     }
 
     @Override
     public Shape down(InteractionEvent event) {
-        Rectangle newShape = new Rectangle(eventToRect(event));
+        Rectangle newShape = eventToRect(event, Rectangle::new);
         event.getDrawing().add(newShape);
         return newShape;
     }
 
     private Rectangle updateRect(InteractionEvent event) {
         Rectangle currentShape = (Rectangle)event.getShape();
-        if (currentShape.update(eventToRect(event))) {
+        if (eventToRect(event, currentShape::update)) {
             event.getDrawing().setDirty(true);
         }
         return currentShape;
@@ -40,8 +40,7 @@ public class RectangleTool implements Tool {
     @Override
     public void up(InteractionEvent event) {
         Rectangle shape = updateRect(event);
-        Rectangle2D rect = shape.getRect();
-        if (rect.getWidth() == 0 && rect.getHeight() == 0) {
+        if (shape.getWidth() == 0 && shape.getHeight() == 0) {
             event.getDrawing().remove(shape);
         }
     }

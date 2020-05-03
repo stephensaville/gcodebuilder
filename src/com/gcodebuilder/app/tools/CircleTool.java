@@ -5,6 +5,7 @@ import com.gcodebuilder.geometry.Shape;
 import javafx.geometry.Point2D;
 
 public class CircleTool implements Tool {
+    @FunctionalInterface
     private interface CircleFunction<T> {
         T apply(Point2D center, double radius);
     }

@@ -1,15 +1,18 @@
 package com.gcodebuilder.geometry;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import lombok.Data;
-import lombok.Getter;
+import lombok.EqualsAndHashCode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@EqualsAndHashCode
 public class Rectangle extends Shape<Rectangle.Handle> {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
@@ -76,34 +79,63 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         private final Rectangle2D original;
     }
 
-    @Getter
     private Rectangle2D rect;
 
-    public Rectangle(Rectangle2D rect) {
-        this.rect = rect;
-        log.debug("new Rectangle(minX={}, minY={}, width={}, height={})",
-                rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
+    @JsonCreator
+    public Rectangle(@JsonProperty("minX") double minX,
+                     @JsonProperty("minY") double minY,
+                     @JsonProperty("width") double width,
+                     @JsonProperty("height") double height) {
+        this.rect = new Rectangle2D(minX, minY, width, height);
+        log.debug("new {}", this);
+    }
+
+    public double getMinX() {
+        return rect.getMinX();
+    }
+
+    public double getMinY() {
+        return rect.getMinY();
+    }
+
+    public double getMaxX() {
+        return rect.getMaxX();
+    }
+
+    public double getMaxY() {
+        return rect.getMaxY();
+    }
+
+    public double getWidth() {
+        return rect.getWidth();
+    }
+
+    public double getHeight() {
+        return rect.getHeight();
     }
 
     public boolean update(Rectangle2D rect) {
         if (!rect.equals(this.rect)) {
             this.rect = rect;
-            log.debug("update(minX={}, minY={}, width={}, height={})",
-                    rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
+            log.debug("update {}", this);
             return true;
         }
         return false;
+    }
+
+    public boolean update(double minX, double minY, double width, double height) {
+        return update(new Rectangle2D(minX, minY, width, height));
     }
 
     @Override
     public Handle getHandle(Point2D point, Point2D mousePoint, double pixelsPerUnit) {
         if (rect == null) return null;
         double x = point.getX();
-        double minX = rect.getMinX();
-        double maxX = rect.getMaxX();
+        double minX = getMinX();
+        double maxX = getMaxX();
         double y = point.getY();
-        double minY = rect.getMinY();
-        double maxY = rect.getMaxY();
+        double minY = getMinY();
+        double maxY = getMaxY();
         HandleType type = null;
         if (x == minX) {
             if (y == minY) {
@@ -152,11 +184,16 @@ public class Rectangle extends Shape<Rectangle.Handle> {
     @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit) {
         if (rect != null) {
-            log.debug("draw(minX={}, minY={}, width={}, height={})",
-                    rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
+            log.debug("draw {}", this);
             ctx.setLineWidth(2 / pixelsPerUnit);
             ctx.setStroke(Color.BLACK);
-            ctx.strokeRect(rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
+            ctx.strokeRect(getMinX(), getMinY(), getWidth(), getHeight());
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Rectangle(minX=%f, minY=%f, width=%f, height=%f)",
+                getMinX(), getMinY(), getWidth(), getHeight());
     }
 }
