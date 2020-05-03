@@ -124,13 +124,16 @@ public class Circle extends Shape<Circle.Handle> {
     }
 
     @Override
+    public boolean isVisible() {
+        return radius > 0;
+    }
+
+    @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit) {
-        if (radius > 0) {
-            log.debug("draw {}", this);
-            ctx.setLineWidth(LINE_WIDTH / pixelsPerUnit);
-            ctx.setStroke(Color.BLACK);
-            ctx.strokeOval(getMinX(), getMinY(), getWidth(), getHeight());
-        }
+        log.debug("draw {}", this);
+        ctx.setLineWidth(LINE_WIDTH / pixelsPerUnit);
+        ctx.setStroke(Color.BLACK);
+        ctx.strokeOval(getMinX(), getMinY(), getWidth(), getHeight());
     }
 
     @Override

@@ -10,7 +10,7 @@ public class CircleTool implements Tool {
         T apply(Point2D center, double radius);
     }
 
-    public <T> T eventToCircle(InteractionEvent event, CircleFunction<T> function) {
+    private static <T> T eventToCircle(InteractionEvent event, CircleFunction<T> function) {
         Point2D center = event.getStartPoint();
         double radius = center.distance(event.getPoint());
         return function.apply(center, radius);
@@ -39,7 +39,7 @@ public class CircleTool implements Tool {
     @Override
     public void up(InteractionEvent event) {
         Circle shape = updateCircle(event);
-        if (shape.getRadius() == 0) {
+        if (!shape.isVisible()) {
             event.getDrawing().remove(shape);
         }
     }

@@ -40,7 +40,7 @@ public class RectangleTool implements Tool {
     @Override
     public void up(InteractionEvent event) {
         Rectangle shape = updateRect(event);
-        if (shape.getWidth() == 0 && shape.getHeight() == 0) {
+        if (!shape.isVisible()) {
             event.getDrawing().remove(shape);
         }
     }
