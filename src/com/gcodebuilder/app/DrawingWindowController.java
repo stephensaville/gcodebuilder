@@ -23,8 +23,17 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class DrawingWindowController {
     private static final Logger log = LogManager.getLogger(DrawingWindowController.class);
@@ -71,6 +80,8 @@ public class DrawingWindowController {
     private Point2D mouseStartPoint = Point2D.ZERO;
     private Shape currentShape;
     private Object currentHandle;
+
+    private FileOperations fileOperations;
 
     @FXML
     public void initialize() {
@@ -137,6 +148,8 @@ public class DrawingWindowController {
         });
 
         canvas.getDrawables().add(drawing);
+
+        fileOperations = new FileOperations(rootPane);
     }
 
     private void updateScrollBars(Rectangle2D originArea) {
@@ -266,5 +279,24 @@ public class DrawingWindowController {
             currentTool.up(toolEvent);
         }
         refreshDrawingWhenDirty();
+    }
+
+    public void openDrawing() {
+        Drawing newDrawing = fileOperations.open();
+        if (newDrawing != null) {
+            canvas.getDrawables().remove(drawing);
+            drawing = newDrawing;
+            canvas.getDrawables().add(newDrawing);
+            canvas.refresh();
+        }
+    }
+
+    public void saveDrawing() {
+        fileOperations.save(drawing);
+    }
+
+    public void closeWindow() {
+        Stage stage = (Stage)rootPane.getScene().getWindow();
+        stage.close();
     }
 }

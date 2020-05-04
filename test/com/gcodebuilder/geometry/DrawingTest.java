@@ -1,11 +1,12 @@
 package com.gcodebuilder.geometry;
 
-import javafx.geometry.Point2D;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 
@@ -40,7 +41,7 @@ public class DrawingTest {
     @Test
     public void testSaveDrawingWithCircle() throws IOException {
         Drawing original = new Drawing();
-        original.add(new Circle(new Point2D(1, 1), 2));
+        original.add(new Circle(new Point(1, 1), 2));
         saveTest(original);
     }
 
@@ -48,7 +49,16 @@ public class DrawingTest {
     public void testSaveDrawingWithAllShapes() throws IOException {
         Drawing original = new Drawing();
         original.add(new Rectangle(1, 2, 3, 4));
-        original.add(new Circle(new Point2D(1, 2), 3));
+        original.add(new Circle(new Point(1, 2), 3));
         saveTest(original);
+    }
+
+    @Test
+    public void testOpenDrawingFromFile() throws IOException {
+        try (FileInputStream in = new FileInputStream(new File("/home/zampire/Documents/drawing2.json"))) {
+            Drawing loaded = Drawing.load(in);
+            Assertions.assertNotNull(loaded);
+            log.info("loaded from file: {}", loaded);
+        }
     }
 }

@@ -23,24 +23,18 @@ public class Circle extends Shape<Circle.Handle> {
     private static final int LINE_WIDTH = 2;
     private static final int HANDLE_RADIUS = 5;
 
-    private Point2D center;
+    private Point center;
     private double radius;
 
     @Data
     public class Handle {
-        private final Point2D originalCenter;
+        private final Point originalCenter;
         private boolean moved = false;
     }
 
     @JsonCreator
     public Circle(@JsonProperty("center") Point center,
                   @JsonProperty("radius") double radius) {
-        this.center = center;
-        this.radius = radius;
-        log.debug("new {}", this);
-    }
-
-    public Circle(Point2D center, double radius) {
         this.center = center;
         this.radius = radius;
         log.debug("new {}", this);
@@ -66,7 +60,7 @@ public class Circle extends Shape<Circle.Handle> {
         return radius * 2;
     }
 
-    public boolean updateCenter(Point2D newCenter) {
+    public boolean updateCenter(Point newCenter) {
         if (!center.equals(newCenter)) {
             center = newCenter;
             return true;
@@ -84,7 +78,7 @@ public class Circle extends Shape<Circle.Handle> {
         }
     }
 
-    public boolean update(Point2D newCenter, double newRadius) {
+    public boolean update(Point newCenter, double newRadius) {
         boolean updated = updateCenter(newCenter);
         updated = updateRadius(newRadius) || updated;
         if (updated) {
@@ -119,8 +113,7 @@ public class Circle extends Shape<Circle.Handle> {
     @Override
     public boolean move(Handle handle, InteractionEvent event) {
         Point2D delta = event.getPoint().subtract(event.getStartPoint());
-        Point2D movedCenter = handle.getOriginalCenter().add(delta);
-        return updateCenter(movedCenter);
+        return updateCenter(handle.getOriginalCenter().add(delta));
     }
 
     @Override
