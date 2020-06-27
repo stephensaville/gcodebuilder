@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.ProfileRecipeEditorController">
+<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.recipe.ProfileRecipeEditorController">
     <columnConstraints>
         <ColumnConstraints minWidth="10.0" prefWidth="120.0" />
         <ColumnConstraints minWidth="10.0" prefWidth="200.0" />

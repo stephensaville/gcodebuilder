@@ -11,6 +11,12 @@ public enum GCodeRecipeType {
         public GCodeRecipe newRecipe(int id) {
             return new GCodeProfileRecipe(id);
         }
+    },
+    POCKET("Pocket", GCodePocketRecipe.class) {
+        @Override
+        public GCodeRecipe newRecipe(int id) {
+            return new GCodePocketRecipe(id);
+        }
     };
 
     private final String label;

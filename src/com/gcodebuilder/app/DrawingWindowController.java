@@ -1,5 +1,6 @@
 package com.gcodebuilder.app;
 
+import com.gcodebuilder.app.recipe.RecipeEditorController;
 import com.gcodebuilder.app.tools.CircleTool;
 import com.gcodebuilder.app.tools.EditTool;
 import com.gcodebuilder.app.tools.EraseTool;
@@ -13,7 +14,6 @@ import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.UnitMode;
 import javafx.beans.binding.DoubleBinding;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
@@ -25,17 +25,11 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class DrawingWindowController {
     private static final Logger log = LogManager.getLogger(DrawingWindowController.class);

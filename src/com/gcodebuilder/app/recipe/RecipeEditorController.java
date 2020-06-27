@@ -1,30 +1,21 @@
-package com.gcodebuilder.app;
+package com.gcodebuilder.app.recipe;
 
 import com.gcodebuilder.recipe.GCodeRecipe;
 import com.gcodebuilder.recipe.GCodeRecipeType;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.Property;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.adapter.JavaBeanObjectProperty;
 import javafx.beans.property.adapter.JavaBeanObjectPropertyBuilder;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ModifiableObservableListBase;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import lombok.Data;
 import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import org.apache.batik.bridge.TextNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -152,6 +143,11 @@ public class RecipeEditorController {
                 GCodeRecipeType.PROFILE,
                 ProfileRecipeEditorController.class,
                 "profileRecipeEditor.fxml");
+
+        addRecipeTypeEditor(
+                GCodeRecipeType.POCKET,
+                PocketRecipeEditorController.class,
+                "pocketRecipeEditor.fxml");
     }
 
     public static RecipeEditorController attach(AnchorPane parent) throws IOException {

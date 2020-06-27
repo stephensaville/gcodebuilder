@@ -1,6 +1,6 @@
 package com.gcodebuilder.app;
 
-import com.gcodebuilder.recipe.GCodeProfileRecipe;
+import com.gcodebuilder.app.recipe.RecipeTypeController;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import com.gcodebuilder.recipe.GCodeRecipeType;
 import javafx.scene.control.ChoiceBox;
