@@ -120,5 +120,16 @@
         </menus>
       </MenuBar>
    </top>
+   <right>
+      <Accordion BorderPane.alignment="CENTER">
+        <panes>
+          <TitledPane animated="false" text="GCode Recipe">
+            <content>
+              <AnchorPane fx:id="recipeEditorPane" minHeight="0.0" minWidth="0.0" />
+            </content>
+          </TitledPane>
+        </panes>
+      </Accordion>
+   </right>
 
 </BorderPane>

@@ -13,6 +13,7 @@ import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.UnitMode;
 import javafx.beans.binding.DoubleBinding;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
@@ -22,6 +23,7 @@ import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -67,6 +69,9 @@ public class DrawingWindowController {
     @FXML
     private ScrollBar vScrollBar;
 
+    @FXML
+    private AnchorPane recipeEditorPane;
+
     private RectangleTool rectangleTool = new RectangleTool();
     private CircleTool circleTool = new CircleTool();
     private EditTool editTool = new EditTool();
@@ -83,8 +88,10 @@ public class DrawingWindowController {
 
     private FileOperations fileOperations;
 
+    private RecipeEditorController recipeEditorController;
+
     @FXML
-    public void initialize() {
+    public void initialize() throws IOException {
         unitCtl.getItems().addAll(UnitMode.values());
         unitCtl.setValue(UnitMode.INCH);
         unitCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
@@ -150,6 +157,8 @@ public class DrawingWindowController {
         canvas.getDrawables().add(drawing);
 
         fileOperations = new FileOperations(rootPane);
+
+        recipeEditorController = RecipeEditorController.attach(recipeEditorPane);
     }
 
     private void updateScrollBars(Rectangle2D originArea) {
