@@ -7,6 +7,7 @@ import com.gcodebuilder.app.tools.EraseTool;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.app.tools.MoveTool;
 import com.gcodebuilder.app.tools.RectangleTool;
+import com.gcodebuilder.app.tools.SelectionTool;
 import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.canvas.GCodeCanvas;
 import com.gcodebuilder.geometry.Drawing;
@@ -71,6 +72,7 @@ public class DrawingWindowController {
     private EditTool editTool = new EditTool();
     private MoveTool moveTool = new MoveTool();
     private EraseTool eraseTool = new EraseTool();
+    private SelectionTool selectionTool = new SelectionTool();
     private Tool currentTool = rectangleTool;
 
     private Drawing drawing = new Drawing();
@@ -211,24 +213,32 @@ public class DrawingWindowController {
         });
     }
 
+    private void setCurrentTool(Tool tool) {
+        currentTool = tool;
+    }
+
     public void selectRectangleTool() {
-        currentTool = rectangleTool;
+        setCurrentTool(rectangleTool);
     }
 
     public void selectCircleTool() {
-        currentTool = circleTool;
+        setCurrentTool(circleTool);
     }
 
     public void selectEditTool() {
-        currentTool = editTool;
+        setCurrentTool(editTool);
     }
 
     public void selectMoveTool() {
-        currentTool = moveTool;
+        setCurrentTool(moveTool);
     }
 
     public void selectEraseTool() {
-        currentTool = eraseTool;
+        setCurrentTool(eraseTool);
+    }
+
+    public void selectSelectionTool() {
+        setCurrentTool(selectionTool);
     }
 
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
@@ -264,6 +274,16 @@ public class DrawingWindowController {
         InteractionEvent toolEvent = makeToolEvent(event, true);
         if (currentTool != null) {
             currentShape = currentTool.down(toolEvent);
+            if (!currentTool.isSelectionTool()) {
+                // default behavior select current shape for non-selection tools
+                if (drawing.unselectAllShapes() > 0) {
+                    drawing.setDirty(true);
+                }
+                if (currentShape != null) {
+                    currentShape.setSelected(true);
+                    drawing.setDirty(true);
+                }
+            }
         }
         refreshDrawingWhenDirty();
     }

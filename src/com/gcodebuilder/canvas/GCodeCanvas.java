@@ -179,7 +179,7 @@ public class GCodeCanvas extends Canvas {
 
         for (Drawable drawable : drawables) {
             if (drawable != null && drawable.isVisible()) {
-                drawable.draw(ctx, pixelsPerUnit);
+                drawable.draw(ctx, pixelsPerUnit, settings);
             }
         }
     }

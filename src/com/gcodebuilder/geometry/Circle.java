@@ -3,6 +3,7 @@ package com.gcodebuilder.geometry;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
@@ -122,10 +123,8 @@ public class Circle extends Shape<Circle.Handle> {
     }
 
     @Override
-    public void draw(GraphicsContext ctx, double pixelsPerUnit) {
-        log.debug("draw {}", this);
-        ctx.setLineWidth(LINE_WIDTH / pixelsPerUnit);
-        ctx.setStroke(Color.BLACK);
+    public void draw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
+        prepareToDraw(ctx, pixelsPerUnit, settings);
         ctx.strokeOval(getMinX(), getMinY(), getWidth(), getHeight());
     }
 

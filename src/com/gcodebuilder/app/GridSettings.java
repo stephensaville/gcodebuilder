@@ -25,4 +25,8 @@ public class GridSettings {
     private Paint xAxisPaint = Color.GREEN;
     private Paint yAxisPaint = Color.RED;
     private double axisLineWidth = 3;
+
+    private double shapeLineWidth = 2;
+    private Paint shapePaint = Color.BLACK;
+    private Paint selectedShapePaint = Color.BLUE;
 }

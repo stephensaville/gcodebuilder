@@ -89,6 +89,11 @@
                   <Font size="10.0" />
                </font>
             </ToggleButton>
+            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="218.0" mnemonicParsing="false" onAction="#selectSelectionTool" prefHeight="48.0" prefWidth="48.0" text="SELECT" toggleGroup="$tools">
+               <font>
+                  <Font size="9.0" />
+               </font>
+            </ToggleButton>
          </children>
          <BorderPane.margin>
             <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
