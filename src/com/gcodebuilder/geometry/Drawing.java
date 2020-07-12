@@ -13,9 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,7 +25,6 @@ public class Drawing implements Drawable {
     @Getter
     private final List<Shape> shapes = new ArrayList<>();
 
-    @Getter
     private final Map<Integer, GCodeRecipe> recipes = new HashMap<>();
 
     @Getter
@@ -52,14 +49,32 @@ public class Drawing implements Drawable {
         return recipes.get(recipeId);
     }
 
-    public void addRecipe(GCodeRecipe recipe) {
+    public void putRecipe(GCodeRecipe recipe) {
         recipes.put(recipe.getId(), recipe);
     }
 
     public GCodeRecipe removeRecipe(int recipeId) {
-        return recipes.remove(recipeId);
+        GCodeRecipe removed = recipes.remove(recipeId);
+        if (removed != null) {
+            shapes.forEach(shape -> {
+                if (shape.getRecipeId() == removed.getId()) {
+                    shape.setRecipeId(0);
+                }
+            });
+        }
+        return removed;
     }
 
+    public List<GCodeRecipe> getRecipes() {
+        return new ArrayList<>(recipes.values());
+    }
+
+    public void setRecipes(List<GCodeRecipe> recipes) {
+        this.recipes.clear();
+        recipes.forEach(this::putRecipe);
+    }
+
+    @JsonIgnore
     public Set<Shape> getSelectedShapes() {
         return shapes.stream().filter(Shape::isSelected).collect(Collectors.toUnmodifiableSet());
     }

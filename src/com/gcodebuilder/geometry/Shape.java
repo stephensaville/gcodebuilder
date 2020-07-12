@@ -13,17 +13,22 @@ import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="@type")
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name="rectangle", value=Rectangle.class),
-        @JsonSubTypes.Type(name="circle", value=Circle.class)
+        @JsonSubTypes.Type(name="RECTANGLE", value=Rectangle.class),
+        @JsonSubTypes.Type(name="CIRCLE", value=Circle.class)
 })
 public abstract class Shape<H> implements Drawable {
     private static final Logger log = LogManager.getLogger(Shape.class);
 
     @Getter
-    @Setter
-    private int recipeId;
+    //@Setter
+    private int recipeId = 0;
+
+    public void setRecipeId(int recipeId) {
+        log.info("Set recipeId={} on shape {}", recipeId, this);
+        this.recipeId = recipeId;
+    }
 
     @Getter
     @Setter

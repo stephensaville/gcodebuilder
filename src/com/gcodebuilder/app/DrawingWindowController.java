@@ -13,6 +13,7 @@ import com.gcodebuilder.canvas.GCodeCanvas;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.UnitMode;
+import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.beans.binding.DoubleBinding;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -31,6 +32,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DrawingWindowController {
     private static final Logger log = LogManager.getLogger(DrawingWindowController.class);
@@ -81,6 +85,8 @@ public class DrawingWindowController {
     private Point2D mouseStartPoint = Point2D.ZERO;
     private Shape currentShape;
     private Object currentHandle;
+
+    private Set<Shape> currentSelectedShapes = Collections.emptySet();
 
     private FileOperations fileOperations;
 
@@ -155,6 +161,18 @@ public class DrawingWindowController {
         fileOperations = new FileOperations(rootPane);
 
         recipeEditorController = RecipeEditorController.attach(recipeEditorPane);
+
+        recipeEditorController.currentRecipeProperty().addListener((obs, oldRecipe, newRecipe) -> {
+            log.info(String.format("Current recipe changed: %s -> %s", oldRecipe, newRecipe));
+            int newRecipeId = 0;
+            if (newRecipe != null) {
+                drawing.putRecipe(newRecipe);
+                newRecipeId = newRecipe.getId();
+            }
+            for (Shape shape : currentSelectedShapes) {
+                shape.setRecipeId(newRecipeId);
+            }
+        });
     }
 
     private void updateScrollBars(Rectangle2D originArea) {
@@ -264,6 +282,38 @@ public class DrawingWindowController {
                 currentShape, currentHandle);
     }
 
+    private void checkSelectedShapes() {
+        // switch to recipe attached to selected shape
+        Set<Shape> selectedShapes = drawing.getSelectedShapes();
+        if (currentSelectedShapes.equals(selectedShapes)) {
+            return;
+        }
+        log.info(String.format("Selection changed: %s -> %s", currentSelectedShapes, selectedShapes));
+        currentSelectedShapes = Collections.emptySet();
+        if (selectedShapes.isEmpty()) {
+            recipeEditorController.clearCurrentRecipe();
+        } else {
+            Set<Integer> selectedShapeRecipes =
+                    selectedShapes.stream()
+                            .map(Shape::getRecipeId)
+                            .collect(Collectors.toSet());
+            log.info(String.format("Selected shape recipes found: %s", selectedShapeRecipes));
+            if (selectedShapeRecipes.size() == 1) {
+                int currentRecipeId = selectedShapeRecipes.iterator().next();
+                if (currentRecipeId > 0) {
+                    GCodeRecipe currentRecipe = drawing.getRecipe(currentRecipeId);
+                    recipeEditorController.setCurrentRecipe(currentRecipe);
+                } else {
+                    recipeEditorController.clearCurrentRecipe();
+                }
+            } else {
+                recipeEditorController.clearCurrentRecipe();
+            }
+        }
+        currentSelectedShapes = selectedShapes;
+        drawing.setDirty(true);
+    }
+
     private void refreshDrawingWhenDirty() {
         if (drawing.isDirty()) {
             canvas.refresh();
@@ -274,14 +324,20 @@ public class DrawingWindowController {
         InteractionEvent toolEvent = makeToolEvent(event, true);
         if (currentTool != null) {
             currentShape = currentTool.down(toolEvent);
-            if (!currentTool.isSelectionTool()) {
+            if (currentTool.isSelectionTool()) {
+                checkSelectedShapes();
+            } else {
                 // default behavior select current shape for non-selection tools
+                boolean selectionChanged = false;
                 if (drawing.unselectAllShapes() > 0) {
-                    drawing.setDirty(true);
+                    selectionChanged = true;
                 }
                 if (currentShape != null) {
                     currentShape.setSelected(true);
-                    drawing.setDirty(true);
+                    selectionChanged = true;
+                }
+                if (selectionChanged) {
+                    checkSelectedShapes();
                 }
             }
         }
@@ -292,6 +348,9 @@ public class DrawingWindowController {
         InteractionEvent toolEvent = makeToolEvent(event, false);
         if (currentTool != null) {
             currentTool.drag(toolEvent);
+            if (currentTool.isSelectionTool()) {
+                checkSelectedShapes();
+            }
         }
         refreshDrawingWhenDirty();
     }
@@ -300,6 +359,9 @@ public class DrawingWindowController {
         InteractionEvent toolEvent = makeToolEvent(event, false);
         if (currentTool != null) {
             currentTool.up(toolEvent);
+            if (currentTool.isSelectionTool()) {
+                checkSelectedShapes();
+            }
         }
         refreshDrawingWhenDirty();
     }
@@ -310,6 +372,11 @@ public class DrawingWindowController {
             canvas.getDrawables().remove(drawing);
             drawing = newDrawing;
             canvas.getDrawables().add(newDrawing);
+
+            recipeEditorController.clearCurrentRecipe();
+            recipeEditorController.getRecipes().clear();
+            recipeEditorController.getRecipes().addAll(newDrawing.getRecipes());
+
             canvas.refresh();
         }
     }

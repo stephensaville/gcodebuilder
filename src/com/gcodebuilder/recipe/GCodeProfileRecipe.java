@@ -1,5 +1,6 @@
 package com.gcodebuilder.recipe;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.gcodebuilder.geometry.Circle;
 import com.gcodebuilder.geometry.Rectangle;
 import com.gcodebuilder.geometry.Shape;
