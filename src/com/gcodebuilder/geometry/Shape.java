@@ -15,20 +15,15 @@ import org.apache.logging.log4j.Logger;
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name="RECTANGLE", value=Rectangle.class),
-        @JsonSubTypes.Type(name="CIRCLE", value=Circle.class)
+        @JsonSubTypes.Type(Rectangle.class),
+        @JsonSubTypes.Type(Circle.class)
 })
 public abstract class Shape<H> implements Drawable {
     private static final Logger log = LogManager.getLogger(Shape.class);
 
     @Getter
-    //@Setter
+    @Setter
     private int recipeId = 0;
-
-    public void setRecipeId(int recipeId) {
-        log.info("Set recipeId={} on shape {}", recipeId, this);
-        this.recipeId = recipeId;
-    }
 
     @Getter
     @Setter
@@ -40,7 +35,6 @@ public abstract class Shape<H> implements Drawable {
     public abstract boolean move(H handle, InteractionEvent event);
 
     protected void prepareToDraw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
-        log.debug("draw {}", this);
         ctx.setLineWidth(settings.getShapeLineWidth() / pixelsPerUnit);
         if (isSelected()) {
             ctx.setStroke(settings.getSelectedShapePaint());

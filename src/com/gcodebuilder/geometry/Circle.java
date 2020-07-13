@@ -3,28 +3,29 @@ package com.gcodebuilder.geometry;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@JsonTypeName("CIRCLE")
 @Getter
-@Setter
 @EqualsAndHashCode
 public class Circle extends Shape<Circle.Handle> {
     private static final Logger log = LogManager.getLogger(Circle.class);
 
-    private static final int LINE_WIDTH = 2;
     private static final int HANDLE_RADIUS = 5;
 
+    @Getter
     private Point center;
+
+    @Getter
     private double radius;
 
     @Data
