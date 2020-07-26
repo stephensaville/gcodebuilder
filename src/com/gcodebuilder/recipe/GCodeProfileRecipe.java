@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.measure.UnitConverter;
-import java.util.zip.ZipEntry;
 
 @Getter
 @Setter
@@ -98,7 +97,7 @@ public class GCodeProfileRecipe extends GCodeRecipe {
 
             // move over starting point
             builder .motionMode(MotionMode.RAPID_LINEAR)
-                    .Z(stockSurface + safetyHeight).endLine()
+                    .Z(safetyHeight).endLine()
                     .XY(minX, minY).endLine();
 
             // plunge down to cut depth
@@ -127,7 +126,7 @@ public class GCodeProfileRecipe extends GCodeRecipe {
         }
 
         builder .motionMode(MotionMode.RAPID_LINEAR)
-                .Z(stockSurface + safetyHeight).endLine();
+                .Z(safetyHeight).endLine();
     }
 
     public void generateCircleGCode(Circle shape, GCodeBuilder builder) {
@@ -153,7 +152,7 @@ public class GCodeProfileRecipe extends GCodeRecipe {
 
             // move over starting point
             builder .motionMode(MotionMode.RAPID_LINEAR)
-                    .Z(stockSurface + safetyHeight).endLine()
+                    .Z(safetyHeight).endLine()
                     .XY(startX, startY).endLine();
 
             // plunge down to cut depth
@@ -181,6 +180,6 @@ public class GCodeProfileRecipe extends GCodeRecipe {
         }
 
         builder .motionMode(MotionMode.RAPID_LINEAR)
-                .Z(stockSurface + safetyHeight).endLine();
+                .Z(safetyHeight).endLine();
     }
 }
