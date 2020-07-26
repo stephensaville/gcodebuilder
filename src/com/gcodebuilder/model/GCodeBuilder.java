@@ -18,6 +18,9 @@ public class GCodeBuilder {
     @Getter
     private DistanceMode distanceMode;
 
+    @Getter
+    private ArcDistanceMode arcDistanceMode;
+
     private List<GCodeLine> lines = new ArrayList<>();
     private List<GCodeWord> currentLine = new ArrayList<>();
 
@@ -34,9 +37,23 @@ public class GCodeBuilder {
         return this;
     }
 
+    public GCodeBuilder emptyLine() {
+        endLine();
+        lines.add(new GCodeLine());
+        return this;
+    }
+
     public GCodeProgram build() {
         endLine();
         return new GCodeProgram(lines);
+    }
+
+    public GCodeBuilder comment(String text) {
+        add(new GCodeComment(text));
+        if (currentLine.size() == 1) {
+            endLine();
+        }
+        return this;
     }
 
     private <T extends GCodeWord> T emitOnModeChange(T currentMode, T newMode) {
@@ -66,6 +83,11 @@ public class GCodeBuilder {
         return this;
     }
 
+    public GCodeBuilder arcDistanceMode(ArcDistanceMode arcDistanceMode) {
+        this.arcDistanceMode = emitOnModeChange(this.arcDistanceMode, arcDistanceMode);
+        return this;
+    }
+
     public GCodeBuilder feedRate(int feedRate) {
         return add(new FeedRate(feedRate));
     }
@@ -88,5 +110,25 @@ public class GCodeBuilder {
 
     public GCodeBuilder XYZ(double x, double y, double z) {
         return X(x).Y(y).Z(z);
+    }
+
+    public GCodeBuilder I(double value) {
+        return add(GCodeParam.I(value));
+    }
+
+    public GCodeBuilder J(double value) {
+        return add(GCodeParam.J(value));
+    }
+
+    public GCodeBuilder K(double value) {
+        return add(GCodeParam.K(value));
+    }
+
+    public GCodeBuilder IJ(double i, double j) {
+        return I(i).J(j);
+    }
+
+    public GCodeBuilder IJK(double i, double j, double k) {
+        return I(i).J(j).K(k);
     }
 }

@@ -6,8 +6,9 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Side {
-    INSIDE("Inside"),
-    OUTSIDE("Outside");
+    INSIDE("Inside", -1),
+    OUTSIDE("Outside", 1);
 
     private final String label;
+    private final int offsetSign;
 }

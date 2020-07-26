@@ -8,7 +8,7 @@ import com.google.common.base.Preconditions;
 import lombok.Data;
 
 @Data
-public abstract class GCodeRecipe {
+public abstract class GCodeRecipe implements Cloneable {
     private final int id;
     private final GCodeRecipeType type;
     private String name;
@@ -24,6 +24,14 @@ public abstract class GCodeRecipe {
     public static GCodeRecipe create(@JsonProperty("id") int id,
                                      @JsonProperty("type") GCodeRecipeType type) {
         return type.newRecipe(id);
+    }
+
+    public GCodeRecipe clone() {
+        try {
+            return (GCodeRecipe)super.clone();
+        } catch (CloneNotSupportedException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public abstract void generateGCode(Shape<?> shape, GCodeBuilder builder);

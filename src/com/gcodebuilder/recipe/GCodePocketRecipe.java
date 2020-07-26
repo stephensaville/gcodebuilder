@@ -32,6 +32,11 @@ public class GCodePocketRecipe extends GCodeRecipe {
     }
 
     @Override
+    public GCodePocketRecipe clone() {
+        return (GCodePocketRecipe)super.clone();
+    }
+
+    @Override
     public void generateGCode(Shape<?> shape, GCodeBuilder builder) {
         if (shape instanceof Rectangle) {
             generateRectangleGCode((Rectangle)shape, builder);

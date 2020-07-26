@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.canvas.Drawable;
+import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
@@ -21,6 +22,10 @@ import java.util.stream.Collectors;
 
 public class Drawing implements Drawable {
     private static final ObjectMapper OM = new ObjectMapper();
+
+    @Getter
+    @Setter
+    private LengthUnit lengthUnit = LengthUnit.INCH;
 
     @Getter
     private final List<Shape> shapes = new ArrayList<>();
@@ -110,7 +115,7 @@ public class Drawing implements Drawable {
         return OM.readValue(in, Drawing.class);
     }
 
-    public static Drawing load(String saved) throws IOException {
+    public static Drawing loadFromString(String saved) throws IOException {
         return OM.readValue(saved, Drawing.class);
     }
 

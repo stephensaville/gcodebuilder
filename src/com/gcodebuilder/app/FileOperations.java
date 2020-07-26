@@ -1,10 +1,9 @@
 package com.gcodebuilder.app;
 
-import com.gcodebuilder.geometry.Drawing;
+import com.google.common.base.Preconditions;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.stage.FileChooser;
-import javafx.stage.Window;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,24 +11,56 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
-public class FileOperations {
+public class FileOperations<T> {
     private static final Logger log = LogManager.getLogger(FileOperations.class);
 
+    @FunctionalInterface
+    public interface LoadFunction<T> {
+        T load(InputStream in) throws IOException;
+    }
+
+    public interface SaveFunction<T> {
+        void save(T document, OutputStream out) throws IOException;
+    }
+
     private final Node root;
+    private final String documentType;
+    private final LoadFunction<T> loadFunction;
+    private final SaveFunction<T> saveFunction;
+
     private final FileChooser chooser;
 
-    public FileOperations(Node root) {
+    public FileOperations(Node root,
+                          LoadFunction<T> loadFunction,
+                          SaveFunction<T> saveFunction,
+                          String documentType,
+                          String initialFileName,
+                          FileChooser.ExtensionFilter... extensionFilters) {
+        Preconditions.checkNotNull(root);
+        Preconditions.checkNotNull(loadFunction);
+        Preconditions.checkNotNull(saveFunction);
+        Preconditions.checkNotNull(documentType);
+        Preconditions.checkNotNull(initialFileName);
+        Preconditions.checkNotNull(extensionFilters);
+        Preconditions.checkArgument(extensionFilters.length > 0);
+
         this.root = root;
+        this.documentType = documentType;
+        this.loadFunction = loadFunction;
+        this.saveFunction = saveFunction;
+
         chooser = new FileChooser();
-        FileChooser.ExtensionFilter jsonExtFilter =
-                new FileChooser.ExtensionFilter("JSON", "*.json");
-        chooser.getExtensionFilters().add(jsonExtFilter);
-        chooser.setSelectedExtensionFilter(jsonExtFilter);
+        chooser.getExtensionFilters().addAll(extensionFilters);
+        chooser.setSelectedExtensionFilter(extensionFilters[0]);
         String homeEnvVal = System.getenv("HOME");
         File initialDirectory = File.listRoots()[0];
         if (homeEnvVal != null) {
@@ -46,7 +77,7 @@ public class FileOperations {
             }
         }
         chooser.setInitialDirectory(initialDirectory);
-        chooser.setInitialFileName("drawing.json");
+        chooser.setInitialFileName(initialFileName);
     }
 
     private void showError(String title, String message, Exception exception) {
@@ -65,13 +96,13 @@ public class FileOperations {
         alert.showAndWait();
     }
 
-    public Drawing open() {
-        chooser.setTitle("Open Drawing");
+    public T open() {
+        chooser.setTitle(String.format("Open %s", documentType));
         File openFile = chooser.showOpenDialog(root.getScene().getWindow());
         if (openFile != null) {
             try {
                 try (FileInputStream in = new FileInputStream(openFile)) {
-                    return Drawing.load(in);
+                    return loadFunction.load(in);
                 }
             } catch (IOException ex) {
                 showError("Open Failed", String.format("Failed to open file: %s", openFile), ex);
@@ -80,13 +111,13 @@ public class FileOperations {
         return null;
     }
 
-    public void save(Drawing drawing) {
-        chooser.setTitle("Save Drawing");
+    public void save(T document) {
+        chooser.setTitle(String.format("Save %s", documentType));
         File saveFile = chooser.showSaveDialog(root.getScene().getWindow());
         if (saveFile != null) {
             try {
                 try (FileOutputStream out = new FileOutputStream(saveFile)) {
-                    drawing.save(out);
+                    saveFunction.save(document, out);
                 }
             } catch (IOException ex) {
                 showError("Save Failed", String.format("Failed to save file: %s", saveFile), ex);

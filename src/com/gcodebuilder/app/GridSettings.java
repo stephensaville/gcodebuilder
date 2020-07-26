@@ -1,5 +1,6 @@
 package com.gcodebuilder.app;
 
+import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.model.UnitMode;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.paint.Color;
@@ -8,7 +9,7 @@ import lombok.Data;
 
 @Data
 public class GridSettings {
-    private UnitMode units = UnitMode.INCH;
+    private LengthUnit units = LengthUnit.INCH;
 
     private Rectangle2D drawingArea = new Rectangle2D(-16, -16, 32, 32);
 

@@ -1,5 +1,8 @@
 package com.gcodebuilder.model;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -32,5 +35,13 @@ public class GCodeProgram {
         for (GCodeLine line : lines) {
             out.println(line.toString());
         }
+    }
+
+    public static GCodeProgram load(InputStream in) throws IOException {
+        throw new UnsupportedOperationException("load gcode not supported");
+    }
+
+    public void save(OutputStream out) throws IOException {
+        print(new PrintStream(out));
     }
 }

@@ -102,9 +102,9 @@
    </left>
    <top>
       <MenuBar BorderPane.alignment="CENTER">
-        <menus>
-          <Menu mnemonicParsing="false" text="File">
-            <items>
+         <menus>
+            <Menu text="_File">
+               <items>
                   <MenuItem onAction="#openDrawing" text="_Open">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
@@ -115,14 +115,28 @@
                         <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-              <MenuItem mnemonicParsing="false" onAction="#closeWindow" text="Close">
+                  <MenuItem onAction="#closeWindow" text="Close">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-            </items>
-          </Menu>
-        </menus>
+               </items>
+            </Menu>
+            <Menu text="_GCode">
+               <items>
+                  <MenuItem onAction="#generateGCode" text="Generate GCode">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem onAction="#saveGCode" fx:id="saveGCodeItem" text="Save GCode" disable="true">
+                     <accelerator>
+                        <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+               </items>
+            </Menu>
+         </menus>
       </MenuBar>
    </top>
    <right>

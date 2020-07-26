@@ -21,7 +21,7 @@ public class DrawingTest {
         log.debug("original: {}", original);
         String saved = original.saveAsString();
         log.debug("saved: {}", saved);
-        Drawing loaded = Drawing.load(saved);
+        Drawing loaded = Drawing.loadFromString(saved);
         log.debug("loaded: {}", loaded);
         assertEquivalentDrawing(original, loaded);
     }

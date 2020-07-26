@@ -12,7 +12,12 @@ import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.canvas.GCodeCanvas;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
-import com.gcodebuilder.model.UnitMode;
+import com.gcodebuilder.model.ArcDistanceMode;
+import com.gcodebuilder.model.DistanceMode;
+import com.gcodebuilder.model.FeedRateMode;
+import com.gcodebuilder.model.GCodeBuilder;
+import com.gcodebuilder.model.GCodeProgram;
+import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.beans.binding.DoubleBinding;
 import javafx.fxml.FXML;
@@ -21,12 +26,14 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +58,7 @@ public class DrawingWindowController {
     private GCodeCanvas canvas;
 
     @FXML
-    private ChoiceBox<UnitMode> unitCtl;
+    private ChoiceBox<LengthUnit> unitCtl;
 
     @FXML
     private Spinner<Double> zoomCtl;
@@ -71,6 +78,9 @@ public class DrawingWindowController {
     @FXML
     private AnchorPane recipeEditorPane;
 
+    @FXML
+    private MenuItem saveGCodeItem;
+
     private RectangleTool rectangleTool = new RectangleTool();
     private CircleTool circleTool = new CircleTool();
     private EditTool editTool = new EditTool();
@@ -88,16 +98,20 @@ public class DrawingWindowController {
 
     private Set<Shape> currentSelectedShapes = Collections.emptySet();
 
-    private FileOperations fileOperations;
+    private FileOperations<Drawing> drawingFileOperations;
+    private FileOperations<GCodeProgram> gCodeFileOperations;
 
     private RecipeEditorController recipeEditorController;
 
+    private GCodeProgram gCodeProgram;
+
     @FXML
     public void initialize() throws IOException {
-        unitCtl.getItems().addAll(UnitMode.values());
-        unitCtl.setValue(UnitMode.INCH);
+        unitCtl.getItems().addAll(LengthUnit.values());
+        unitCtl.setValue(LengthUnit.INCH);
         unitCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != canvas.getSettings().getUnits()) {
+            if (newValue != drawing.getLengthUnit()) {
+                drawing.setLengthUnit(newValue);
                 canvas.getSettings().setUnits(newValue);
                 canvas.refresh();
             }
@@ -158,7 +172,15 @@ public class DrawingWindowController {
 
         canvas.getDrawables().add(drawing);
 
-        fileOperations = new FileOperations(rootPane);
+        drawingFileOperations = new FileOperations<>(
+                rootPane, Drawing::load, Drawing::save,
+                "Drawing", "drawing.json",
+                new FileChooser.ExtensionFilter("JSON", "*.json"));
+
+        gCodeFileOperations = new FileOperations<>(
+                rootPane, GCodeProgram::load, GCodeProgram::save,
+                "GCode", "toolpath.nc",
+                new FileChooser.ExtensionFilter("GCode", "*.nc"));
 
         recipeEditorController = RecipeEditorController.attach(recipeEditorPane);
 
@@ -367,10 +389,11 @@ public class DrawingWindowController {
     }
 
     public void openDrawing() {
-        Drawing newDrawing = fileOperations.open();
+        Drawing newDrawing = drawingFileOperations.open();
         if (newDrawing != null) {
             canvas.getDrawables().remove(drawing);
             drawing = newDrawing;
+            unitCtl.setValue(newDrawing.getLengthUnit());
             canvas.getDrawables().add(newDrawing);
 
             recipeEditorController.clearCurrentRecipe();
@@ -382,11 +405,46 @@ public class DrawingWindowController {
     }
 
     public void saveDrawing() {
-        fileOperations.save(drawing);
+        drawingFileOperations.save(drawing);
     }
 
     public void closeWindow() {
         Stage stage = (Stage)rootPane.getScene().getWindow();
         stage.close();
+    }
+
+    public void generateGCode() {
+        GCodeBuilder builder = new GCodeBuilder();
+        builder .unitMode(drawing.getLengthUnit().getMode())
+                .distanceMode(DistanceMode.ABSOLUTE)
+                .arcDistanceMode(ArcDistanceMode.INCREMENTAL)
+                .feedRateMode(FeedRateMode.UNITS_PER_MIN);
+
+        for (Shape shape : drawing.getShapes()) {
+            int recipeId = shape.getRecipeId();
+            if (recipeId <= 0) {
+                continue;
+            }
+
+            GCodeRecipe recipe = drawing.getRecipe(recipeId);
+            builder.emptyLine();
+            builder.comment(String.format("shape:%s recipe:%s", shape, recipe));
+            recipe.generateGCode(shape, builder);
+        }
+
+        gCodeProgram = builder.build();
+
+        gCodeProgram.print(System.out);
+
+        saveGCodeItem.setDisable(false);
+    }
+
+    public void saveGCode() {
+        if (gCodeProgram == null) {
+            saveGCodeItem.setDisable(true);
+            return;
+        }
+
+        gCodeFileOperations.save(gCodeProgram);
     }
 }

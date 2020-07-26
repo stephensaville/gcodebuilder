@@ -30,9 +30,6 @@ public class ProfileRecipeEditorController extends AbstractRecipeTypeController<
     private TextField stepDownCtl;
 
     @FXML
-    private TextField stepOverCtl;
-
-    @FXML
     private TextField feedRateCtl;
 
     @FXML
@@ -62,8 +59,6 @@ public class ProfileRecipeEditorController extends AbstractRecipeTypeController<
                 GCodeProfileRecipe::getSafetyHeight, GCodeProfileRecipe::setSafetyHeight);
         configureTextField(stepDownCtl, doubleFormatter(),
                 GCodeProfileRecipe::getStepDown, GCodeProfileRecipe::setStepDown);
-        configureTextField(stepOverCtl, doubleFormatter(),
-                GCodeProfileRecipe::getStepOver, GCodeProfileRecipe::setStepOver);
         configureTextField(feedRateCtl, integerFormatter(),
                 GCodeProfileRecipe::getFeedRate, GCodeProfileRecipe::setFeedRate);
         configureTextField(plungeRateCtl, integerFormatter(),
