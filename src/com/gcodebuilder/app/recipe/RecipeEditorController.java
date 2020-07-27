@@ -10,6 +10,8 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -36,6 +38,15 @@ public class RecipeEditorController {
 
     @FXML
     private TextField recipeNameCtl;
+
+    @FXML
+    private Label recipeTypeCtl;
+
+    @FXML
+    private Button duplicateBtn;
+
+    @FXML
+    private Button deleteBtn;
 
     @Getter
     private final ObservableList<GCodeRecipe> recipes = new ModifiableObservableListBase<GCodeRecipe>() {
@@ -167,7 +178,10 @@ public class RecipeEditorController {
         if (recipe != null) {
             recipeMenuBtn.setText(currentRecipe.getName());
             recipeNameCtl.setText(currentRecipe.getName());
+            recipeTypeCtl.setText(currentRecipe.getType().getLabel());
             recipeNameCtl.setDisable(false);
+            duplicateBtn.setDisable(false);
+            deleteBtn.setDisable(false);
             RecipeTypeEditor editor = recipeTypeEditors.get(recipe.getType());
             if (editor != null) {
                 editor.getController().setRecipe(recipe);
@@ -184,7 +198,10 @@ public class RecipeEditorController {
         } else {
             recipeMenuBtn.setText("None");
             recipeNameCtl.setText("");
+            recipeTypeCtl.setText("");
+            duplicateBtn.setDisable(true);
             recipeNameCtl.setDisable(true);
+            deleteBtn.setDisable(true);
             if (currentTypeEditor != null) {
                 editorPane.getChildren().remove(currentTypeEditor.getNode());
             }
@@ -221,15 +238,39 @@ public class RecipeEditorController {
         }
     }
 
-    public void addNewRecipe(GCodeRecipeType type) {
+    private int nextRecipeId() {
         int maxRecipeId = 0;
         for (GCodeRecipe existingRecipe : recipes) {
             maxRecipeId = Math.max(maxRecipeId, existingRecipe.getId());
         }
-        int newRecipeId = maxRecipeId + 1;
-        GCodeRecipe newRecipe = type.newRecipe(newRecipeId);
+        return maxRecipeId + 1;
+    }
+
+    public void addRecipe(GCodeRecipe newRecipe) {
         int recipeIndex = recipes.size();
         recipes.add(recipeIndex, newRecipe);
         setCurrentRecipe(newRecipe, recipeMenuBtn.getItems().get(recipeIndex));
+    }
+
+    public void addNewRecipe(GCodeRecipeType type) {
+        addRecipe(type.newRecipe(nextRecipeId()));
+    }
+
+    public void duplicateCurrentRecipe() {
+        if (currentRecipe == null) {
+            return;
+        }
+        GCodeRecipe copy = currentRecipe.clone();
+        copy.setId(nextRecipeId());
+        copy.setName(copy.getName() + " copy");
+        addRecipe(copy);
+    }
+
+    public void deleteCurrentRecipe() {
+        if (currentRecipe == null) {
+            return;
+        }
+        recipes.remove(currentRecipe);
+        clearCurrentRecipe();
     }
 }

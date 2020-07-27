@@ -156,7 +156,7 @@ public class DrawingWindowController {
         hScrollBar.setBlockIncrement(10);
         hScrollBar.valueProperty().addListener((obs, oldValue, newValue) -> {
             if (newValue.doubleValue() != canvas.getOriginX()) {
-                canvas.setOriginX(newValue.doubleValue());
+                canvas.setOriginX(canvas.getOriginArea().getMaxX() - newValue.doubleValue());
                 canvas.refresh();
             }
         });
@@ -165,7 +165,7 @@ public class DrawingWindowController {
         vScrollBar.setBlockIncrement(10);
         vScrollBar.valueProperty().addListener((obs, oldValue, newValue) -> {
             if (newValue.doubleValue() != canvas.getOriginY()) {
-                canvas.setOriginY(newValue.doubleValue());
+                canvas.setOriginY(canvas.getOriginArea().getMaxY() - newValue.doubleValue());
                 canvas.refresh();
             }
         });
@@ -198,12 +198,13 @@ public class DrawingWindowController {
     }
 
     private void updateScrollBars(Rectangle2D originArea) {
-        hScrollBar.setMin(originArea.getMinX());
-        hScrollBar.setMax(originArea.getMaxX());
-        hScrollBar.setValue(canvas.getOriginX());
-        vScrollBar.setMin(originArea.getMinY());
-        vScrollBar.setMax(originArea.getMaxY());
-        vScrollBar.setValue(canvas.getOriginY());
+        log.info("updateScrollBars originArea={}", originArea);
+        hScrollBar.setMin(0);
+        hScrollBar.setMax(originArea.getWidth());
+        hScrollBar.setValue(originArea.getMaxX() - canvas.getOriginX());
+        vScrollBar.setMin(0);
+        vScrollBar.setMax(originArea.getHeight());
+        vScrollBar.setValue(originArea.getMaxY() - canvas.getOriginY());
     }
 
     private double measureHeight(Node child) {
@@ -245,10 +246,20 @@ public class DrawingWindowController {
 
         updateScrollBars(canvas.getOriginArea());
 
-        hScrollBar.setValue(canvas.getWidth()/2);
-        vScrollBar.setValue(canvas.getHeight()/2);
+        GridSettings settings = canvas.getSettings();
+        double minorGridWidth = canvas.getPixelsPerUnit() * settings.getMajorGridSpacing() / settings.getMinorGridDivision();
+        log.info("minorGridWidth={}", minorGridWidth);
+
+        hScrollBar.setValue(canvas.getOriginArea().getMaxX() - minorGridWidth);
+        vScrollBar.setValue(canvas.getOriginArea().getMaxY() - canvas.getHeight() + minorGridWidth);
+
+        canvas.heightProperty().addListener((obs, oldValue, newValue) -> {
+            double heightChange = newValue.doubleValue() - oldValue.doubleValue();
+            vScrollBar.setValue(canvas.getOriginArea().getMaxX() - canvas.getOriginY() - heightChange);
+        });
 
         canvas.originAreaProperty().addListener((obs, oldValue, newValue) -> {
+            log.info("originAreaProperty updated oldValue={} newValue={}", oldValue, newValue);
             updateScrollBars(newValue);
         });
     }

@@ -142,7 +142,7 @@
    <right>
       <Accordion BorderPane.alignment="CENTER">
         <panes>
-          <TitledPane animated="false" text="GCode Recipe">
+          <TitledPane text="Recipes">
             <content>
               <AnchorPane fx:id="recipeEditorPane" minHeight="0.0" minWidth="0.0" />
             </content>

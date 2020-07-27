@@ -9,7 +9,7 @@ import lombok.Data;
 
 @Data
 public abstract class GCodeRecipe implements Cloneable {
-    private final int id;
+    private int id;
     private final GCodeRecipeType type;
     private String name;
 
