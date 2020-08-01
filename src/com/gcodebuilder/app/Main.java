@@ -5,8 +5,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Main extends Application {
+    private static final Logger log = LogManager.getLogger(Main.class);
+
     private void showFaceBuilder(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("faceBuilder.fxml"));
         primaryStage.setTitle("GCode Facing Program Builder");
@@ -35,7 +39,21 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        showDrawingWindow(primaryStage);
+        log.info("named parameters: " + getParameters().getNamed());
+        log.info("unnamed parameters: " + getParameters().getUnnamed());
+        String ui = getParameters().getNamed().getOrDefault("ui", "DrawingWindow");
+        switch (ui) {
+            case "FaceBuilder":
+                showFaceBuilder(primaryStage);
+                break;
+            case "PathBuilder":
+                showPathBuilder(primaryStage);
+                break;
+            case "DrawingWindow":
+            default:
+                showDrawingWindow(primaryStage);
+                break;
+        }
     }
 
 

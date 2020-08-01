@@ -17,7 +17,7 @@ public class Point {
         this.point2D = point2D;
     }
 
-    public Point2D toPoint2D() {
+    public Point2D asPoint2D() {
         return point2D;
     }
 

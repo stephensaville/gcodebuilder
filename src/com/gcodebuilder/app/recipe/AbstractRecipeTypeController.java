@@ -1,4 +1,4 @@
-package com.gcodebuilder.app;
+package com.gcodebuilder.app.recipe;
 
 import com.gcodebuilder.app.recipe.RecipeTypeController;
 import com.gcodebuilder.recipe.GCodeRecipe;

@@ -1,6 +1,5 @@
 package com.gcodebuilder.app.recipe;
 
-import com.gcodebuilder.app.AbstractRecipeTypeController;
 import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.model.Side;

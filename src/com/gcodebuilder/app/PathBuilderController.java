@@ -1,7 +1,6 @@
 package com.gcodebuilder.app;
 
-import com.gcodebuilder.geometry.Segment2D;
-import com.sun.javafx.scene.paint.GradientUtils;
+import com.gcodebuilder.geometry.Segment;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
@@ -15,7 +14,7 @@ import java.util.List;
 
 public class PathBuilderController {
     private static final double POINT_RADIUS = 5;
-    private static final double TOOL_WIDTH = 20;
+    private static final double TOOL_WIDTH = 100;
     private static final double TRACE_STEP = 5;
 
     @FXML private BorderPane rootPane;
@@ -50,7 +49,7 @@ public class PathBuilderController {
                 toPoint.getX(), toPoint.getY());
     }
 
-    private void drawLine(Segment2D segment) {
+    private void drawLine(Segment segment) {
         drawLine(segment.getFrom(), segment.getTo());
     }
 
@@ -91,48 +90,12 @@ public class PathBuilderController {
         return pointInPath;
     }
 
-    private void drawTrace(Point2D fromPoint, Point2D toPoint, Point2D offsetVec) {
-        double lineLength = fromPoint.distance(toPoint);
-        double step = Math.max(TRACE_STEP / lineLength, 0.0001);
-        for (double v = 0; v <= 1; v += step) {
-            Point2D point = fromPoint.interpolate(toPoint, v).add(offsetVec);
-            if (isPointInPath(point)) {
-                drawPoint(point);
-            }
-        }
-    }
-
-    private void tracePath(Point2D fromPoint, Point2D toPoint) {
-        Point2D midPoint = toPoint.midpoint(fromPoint);
-        Point2D vec = toPoint.subtract(fromPoint).normalize();
-        Point2D lVec = new Point2D(-vec.getY(), vec.getX()).multiply(2*POINT_RADIUS);
-        Point2D rVec = new Point2D(vec.getY(), -vec.getX()).multiply(2*POINT_RADIUS);
-        Point2D lPoint = midPoint.add(lVec);
-        if (isPointInPath(lPoint)) {
-            drawPoint(lPoint);
-            drawTrace(fromPoint, toPoint, lVec);
-        }
-        Point2D rPoint = midPoint.add(rVec);
-        if (isPointInPath(rPoint)) {
-            drawPoint(rPoint);
-            drawTrace(fromPoint, toPoint, rVec);
-        }
-    }
-
     // rotate vector by angle expressed in radians
     private static Point2D rotate(Point2D vec, double angle) {
         double sinAngle = Math.sin(angle);
         double cosAngle = Math.cos(angle);
         return new Point2D(cosAngle*vec.getX() - sinAngle*vec.getY(),
                 sinAngle*vec.getX() + cosAngle*vec.getY());
-    }
-
-    private static Point2D rotateLeft90(Point2D vec) {
-        return new Point2D(-vec.getY(), vec.getX());
-    }
-
-    private static Point2D rotateRight90(Point2D vec) {
-        return new Point2D(vec.getY(), -vec.getX());
     }
 
     private static double unitVecToAngle(Point2D unitVec) {
@@ -143,73 +106,19 @@ public class PathBuilderController {
         return angle;
     }
 
-    private Point2D findInsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double toolRadius) {
-        double pOffset = toolRadius / Math.tan(halfAngle);
-        Point2D orthoVec = rotateLeft90(lineVec);
-        return thisPoint.add(lineVec.multiply(pOffset)).add(orthoVec.multiply(toolRadius));
+    private static Point2D rotateLeft90(Point2D vec) {
+        return new Point2D(-vec.getY(), vec.getX());
     }
 
-    private Point2D findOutsideCorner(Point2D thisPoint, Point2D lineVec, double halfAngle, double toolRadius) {
-        Point2D cornerVec = rotate(lineVec, halfAngle).multiply(toolRadius);
-        return thisPoint.add(cornerVec);
+    private static Point2D rotateRight90(Point2D vec) {
+        return new Point2D(vec.getY(), -vec.getX());
     }
 
-    private Point2D findCorner(Point2D prevPoint, Point2D thisPoint, Point2D nextPoint, double toolRadius) {
-        Point2D insideCorner, outsideCorner;
-
-        Point2D vecToPrev = prevPoint.subtract(thisPoint).normalize();
-        double angleToPrev = unitVecToAngle(vecToPrev);
-
-        Point2D vecToNext = nextPoint.subtract(thisPoint).normalize();
-        double angleToNext = unitVecToAngle(vecToNext);
-
-        double smallAngle, largeAngle;
-        Point2D smallVec, largeVec;
-        if (angleToPrev < angleToNext) {
-            smallAngle = angleToPrev;
-            smallVec = vecToPrev;
-            largeAngle = angleToNext;
-            largeVec = vecToNext;
-        } else {
-            smallAngle = angleToNext;
-            smallVec = vecToNext;
-            largeAngle = angleToPrev;
-            largeVec = vecToPrev;
-        }
-        double firstAngle = largeAngle - smallAngle;
-        double secondAngle = 2*Math.PI - firstAngle;
-
-        if (firstAngle < Math.PI) {
-            // inside corner first
-            insideCorner = findInsideCorner(thisPoint, smallVec, firstAngle / 2, toolRadius);
-            outsideCorner = findOutsideCorner(thisPoint, largeVec, secondAngle / 2, toolRadius);
-        } else if (firstAngle > Math.PI) {
-            // outside corner first
-            outsideCorner = findOutsideCorner(thisPoint, smallVec, firstAngle / 2, toolRadius);
-            insideCorner = findInsideCorner(thisPoint, largeVec, secondAngle / 2, toolRadius);
-        } else {
-            // straight line
-            insideCorner = thisPoint.add(rotateLeft90(smallVec).multiply(toolRadius));
-            outsideCorner = thisPoint.add(rotateLeft90(largeVec).multiply(toolRadius));
-        }
-
-        if (isPointInPath(insideCorner)) {
-            return insideCorner;
-        } else {
-            return outsideCorner;
-        }
+    private static Segment moveLineSegment(Point2D fromPoint, Point2D toPoint, Point2D offset) {
+        return Segment.of(fromPoint.add(offset), toPoint.add(offset));
     }
 
-    private void drawCorner(Point2D prevPoint, Point2D thisPoint, Point2D nextPoint, double toolRadius) {
-        Point2D cornerPoint = findCorner(prevPoint, thisPoint, nextPoint, toolRadius);
-        drawCircle(cornerPoint, toolRadius);
-    }
-
-    private static Segment2D moveLineSegment(Point2D fromPoint, Point2D toPoint, Point2D offset) {
-        return Segment2D.of(fromPoint.add(offset), toPoint.add(offset));
-    }
-
-    private List<Segment2D> computePossibleToolpaths(Point2D fromPoint, Point2D toPoint, double toolRadius) {
+    private List<Segment> computeToolpathSegments(Point2D fromPoint, Point2D toPoint, double toolRadius) {
         Point2D lineVec = toPoint.subtract(fromPoint).normalize();
         Point2D leftOffset = rotateLeft90(lineVec).multiply(toolRadius);
         Point2D rightOffset = rotateRight90(lineVec).multiply(toolRadius);
@@ -217,10 +126,14 @@ public class PathBuilderController {
                 moveLineSegment(fromPoint, toPoint, rightOffset));
     }
 
-    private void drawPossibleToolpaths(Point2D fromPoint, Point2D toPoint, double toolRadius) {
-        List<Segment2D> segments = computePossibleToolpaths(fromPoint, toPoint, toolRadius);
-        for (Segment2D segment : segments) {
-            drawLine(segment);
+    private void intersectToolpathSegments(int i, List<Segment> segments) {
+        Segment current = segments.get(i);
+        for (int j = i + 1; j < segments.size(); ++j) {
+            Segment other = segments.get(j);
+            Point2D intersectionPoint = current.intersect(other);
+            if (intersectionPoint != null) {
+                drawPoint(intersectionPoint);
+            }
         }
     }
 
@@ -231,6 +144,8 @@ public class PathBuilderController {
 
         if (pathClosed) {
             int nPoints = points.size();
+            List<Segment> leftToolpathSegments = new ArrayList<>();
+            List<Segment> rightToolpathSegments = new ArrayList<>();
             for (int i = 0; i < nPoints; ++i) {
                 Point2D prevPoint = points.get((i+nPoints-1) % nPoints);
                 Point2D thisPoint = points.get(i);
@@ -238,8 +153,17 @@ public class PathBuilderController {
 
                 drawPoint(thisPoint);
                 drawLine(prevPoint, thisPoint);
-                //drawCorner(prevPoint, thisPoint, nextPoint, TOOL_WIDTH/2);
-                drawPossibleToolpaths(thisPoint, nextPoint, TOOL_WIDTH/2);
+
+                List<Segment> toolpathSegments = computeToolpathSegments(thisPoint, nextPoint, TOOL_WIDTH/2);
+                for (Segment segment : toolpathSegments) {
+                    drawLine(segment);
+                }
+                leftToolpathSegments.add(toolpathSegments.get(0));
+                rightToolpathSegments.add(toolpathSegments.get(1));
+            }
+            for (int i = 0; i < nPoints; ++i) {
+                intersectToolpathSegments(i, leftToolpathSegments);
+                intersectToolpathSegments(i, rightToolpathSegments);
             }
         } else {
             Point2D prevPoint = null;

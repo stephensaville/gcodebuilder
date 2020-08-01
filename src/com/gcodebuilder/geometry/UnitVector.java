@@ -4,46 +4,46 @@ import javafx.geometry.Point2D;
 import lombok.Getter;
 
 @Getter
-public class UnitVector2D extends Point2D {
+public class UnitVector extends Point2D {
     private final double angle;
 
-    public static UnitVector2D from(double x, double y) {
+    public static UnitVector from(double x, double y) {
         double magnitude = Math.sqrt(x*x + y+y);
         double unitX = x / magnitude;
         double unitY = y / magnitude;
         double angle = computeAngle(unitX, unitY);
-        return new UnitVector2D(unitX, unitY, angle);
+        return new UnitVector(unitX, unitY, angle);
     }
 
-    public static UnitVector2D from(Point2D vector) {
+    public static UnitVector from(Point2D vector) {
         return from(vector.getX(), vector.getY());
     }
 
-    public static UnitVector2D from(Point2D from, Point2D to) {
+    public static UnitVector from(Point2D from, Point2D to) {
         return from(to.getX() - from.getX(), to.getY() - from.getY());
     }
 
-    public static UnitVector2D from(double angle) {
-        return new UnitVector2D(Math.cos(angle), Math.sin(angle), angle);
+    public static UnitVector from(double angle) {
+        return new UnitVector(Math.cos(angle), Math.sin(angle), angle);
     }
 
-    public UnitVector2D rotate(double delta) {
+    public UnitVector rotate(double delta) {
         return from(addAngle(angle, delta));
     }
 
-    public UnitVector2D rotatePerpCW() {
-        return new UnitVector2D(-getY(), getX(), addAngle(angle, Math.PI / 2));
+    public UnitVector rotatePerpCW() {
+        return new UnitVector(-getY(), getX(), addAngle(angle, Math.PI / 2));
     }
 
-    public UnitVector2D rotatePerpCCW() {
-        return new UnitVector2D(getY(), -getX(), addAngle(angle, - Math.PI / 2));
+    public UnitVector rotatePerpCCW() {
+        return new UnitVector(getY(), -getX(), addAngle(angle, - Math.PI / 2));
     }
 
-    public UnitVector2D inverse() {
-        return new UnitVector2D(-getX(), -getY(), addAngle(angle, Math.PI));
+    public UnitVector inverse() {
+        return new UnitVector(-getX(), -getY(), addAngle(angle, Math.PI));
     }
 
-    private UnitVector2D(double unitX, double unitY, double angle) {
+    private UnitVector(double unitX, double unitY, double angle) {
         super(unitX, unitY);
         this.angle = angle;
     }
