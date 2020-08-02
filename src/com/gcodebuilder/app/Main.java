@@ -19,11 +19,14 @@ public class Main extends Application {
     }
 
     private void showPathBuilder(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("pathBuilder.fxml"));
+        FXMLLoader loader = new FXMLLoader();
+        Parent root = loader.load(getClass().getResourceAsStream("pathBuilder.fxml"));
         primaryStage.setTitle("GCode Path Builder");
         primaryStage.setScene(new Scene(root));
         primaryStage.setResizable(true);
         primaryStage.show();
+        PathBuilderController controller = loader.getController();
+        controller.bindProperties();
     }
 
     private void showDrawingWindow(Stage primaryStage) throws Exception {

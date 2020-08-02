@@ -21,10 +21,8 @@ import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.beans.binding.DoubleBinding;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollBar;
@@ -207,41 +205,17 @@ public class DrawingWindowController {
         vScrollBar.setValue(originArea.getMaxY() - canvas.getOriginY());
     }
 
-    private double measureHeight(Node child) {
-        if (child == null) {
-            return 0;
-        }
-        double height = child.getBoundsInParent().getHeight();
-        Insets margin = BorderPane.getMargin(child);
-        if (margin != null) {
-            height += margin.getTop() + margin.getBottom();
-        }
-        return height;
-    }
-
-    private double measureWidth(Node child) {
-        if (child == null) {
-            return 0;
-        }
-        double width = child.getBoundsInParent().getWidth();
-        Insets margin = BorderPane.getMargin(child);
-        if (margin != null) {
-            width += margin.getLeft() + margin.getRight();
-        }
-        return width;
-    }
-
     public void bindProperties() {
         DoubleBinding widthBinding = rootPane.widthProperty()
-                .subtract(measureWidth(rootPane.getLeft()))
-                .subtract(measureWidth(rootPane.getRight()))
-                .subtract(measureWidth(vScrollBar));
+                .subtract(NodeSize.measureWidth(rootPane.getLeft()))
+                .subtract(NodeSize.measureWidth(rootPane.getRight()))
+                .subtract(NodeSize.measureWidth(vScrollBar));
         canvas.widthProperty().bind(widthBinding);
 
         DoubleBinding heightBinding = rootPane.heightProperty()
-                .subtract(measureHeight(rootPane.getTop()))
-                .subtract(measureHeight(rootPane.getBottom()))
-                .subtract(measureHeight(hScrollBar));
+                .subtract(NodeSize.measureHeight(rootPane.getTop()))
+                .subtract(NodeSize.measureHeight(rootPane.getBottom()))
+                .subtract(NodeSize.measureHeight(hScrollBar));
         canvas.heightProperty().bind(heightBinding);
 
         updateScrollBars(canvas.getOriginArea());

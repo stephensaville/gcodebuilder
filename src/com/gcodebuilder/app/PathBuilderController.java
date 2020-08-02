@@ -1,18 +1,22 @@
 package com.gcodebuilder.app;
 
-import com.gcodebuilder.app.tools.Tool;
+import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Segment;
 import com.gcodebuilder.geometry.UnitVector;
+import javafx.beans.binding.DoubleBinding;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class PathBuilderController {
@@ -20,6 +24,15 @@ public class PathBuilderController {
     private static final double TOOL_WIDTH = 100;
     private static final double TOOL_RADIUS = TOOL_WIDTH / 2;
     private static final double TRACE_STEP = 5;
+
+    private static final Paint DEFAULT_PAINT = Color.BLACK;
+    private static final Paint VALID_PAINT = Color.GREEN;
+    private static final Paint INVALID_PAINT = Color.RED;
+
+    private static enum DisplayMode {
+        SPLIT_POINTS,
+        VALID_SEGMENTS
+    }
 
     @FXML private BorderPane rootPane;
     @FXML private Canvas pathCanvas;
@@ -29,32 +42,62 @@ public class PathBuilderController {
     private Point2D startPoint = null;
     private int currentPointIndex = 0;
     private boolean pathClosed = false;
+    private DisplayMode displayMode = DisplayMode.SPLIT_POINTS;
 
     @FXML
     public void initialize() {
         System.out.println("initializing...");
 
-        pathCanvas.widthProperty().bind(rootPane.widthProperty());
-        pathCanvas.heightProperty().bind(rootPane.heightProperty());
 
         ctx = pathCanvas.getGraphicsContext2D();
     }
 
-    private void drawCircle(Point2D point, double radius) {
-        ctx.fillOval(point.getX() - radius, point.getY() - radius, radius*2, radius*2);
+    public void bindProperties() {
+        pathCanvas.widthProperty().bind(rootPane.widthProperty());
+        pathCanvas.heightProperty().bind(rootPane.heightProperty());
+
+        DoubleBinding widthBinding = rootPane.widthProperty()
+                .subtract(NodeSize.measureWidth(rootPane.getLeft()))
+                .subtract(NodeSize.measureWidth(rootPane.getRight()));
+        pathCanvas.widthProperty().bind(widthBinding);
+
+        DoubleBinding heightBinding = rootPane.heightProperty()
+                .subtract(NodeSize.measureHeight(rootPane.getTop()))
+                .subtract(NodeSize.measureHeight(rootPane.getBottom()));
+        pathCanvas.heightProperty().bind(heightBinding);
     }
 
-    private void drawPoint(Point2D point2D) {
-        drawCircle(point2D, POINT_RADIUS);
+    private static void drawCircle(GraphicsContext ctx, Point2D center, double radius) {
+        ctx.fillOval(center.getX() - radius, center.getY() - radius, radius*2, radius*2);
     }
 
-    private void drawLine(Point2D fromPoint, Point2D toPoint) {
+    private void drawCircle(Point2D center, double radius) {
+        drawCircle(ctx, center, radius);
+    }
+
+    private static void drawPoint(GraphicsContext ctx, Point2D point) {
+        drawCircle(ctx, point, POINT_RADIUS);
+    }
+
+    private void drawPoint(Point2D point) {
+        drawPoint(ctx, point);
+    }
+
+    private static void drawLine(GraphicsContext ctx, Point2D fromPoint, Point2D toPoint) {
         ctx.strokeLine(fromPoint.getX(), fromPoint.getY(),
                 toPoint.getX(), toPoint.getY());
     }
 
+    private void drawLine(Point2D fromPoint, Point2D toPoint) {
+        drawLine(ctx, fromPoint, toPoint);
+    }
+
+    private static void drawLine(GraphicsContext ctx, Segment segment) {
+        drawLine(ctx, segment.getFrom(), segment.getTo());
+    }
+
     private void drawLine(Segment segment) {
-        drawLine(segment.getFrom(), segment.getTo());
+        drawLine(ctx, segment);
     }
 
     private Point2D firstPoint() {
@@ -95,14 +138,81 @@ public class PathBuilderController {
     }
 
     @Data
+    private static class ToolpathSplitPoint {
+        private final Point2D point;
+        private final boolean fromSideValid;
+        private final boolean toSideValid;
+    }
+
+    @RequiredArgsConstructor
+    private static class ToolpathSplitPointComparator implements Comparator<ToolpathSplitPoint> {
+        private final Point2D from;
+
+        @Override
+        public int compare(ToolpathSplitPoint left, ToolpathSplitPoint right) {
+            double leftDistance = from.distance(left.getPoint());
+            double rightDistance = from.distance(right.getPoint());
+            if (leftDistance < rightDistance) {
+                return -1;
+            } else if (leftDistance > rightDistance) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    @Data
     private static class ToolpathSegment {
         private final Segment segment;
         private final UnitVector towards;
         private final UnitVector away;
-        private final boolean valid;
+
+        private final List<ToolpathSplitPoint> splitPoints = new ArrayList<>();
+        private boolean splitPointsSorted = true;
 
         public Point2D intersect(ToolpathSegment other) {
             return segment.intersect(other.segment);
+        }
+
+        public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid) {
+            splitPoints.add(new ToolpathSplitPoint(splitPoint, fromSideValid, toSideValid));
+            splitPointsSorted = false;
+        }
+
+        public void sortSplitPoints() {
+            if (!splitPointsSorted) {
+                splitPoints.sort(new ToolpathSplitPointComparator(segment.getFrom()));
+                splitPointsSorted = true;
+            }
+        }
+
+        private static void setStroke(GraphicsContext ctx, boolean valid) {
+            if (valid) {
+                ctx.setStroke(VALID_PAINT);
+            } else {
+                ctx.setStroke(INVALID_PAINT);
+            }
+        }
+
+        public void drawSplitPoints(GraphicsContext ctx) {
+            sortSplitPoints();
+            ctx.save();
+            Point2D lastSplitPoint = segment.getFrom();
+            boolean toSideValid = true;
+            for (ToolpathSplitPoint splitPoint : splitPoints) {
+                setStroke(ctx, splitPoint.isFromSideValid());
+                drawLine(ctx, lastSplitPoint, splitPoint.getPoint());
+                lastSplitPoint = splitPoint.getPoint();
+                toSideValid = splitPoint.isToSideValid();
+            }
+            setStroke(ctx, toSideValid);
+            drawLine(ctx, lastSplitPoint, segment.getTo());
+            ctx.setStroke(DEFAULT_PAINT);
+            for (ToolpathSplitPoint splitPoint : splitPoints) {
+                drawPoint(ctx, splitPoint.getPoint());
+            }
+            ctx.restore();
         }
     }
 
@@ -118,8 +228,8 @@ public class PathBuilderController {
         ctx.restore();
 
         return new ToolpathSegment[] {
-                new ToolpathSegment(edge.move(left.multiply(toolRadius)), right, left, true),
-                new ToolpathSegment(edge.move(right.multiply(toolRadius)), left, right, true)
+                new ToolpathSegment(edge.move(left.multiply(toolRadius)), right, left),
+                new ToolpathSegment(edge.move(right.multiply(toolRadius)), left, right)
         };
     }
 
@@ -129,7 +239,15 @@ public class PathBuilderController {
             ToolpathSegment other = toolpathSegments.get(j);
             Point2D intersectionPoint = current.intersect(other);
             if (intersectionPoint != null) {
-                drawPoint(intersectionPoint);
+                double angleFromCurrentToTowards = Math.abs(Math2D.subtractAngle(
+                        other.getTowards().getAngle(), current.getSegment().getDirection().getAngle()));
+                boolean currentFromSideValid = (angleFromCurrentToTowards <= Math.PI/2);
+                current.split(intersectionPoint, currentFromSideValid, !currentFromSideValid);
+
+                double angleFromOtherToTowards = Math.abs(Math2D.subtractAngle(
+                        current.getTowards().getAngle(), other.getSegment().getDirection().getAngle()));
+                boolean otherFromSideValid = (angleFromOtherToTowards <= Math.PI/2);
+                other.split(intersectionPoint, otherFromSideValid, !otherFromSideValid);
             }
         }
     }
@@ -146,7 +264,6 @@ public class PathBuilderController {
             for (int i = 0; i < nPoints; ++i) {
                 Point2D prevPoint = points.get((i+nPoints-1) % nPoints);
                 Point2D thisPoint = points.get(i);
-                Point2D nextPoint = points.get((i+1) % nPoints);
 
                 drawPoint(thisPoint);
 
@@ -154,15 +271,22 @@ public class PathBuilderController {
                 drawLine(edge);
 
                 ToolpathSegment[] toolpathSegments = computeToolpathSegments(edge, TOOL_RADIUS);
-                for (ToolpathSegment segment : toolpathSegments) {
-                    drawLine(segment.getSegment());
-                }
                 leftToolpathSegments.add(toolpathSegments[0]);
                 rightToolpathSegments.add(toolpathSegments[1]);
             }
-            for (int i = 0; i < nPoints; ++i) {
+            for (int i = 0; i < leftToolpathSegments.size(); ++i) {
                 intersectToolpathSegments(i, leftToolpathSegments);
+            }
+            for (int i = 0; i < rightToolpathSegments.size(); ++i) {
                 intersectToolpathSegments(i, rightToolpathSegments);
+            }
+            if (displayMode == DisplayMode.SPLIT_POINTS) {
+                for (ToolpathSegment segment : leftToolpathSegments) {
+                    segment.drawSplitPoints(ctx);
+                }
+                for (ToolpathSegment segment : rightToolpathSegments) {
+                    segment.drawSplitPoints(ctx);
+                }
             }
         } else {
             Point2D prevPoint = null;
@@ -235,5 +359,23 @@ public class PathBuilderController {
             redrawPath();
             points.set(currentPointIndex, origPoint);
         }
+    }
+
+    public void displaySplitPoints() {
+        displayMode = DisplayMode.SPLIT_POINTS;
+        redrawPath();
+    }
+
+    public void displayValidSegments() {
+        displayMode = DisplayMode.VALID_SEGMENTS;
+        redrawPath();
+    }
+
+    public void resetPath() {
+        points.clear();
+        startPoint = null;
+        currentPointIndex = 0;
+        pathClosed = false;
+        redrawPath();
     }
 }

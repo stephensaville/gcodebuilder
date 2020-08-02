@@ -11,7 +11,7 @@ public class UnitVector extends Point2D {
         double magnitude = Math.sqrt(x*x + y*y);
         double unitX = x / magnitude;
         double unitY = y / magnitude;
-        double angle = computeAngle(unitX, unitY);
+        double angle = Math2D.computeAngle(unitX, unitY);
         return new UnitVector(unitX, unitY, angle);
     }
 
@@ -28,19 +28,19 @@ public class UnitVector extends Point2D {
     }
 
     public UnitVector rotate(double delta) {
-        return from(addAngle(angle, delta));
+        return from(Math2D.addAngle(angle, delta));
     }
 
     public UnitVector leftNormal() {
-        return new UnitVector(-getY(), getX(), addAngle(angle, Math.PI / 2));
+        return new UnitVector(-getY(), getX(), Math2D.addAngle(angle, Math.PI / 2));
     }
 
     public UnitVector rightNormal() {
-        return new UnitVector(getY(), -getX(), addAngle(angle, - Math.PI / 2));
+        return new UnitVector(getY(), -getX(), Math2D.addAngle(angle, - Math.PI / 2));
     }
 
     public UnitVector inverse() {
-        return new UnitVector(-getX(), -getY(), addAngle(angle, Math.PI));
+        return new UnitVector(-getX(), -getY(), Math2D.addAngle(angle, Math.PI));
     }
 
     private UnitVector(double unitX, double unitY, double angle) {
@@ -48,22 +48,4 @@ public class UnitVector extends Point2D {
         this.angle = angle;
     }
 
-    private static double computeAngle(double unitX, double unitY) {
-        double angle = Math.acos(unitX);
-        if (unitY < 0) {
-            angle = 2*Math.PI - angle;
-        }
-        return angle;
-    }
-
-    private static double addAngle(double angle, double delta) {
-        double result = angle + delta;
-        while (result < 0) {
-            result += 2*Math.PI;
-        }
-        while (result >= 2*Math.PI) {
-            result -= 2*Math.PI;
-        }
-        return result;
-    }
 }

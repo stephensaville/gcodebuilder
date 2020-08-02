@@ -48,8 +48,8 @@ public class Segment extends Line {
 
         Point2D intersectionPoint = null;
 
-        if (thisParam >= 0 && thisParam <= 1 &&
-                otherParam >= -1 && otherParam <= 0) {
+        if (thisParam > 0 && thisParam < 1 &&
+                otherParam > -1 && otherParam < 0) {
             intersectionPoint = getTo().add(getVector().multiply(-thisParam));
         }
 
