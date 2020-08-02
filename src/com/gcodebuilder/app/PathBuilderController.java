@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PathBuilderController {
     private static final double POINT_RADIUS = 5;
@@ -29,7 +30,7 @@ public class PathBuilderController {
     private static final Paint VALID_PAINT = Color.GREEN;
     private static final Paint INVALID_PAINT = Color.RED;
 
-    private static enum DisplayMode {
+    private enum DisplayMode {
         SPLIT_POINTS,
         VALID_SEGMENTS
     }
@@ -46,9 +47,6 @@ public class PathBuilderController {
 
     @FXML
     public void initialize() {
-        System.out.println("initializing...");
-
-
         ctx = pathCanvas.getGraphicsContext2D();
     }
 
@@ -214,6 +212,24 @@ public class PathBuilderController {
             }
             ctx.restore();
         }
+
+        public List<Segment> getValidSegments() {
+            List<Segment> validSegments = new ArrayList<>();
+            sortSplitPoints();
+            Point2D lastSplitPoint = segment.getFrom();
+            boolean toSideValid = true;
+            for (ToolpathSplitPoint splitPoint : splitPoints) {
+                if (splitPoint.isFromSideValid()) {
+                    validSegments.add(Segment.of(lastSplitPoint, splitPoint.getPoint()));
+                }
+                lastSplitPoint = splitPoint.getPoint();
+                toSideValid = splitPoint.isToSideValid();
+            }
+            if (toSideValid) {
+                validSegments.add(Segment.of(lastSplitPoint, segment.getTo()));
+            }
+            return validSegments;
+        }
     }
 
     private ToolpathSegment[] computeToolpathSegments(Segment edge, double toolRadius) {
@@ -252,6 +268,16 @@ public class PathBuilderController {
         }
     }
 
+    private void drawSplitPoints(ToolpathSegment toolpathSegment) {
+        toolpathSegment.drawSplitPoints(ctx);
+    }
+
+    private static List<Segment> getAllValidSegments(List<ToolpathSegment> toolpathSegments) {
+        return toolpathSegments.stream()
+                .flatMap(toolpathSegment -> toolpathSegment.getValidSegments().stream())
+                .collect(Collectors.toList());
+    }
+
     private void redrawPath() {
         System.out.println("redrawPath");
 
@@ -281,11 +307,17 @@ public class PathBuilderController {
                 intersectToolpathSegments(i, rightToolpathSegments);
             }
             if (displayMode == DisplayMode.SPLIT_POINTS) {
-                for (ToolpathSegment segment : leftToolpathSegments) {
-                    segment.drawSplitPoints(ctx);
-                }
-                for (ToolpathSegment segment : rightToolpathSegments) {
-                    segment.drawSplitPoints(ctx);
+                leftToolpathSegments.forEach(this::drawSplitPoints);
+                rightToolpathSegments.forEach(this::drawSplitPoints);
+            } else {
+                List<Segment> leftValidSegments = getAllValidSegments(leftToolpathSegments);
+                List<Segment> rightValidSegments = getAllValidSegments(rightToolpathSegments);
+                if (displayMode == DisplayMode.VALID_SEGMENTS) {
+                    ctx.save();
+                    ctx.setStroke(VALID_PAINT);
+                    leftValidSegments.forEach(this::drawLine);
+                    rightValidSegments.forEach(this::drawLine);
+                    ctx.restore();
                 }
             }
         } else {
