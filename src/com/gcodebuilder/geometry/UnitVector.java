@@ -8,7 +8,7 @@ public class UnitVector extends Point2D {
     private final double angle;
 
     public static UnitVector from(double x, double y) {
-        double magnitude = Math.sqrt(x*x + y+y);
+        double magnitude = Math.sqrt(x*x + y*y);
         double unitX = x / magnitude;
         double unitY = y / magnitude;
         double angle = computeAngle(unitX, unitY);
@@ -31,11 +31,11 @@ public class UnitVector extends Point2D {
         return from(addAngle(angle, delta));
     }
 
-    public UnitVector rotatePerpCW() {
+    public UnitVector leftNormal() {
         return new UnitVector(-getY(), getX(), addAngle(angle, Math.PI / 2));
     }
 
-    public UnitVector rotatePerpCCW() {
+    public UnitVector rightNormal() {
         return new UnitVector(getY(), -getX(), addAngle(angle, - Math.PI / 2));
     }
 

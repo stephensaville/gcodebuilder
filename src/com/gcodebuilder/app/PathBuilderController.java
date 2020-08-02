@@ -1,12 +1,15 @@
 package com.gcodebuilder.app;
 
+import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.geometry.Segment;
+import com.gcodebuilder.geometry.UnitVector;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +18,7 @@ import java.util.List;
 public class PathBuilderController {
     private static final double POINT_RADIUS = 5;
     private static final double TOOL_WIDTH = 100;
+    private static final double TOOL_RADIUS = TOOL_WIDTH / 2;
     private static final double TRACE_STEP = 5;
 
     @FXML private BorderPane rootPane;
@@ -90,46 +94,39 @@ public class PathBuilderController {
         return pointInPath;
     }
 
-    // rotate vector by angle expressed in radians
-    private static Point2D rotate(Point2D vec, double angle) {
-        double sinAngle = Math.sin(angle);
-        double cosAngle = Math.cos(angle);
-        return new Point2D(cosAngle*vec.getX() - sinAngle*vec.getY(),
-                sinAngle*vec.getX() + cosAngle*vec.getY());
-    }
+    @Data
+    private static class ToolpathSegment {
+        private final Segment segment;
+        private final UnitVector towards;
+        private final UnitVector away;
+        private final boolean valid;
 
-    private static double unitVecToAngle(Point2D unitVec) {
-        double angle = Math.acos(unitVec.getX());
-        if (unitVec.getY() < 0) {
-            angle = 2*Math.PI - angle;
+        public Point2D intersect(ToolpathSegment other) {
+            return segment.intersect(other.segment);
         }
-        return angle;
     }
 
-    private static Point2D rotateLeft90(Point2D vec) {
-        return new Point2D(-vec.getY(), vec.getX());
+    private ToolpathSegment[] computeToolpathSegments(Segment edge, double toolRadius) {
+        UnitVector left = edge.getDirection().leftNormal();
+        UnitVector right = edge.getDirection().rightNormal();
+
+        ctx.save();
+        ctx.setLineWidth(2);
+        drawLine(edge.getFrom(), edge.getFrom().add(edge.getDirection().multiply(toolRadius)));
+        drawLine(edge.getFrom(), edge.getFrom().add(left.multiply(toolRadius)));
+        drawLine(edge.getFrom(), edge.getFrom().add(right.multiply(toolRadius)));
+        ctx.restore();
+
+        return new ToolpathSegment[] {
+                new ToolpathSegment(edge.move(left.multiply(toolRadius)), right, left, true),
+                new ToolpathSegment(edge.move(right.multiply(toolRadius)), left, right, true)
+        };
     }
 
-    private static Point2D rotateRight90(Point2D vec) {
-        return new Point2D(vec.getY(), -vec.getX());
-    }
-
-    private static Segment moveLineSegment(Point2D fromPoint, Point2D toPoint, Point2D offset) {
-        return Segment.of(fromPoint.add(offset), toPoint.add(offset));
-    }
-
-    private List<Segment> computeToolpathSegments(Point2D fromPoint, Point2D toPoint, double toolRadius) {
-        Point2D lineVec = toPoint.subtract(fromPoint).normalize();
-        Point2D leftOffset = rotateLeft90(lineVec).multiply(toolRadius);
-        Point2D rightOffset = rotateRight90(lineVec).multiply(toolRadius);
-        return Arrays.asList(moveLineSegment(fromPoint, toPoint, leftOffset),
-                moveLineSegment(fromPoint, toPoint, rightOffset));
-    }
-
-    private void intersectToolpathSegments(int i, List<Segment> segments) {
-        Segment current = segments.get(i);
-        for (int j = i + 1; j < segments.size(); ++j) {
-            Segment other = segments.get(j);
+    private void intersectToolpathSegments(int i, List<ToolpathSegment> toolpathSegments) {
+        ToolpathSegment current = toolpathSegments.get(i);
+        for (int j = i + 1; j < toolpathSegments.size(); ++j) {
+            ToolpathSegment other = toolpathSegments.get(j);
             Point2D intersectionPoint = current.intersect(other);
             if (intersectionPoint != null) {
                 drawPoint(intersectionPoint);
@@ -144,22 +141,24 @@ public class PathBuilderController {
 
         if (pathClosed) {
             int nPoints = points.size();
-            List<Segment> leftToolpathSegments = new ArrayList<>();
-            List<Segment> rightToolpathSegments = new ArrayList<>();
+            List<ToolpathSegment> leftToolpathSegments = new ArrayList<>();
+            List<ToolpathSegment> rightToolpathSegments = new ArrayList<>();
             for (int i = 0; i < nPoints; ++i) {
                 Point2D prevPoint = points.get((i+nPoints-1) % nPoints);
                 Point2D thisPoint = points.get(i);
                 Point2D nextPoint = points.get((i+1) % nPoints);
 
                 drawPoint(thisPoint);
-                drawLine(prevPoint, thisPoint);
 
-                List<Segment> toolpathSegments = computeToolpathSegments(thisPoint, nextPoint, TOOL_WIDTH/2);
-                for (Segment segment : toolpathSegments) {
-                    drawLine(segment);
+                Segment edge = Segment.of(prevPoint, thisPoint);
+                drawLine(edge);
+
+                ToolpathSegment[] toolpathSegments = computeToolpathSegments(edge, TOOL_RADIUS);
+                for (ToolpathSegment segment : toolpathSegments) {
+                    drawLine(segment.getSegment());
                 }
-                leftToolpathSegments.add(toolpathSegments.get(0));
-                rightToolpathSegments.add(toolpathSegments.get(1));
+                leftToolpathSegments.add(toolpathSegments[0]);
+                rightToolpathSegments.add(toolpathSegments[1]);
             }
             for (int i = 0; i < nPoints; ++i) {
                 intersectToolpathSegments(i, leftToolpathSegments);

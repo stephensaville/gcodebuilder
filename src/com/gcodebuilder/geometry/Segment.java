@@ -28,6 +28,17 @@ public class Segment extends Line {
         this.length = vector.magnitude();
     }
 
+    private Segment(Point2D from, Point2D to, Point2D vector, UnitVector direction, double length) {
+        super(from, direction);
+        this.to = to;
+        this.vector = vector;
+        this.length = length;
+    }
+
+    public Segment move(Point2D offset) {
+        return new Segment(getFrom().add(offset), getTo().add(offset), getVector(), getDirection(), getLength());
+    }
+
     public Point2D intersect(Segment other) {
         Point2D between = getTo().subtract(other.getTo());
 
