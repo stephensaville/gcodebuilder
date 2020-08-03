@@ -1,5 +1,6 @@
 package com.gcodebuilder.app;
 
+import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Point;
 import com.gcodebuilder.geometry.Segment;
@@ -13,6 +14,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.shape.ArcType;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
@@ -36,8 +38,6 @@ public class PathBuilderController {
     private static final Paint DEFAULT_PAINT = Color.BLACK;
     private static final Paint VALID_PAINT = Color.GREEN;
     private static final Paint INVALID_PAINT = Color.RED;
-    private static final Paint LEFT_PAINT = Color.BLUE;
-    private static final Paint RIGHT_PAINT = Color.GREEN;
     private static final Paint INSIDE_PAINT = Color.PURPLE;
     private static final Paint OUTSIDE_PAINT = Color.DARKORANGE;
 
@@ -166,6 +166,10 @@ public class PathBuilderController {
         public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid) {
             splitPoints.add(new ToolpathSplitPoint(splitPoint, fromSideValid, toSideValid));
             splitPointsSorted = false;
+        }
+
+        public ToolpathSegment flip() {
+            return new ToolpathSegment(segment.flip(), toolRadius, towards, away);
         }
 
         public void sortSplitPoints() {
@@ -310,6 +314,12 @@ public class PathBuilderController {
                 if (isSamePoint(current.getTo(), other.getFrom())) {
                     next = other;
                     segmentIterator.remove();
+                    break;
+                }
+                if (isSamePoint(current.getTo(), other.getTo())) {
+                    next = other.flip();
+                    segmentIterator.remove();
+                    break;
                 }
             }
 
@@ -319,10 +329,17 @@ public class PathBuilderController {
                 segmentIterator = remainingSegments.iterator();
                 while (segmentIterator.hasNext()) {
                     ToolpathSegment other = segmentIterator.next();
-                    Point2D otherEdgePoint = other.getEdgePoint(other.getFrom());
-                    if (isSamePoint(currentEdgePoint, otherEdgePoint)) {
+                    Point2D otherFromEdgePoint = other.getEdgePoint(other.getFrom());
+                    if (isSamePoint(currentEdgePoint, otherFromEdgePoint)) {
                         next = other;
                         segmentIterator.remove();
+                        break;
+                    }
+                    Point2D otherToEdgePoint = other.getEdgePoint(other.getTo());
+                    if (isSamePoint(currentEdgePoint, otherToEdgePoint)) {
+                        next = other.flip();
+                        segmentIterator.remove();
+                        break;
                     }
                 }
             }
@@ -342,26 +359,22 @@ public class PathBuilderController {
         return result;
     }
 
-    public boolean isInsideToolpath(List<ToolpathSegment> toolpath) {
-        for (ToolpathSegment segment : toolpath) {
-            if (!isPointInPath(segment.getFrom())) {
-                return false;
-            }
-            if (!isPointInPath(segment.getTo())) {
-                return false;
-            }
+    private boolean isInsideSegment(ToolpathSegment segment) {
+        if (!isPointInPath(segment.getFrom())) {
+            return false;
+        }
+        if (!isPointInPath(segment.getTo())) {
+            return false;
         }
         return true;
     }
 
-    public boolean isOutsideToolpath(List<ToolpathSegment> toolpath) {
-        for (ToolpathSegment segment : toolpath) {
-            if (isPointInPath(segment.getFrom())) {
-                return false;
-            }
-            if (isPointInPath(segment.getTo())) {
-                return false;
-            }
+    private boolean isOutsideSegment(ToolpathSegment segment) {
+        if (isPointInPath(segment.getFrom())) {
+            return false;
+        }
+        if (isPointInPath(segment.getTo())) {
+            return false;
         }
         return true;
     }
@@ -399,6 +412,20 @@ public class PathBuilderController {
         drawLine(ctx, segment);
     }
 
+    private void drawArc(Point2D center, Point2D start, Point2D end) {
+        Segment centerToStart = Segment.of(center, start);
+        drawLine(centerToStart);
+        Segment centerToEnd = Segment.of(center, end);
+        drawLine(centerToEnd);
+        double radius = centerToStart.getLength();
+        double angleToStart = centerToStart.getDirection().getAngle();
+        double angleToEnd = centerToEnd.getDirection().getAngle();
+        ctx.strokeArc(center.getX() - radius, center.getY() - radius, radius*2, radius*2,
+                Math2D.convertToDegrees(Math.min(angleToStart, angleToEnd)),
+                Math2D.convertToDegrees(Math.abs(angleToEnd - angleToStart)),
+                ArcType.OPEN);
+    }
+
     private Point2D firstPoint() {
         return points.get(0);
     }
@@ -420,14 +447,22 @@ public class PathBuilderController {
         for (List<ToolpathSegment> toolpath : toolpaths) {
             ++toolpathIndex;
 
-            ToolpathSegment startSegment = toolpath.get(0);
-            Point2D textOffset = startSegment.getTowards().multiply(startSegment.getToolRadius()/2);
-            Point2D textPoint = startSegment.getFrom()
-                    .midpoint(startSegment.getTo())
-                    .add(textOffset);
-            ctx.strokeText(String.valueOf(toolpathIndex), textPoint.getX(), textPoint.getY());
+            ToolpathSegment prevSegment = toolpath.get(toolpath.size() - 1);
+            for (ToolpathSegment segment : toolpath) {
+                Point2D textOffset = segment.getTowards().multiply(segment.getToolRadius() / 3);
+                Point2D textPoint = segment.getFrom()
+                        .midpoint(segment.getTo())
+                        .add(textOffset);
+                ctx.strokeText(String.valueOf(toolpathIndex), textPoint.getX(), textPoint.getY());
 
-            toolpath.forEach(this::drawToolpathSegment);
+                if (!isSamePoint(prevSegment.getTo(), segment.getFrom())) {
+                    // draw an arc to join outside corner segments
+                    drawArc(segment.getEdgePoint(segment.getFrom()), prevSegment.getTo(), segment.getFrom());
+                }
+                drawToolpathSegment(segment);
+
+                prevSegment = segment;
+            }
         }
     }
 
@@ -453,46 +488,37 @@ public class PathBuilderController {
                 leftToolpathSegments.add(toolpathSegments[0]);
                 rightToolpathSegments.add(toolpathSegments[1]);
             }
-            for (int i = 0; i < leftToolpathSegments.size(); ++i) {
-                intersectToolpathSegments(i, leftToolpathSegments);
-            }
-            for (int i = 0; i < rightToolpathSegments.size(); ++i) {
-                intersectToolpathSegments(i, rightToolpathSegments);
+            List<ToolpathSegment> allToolpathSegments = new ArrayList<>();
+            allToolpathSegments.addAll(leftToolpathSegments);
+            allToolpathSegments.addAll(rightToolpathSegments);
+            for (int i = 0; i < allToolpathSegments.size(); ++i) {
+                intersectToolpathSegments(i, allToolpathSegments);
             }
             if (displayMode == DisplayMode.SPLIT_POINTS) {
-                leftToolpathSegments.forEach(this::drawSplitPoints);
-                rightToolpathSegments.forEach(this::drawSplitPoints);
+                allToolpathSegments.forEach(this::drawSplitPoints);
             } else {
-                List<ToolpathSegment> leftValidSegments = getAllValidSegments(leftToolpathSegments);
-                List<ToolpathSegment> rightValidSegments = getAllValidSegments(rightToolpathSegments);
+                List<ToolpathSegment> allValidSegments = getAllValidSegments(allToolpathSegments);
                 if (displayMode == DisplayMode.VALID_SEGMENTS) {
                     ctx.save();
-                    ctx.setStroke(LEFT_PAINT);
-                    leftValidSegments.forEach(this::drawToolpathSegment);
-                    ctx.setStroke(RIGHT_PAINT);
-                    rightValidSegments.forEach(this::drawToolpathSegment);
+                    ctx.setStroke(VALID_PAINT);
+                    allValidSegments.forEach(this::drawToolpathSegment);
                     ctx.restore();
                 } else {
-                    List<List<ToolpathSegment>> leftPartitionedToolpaths = partitionToolpaths(leftValidSegments);
-                    List<List<ToolpathSegment>> rightPartitionedToolpaths = partitionToolpaths(rightValidSegments);
-                    if (displayMode == DisplayMode.PARTITIONED_TOOLPATHS) {
+                    List<ToolpathSegment> insideSegments = allValidSegments.stream()
+                            .filter(this::isInsideSegment).collect(Collectors.toList());
+                    List<ToolpathSegment> outsideSegments = allValidSegments.stream()
+                            .filter(this::isOutsideSegment).collect(Collectors.toList());
+                    if (displayMode == DisplayMode.INSIDE_OUTSIDE) {
                         ctx.save();
-                        ctx.setStroke(LEFT_PAINT);
-                        drawPartitionedToolpaths(leftPartitionedToolpaths);
-                        ctx.setStroke(RIGHT_PAINT);
-                        drawPartitionedToolpaths(rightPartitionedToolpaths);
+                        ctx.setStroke(INSIDE_PAINT);
+                        insideSegments.forEach(this::drawToolpathSegment);
+                        ctx.setStroke(OUTSIDE_PAINT);
+                        outsideSegments.forEach(this::drawToolpathSegment);
                         ctx.restore();
                     } else {
-                        List<List<ToolpathSegment>> allToolpaths = new ArrayList<>();
-                        allToolpaths.addAll(leftPartitionedToolpaths);
-                        allToolpaths.addAll(rightPartitionedToolpaths);
-
-                        List<List<ToolpathSegment>> insideToolpaths = allToolpaths.stream()
-                                .filter(this::isInsideToolpath).collect(Collectors.toList());
-                        List<List<ToolpathSegment>> outsideToolpaths = allToolpaths.stream()
-                                .filter(this::isOutsideToolpath).collect(Collectors.toList());
-
-                        if (displayMode == DisplayMode.INSIDE_OUTSIDE) {
+                        List<List<ToolpathSegment>> insideToolpaths = partitionToolpaths(insideSegments);
+                        List<List<ToolpathSegment>> outsideToolpaths = partitionToolpaths(outsideSegments);
+                        if (displayMode == DisplayMode.PARTITIONED_TOOLPATHS) {
                             ctx.save();
                             ctx.setStroke(INSIDE_PAINT);
                             drawPartitionedToolpaths(insideToolpaths);

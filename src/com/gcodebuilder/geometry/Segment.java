@@ -39,6 +39,10 @@ public class Segment extends Line {
         return new Segment(getFrom().add(offset), getTo().add(offset), getVector(), getDirection(), getLength());
     }
 
+    public Segment flip() {
+        return new Segment(getTo(), getFrom(), getVector().multiply(-1), getDirection().invert(), getLength());
+    }
+
     public Point2D intersect(Segment other) {
         Point2D between = getTo().subtract(other.getTo());
 

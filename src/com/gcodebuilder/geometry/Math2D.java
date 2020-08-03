@@ -86,4 +86,8 @@ public class Math2D {
         }
         return result;
     }
+
+    public static double convertToDegrees(double angleInRadians) {
+        return angleInRadians * 180 / Math.PI;
+    }
 }

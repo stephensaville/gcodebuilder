@@ -39,7 +39,7 @@ public class UnitVector extends Point2D {
         return new UnitVector(getY(), -getX(), Math2D.addAngle(angle, - Math.PI / 2));
     }
 
-    public UnitVector inverse() {
+    public UnitVector invert() {
         return new UnitVector(-getX(), -getY(), Math2D.addAngle(angle, Math.PI));
     }
 
