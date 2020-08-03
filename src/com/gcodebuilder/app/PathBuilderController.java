@@ -12,8 +12,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -63,47 +66,6 @@ public class PathBuilderController {
                 .subtract(NodeSize.measureHeight(rootPane.getTop()))
                 .subtract(NodeSize.measureHeight(rootPane.getBottom()));
         pathCanvas.heightProperty().bind(heightBinding);
-    }
-
-    private static void drawCircle(GraphicsContext ctx, Point2D center, double radius) {
-        ctx.fillOval(center.getX() - radius, center.getY() - radius, radius*2, radius*2);
-    }
-
-    private void drawCircle(Point2D center, double radius) {
-        drawCircle(ctx, center, radius);
-    }
-
-    private static void drawPoint(GraphicsContext ctx, Point2D point) {
-        drawCircle(ctx, point, POINT_RADIUS);
-    }
-
-    private void drawPoint(Point2D point) {
-        drawPoint(ctx, point);
-    }
-
-    private static void drawLine(GraphicsContext ctx, Point2D fromPoint, Point2D toPoint) {
-        ctx.strokeLine(fromPoint.getX(), fromPoint.getY(),
-                toPoint.getX(), toPoint.getY());
-    }
-
-    private void drawLine(Point2D fromPoint, Point2D toPoint) {
-        drawLine(ctx, fromPoint, toPoint);
-    }
-
-    private static void drawLine(GraphicsContext ctx, Segment segment) {
-        drawLine(ctx, segment.getFrom(), segment.getTo());
-    }
-
-    private void drawLine(Segment segment) {
-        drawLine(ctx, segment);
-    }
-
-    private Point2D firstPoint() {
-        return points.get(0);
-    }
-
-    private Point2D lastPoint() {
-        return points.get(points.size() - 1);
     }
 
     /**
@@ -160,11 +122,17 @@ public class PathBuilderController {
         }
     }
 
-    @Data
+    @Getter
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     private static class ToolpathSegment {
         private final Segment segment;
+        private final double toolRadius;
         private final UnitVector towards;
         private final UnitVector away;
+
+        public static ToolpathSegment fromEdge(Segment edge, double toolRadius, UnitVector towards, UnitVector away) {
+            return new ToolpathSegment(edge.move(away.multiply(toolRadius)), toolRadius, towards, away);
+        }
 
         private final List<ToolpathSplitPoint> splitPoints = new ArrayList<>();
         private boolean splitPointsSorted = true;
@@ -213,20 +181,24 @@ public class PathBuilderController {
             ctx.restore();
         }
 
-        public List<Segment> getValidSegments() {
-            List<Segment> validSegments = new ArrayList<>();
+        public List<ToolpathSegment> getValidSegments() {
+            List<ToolpathSegment> validSegments = new ArrayList<>();
             sortSplitPoints();
             Point2D lastSplitPoint = segment.getFrom();
             boolean toSideValid = true;
             for (ToolpathSplitPoint splitPoint : splitPoints) {
                 if (splitPoint.isFromSideValid()) {
-                    validSegments.add(Segment.of(lastSplitPoint, splitPoint.getPoint()));
+                    validSegments.add(new ToolpathSegment(
+                            Segment.of(lastSplitPoint, splitPoint.getPoint()),
+                            toolRadius, towards, away));
                 }
                 lastSplitPoint = splitPoint.getPoint();
                 toSideValid = splitPoint.isToSideValid();
             }
             if (toSideValid) {
-                validSegments.add(Segment.of(lastSplitPoint, segment.getTo()));
+                validSegments.add(new ToolpathSegment(
+                        Segment.of(lastSplitPoint, segment.getTo()),
+                        toolRadius, towards, away));
             }
             return validSegments;
         }
@@ -244,8 +216,8 @@ public class PathBuilderController {
         ctx.restore();
 
         return new ToolpathSegment[] {
-                new ToolpathSegment(edge.move(left.multiply(toolRadius)), right, left),
-                new ToolpathSegment(edge.move(right.multiply(toolRadius)), left, right)
+                ToolpathSegment.fromEdge(edge, toolRadius, right, left),
+                ToolpathSegment.fromEdge(edge, toolRadius, left, right)
         };
     }
 
@@ -268,14 +240,59 @@ public class PathBuilderController {
         }
     }
 
+    private static List<ToolpathSegment> getAllValidSegments(List<ToolpathSegment> toolpathSegments) {
+        return toolpathSegments.stream()
+                .flatMap(toolpathSegment -> toolpathSegment.getValidSegments().stream())
+                .collect(Collectors.toList());
+    }
+
+    private static void drawCircle(GraphicsContext ctx, Point2D center, double radius) {
+        ctx.fillOval(center.getX() - radius, center.getY() - radius, radius*2, radius*2);
+    }
+
+    private void drawCircle(Point2D center, double radius) {
+        drawCircle(ctx, center, radius);
+    }
+
+    private static void drawPoint(GraphicsContext ctx, Point2D point) {
+        drawCircle(ctx, point, POINT_RADIUS);
+    }
+
+    private void drawPoint(Point2D point) {
+        drawPoint(ctx, point);
+    }
+
+    private static void drawLine(GraphicsContext ctx, Point2D fromPoint, Point2D toPoint) {
+        ctx.strokeLine(fromPoint.getX(), fromPoint.getY(),
+                toPoint.getX(), toPoint.getY());
+    }
+
+    private void drawLine(Point2D fromPoint, Point2D toPoint) {
+        drawLine(ctx, fromPoint, toPoint);
+    }
+
+    private static void drawLine(GraphicsContext ctx, Segment segment) {
+        drawLine(ctx, segment.getFrom(), segment.getTo());
+    }
+
+    private void drawLine(Segment segment) {
+        drawLine(ctx, segment);
+    }
+
+    private Point2D firstPoint() {
+        return points.get(0);
+    }
+
+    private Point2D lastPoint() {
+        return points.get(points.size() - 1);
+    }
+
     private void drawSplitPoints(ToolpathSegment toolpathSegment) {
         toolpathSegment.drawSplitPoints(ctx);
     }
 
-    private static List<Segment> getAllValidSegments(List<ToolpathSegment> toolpathSegments) {
-        return toolpathSegments.stream()
-                .flatMap(toolpathSegment -> toolpathSegment.getValidSegments().stream())
-                .collect(Collectors.toList());
+    private void drawToolpathSegment(ToolpathSegment toolpathSegment) {
+        drawLine(toolpathSegment.getSegment());
     }
 
     private void redrawPath() {
@@ -310,13 +327,13 @@ public class PathBuilderController {
                 leftToolpathSegments.forEach(this::drawSplitPoints);
                 rightToolpathSegments.forEach(this::drawSplitPoints);
             } else {
-                List<Segment> leftValidSegments = getAllValidSegments(leftToolpathSegments);
-                List<Segment> rightValidSegments = getAllValidSegments(rightToolpathSegments);
+                List<ToolpathSegment> leftValidSegments = getAllValidSegments(leftToolpathSegments);
+                List<ToolpathSegment> rightValidSegments = getAllValidSegments(rightToolpathSegments);
                 if (displayMode == DisplayMode.VALID_SEGMENTS) {
                     ctx.save();
                     ctx.setStroke(VALID_PAINT);
-                    leftValidSegments.forEach(this::drawLine);
-                    rightValidSegments.forEach(this::drawLine);
+                    leftValidSegments.forEach(this::drawToolpathSegment);
+                    rightValidSegments.forEach(this::drawToolpathSegment);
                     ctx.restore();
                 }
             }
