@@ -20,6 +20,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,6 +32,8 @@ import java.util.Queue;
 import java.util.stream.Collectors;
 
 public class PathBuilderController {
+    private static final Logger log = LogManager.getLogger(PathBuilderController.class);
+
     private static final double POINT_RADIUS = 5;
     private static final double TOOL_WIDTH = 100;
     private static final double TOOL_RADIUS = TOOL_WIDTH / 2;
@@ -234,13 +238,6 @@ public class PathBuilderController {
         UnitVector left = edge.getDirection().leftNormal();
         UnitVector right = edge.getDirection().rightNormal();
 
-        ctx.save();
-        ctx.setLineWidth(2);
-        drawLine(edge.getFrom(), edge.getFrom().add(edge.getDirection().multiply(toolRadius)));
-        drawLine(edge.getFrom(), edge.getFrom().add(left.multiply(toolRadius)));
-        drawLine(edge.getFrom(), edge.getFrom().add(right.multiply(toolRadius)));
-        ctx.restore();
-
         return new ToolpathSegment[] {
                 ToolpathSegment.fromEdge(edge, toolRadius, right, left),
                 ToolpathSegment.fromEdge(edge, toolRadius, left, right)
@@ -420,9 +417,14 @@ public class PathBuilderController {
         double radius = centerToStart.getLength();
         double angleToStart = centerToStart.getDirection().getAngle();
         double angleToEnd = centerToEnd.getDirection().getAngle();
+        double cornerAngle = Math2D.subtractAngle(angleToStart, angleToEnd);
+        if (cornerAngle < 0) {
+            cornerAngle = -cornerAngle;
+            angleToStart = angleToEnd;
+        }
         ctx.strokeArc(center.getX() - radius, center.getY() - radius, radius*2, radius*2,
-                Math2D.convertToDegrees(Math.min(angleToStart, angleToEnd)),
-                Math2D.convertToDegrees(Math.abs(angleToEnd - angleToStart)),
+                360 - Math2D.convertToDegrees(angleToStart),
+                Math2D.convertToDegrees(cornerAngle),
                 ArcType.OPEN);
     }
 
