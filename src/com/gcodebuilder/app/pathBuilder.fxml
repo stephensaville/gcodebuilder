@@ -16,6 +16,8 @@
                   <ToggleGroup fx:id="displayModeGroup" />
                </toggleGroup></RadioButton>
             <RadioButton mnemonicParsing="false" onAction="#displayValidSegments" text="Valid Segments" toggleGroup="$displayModeGroup" ButtonBar.buttonData="LEFT" />
+            <RadioButton mnemonicParsing="false" onAction="#displayPartitionedToolpaths" text="Partitioned Toolpaths" toggleGroup="$displayModeGroup" ButtonBar.buttonData="LEFT" />
+            <RadioButton mnemonicParsing="false" onAction="#displayInsideOutside" text="Inside / Outside" toggleGroup="$displayModeGroup" ButtonBar.buttonData="LEFT" />
          </buttons>
       </ButtonBar>
    </top>
