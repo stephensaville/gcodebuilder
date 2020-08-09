@@ -42,7 +42,6 @@ public class GCodePocketRecipe extends GCodeRecipe {
     }
 
     public void convertToUnit(LengthUnit toUnit) {
-        //UnitConverter converter = unit.getUnit().getConverterTo(toUnit.getUnit());
         LengthUnitConverter converter = unit.getConverterTo(toUnit);
         setUnit(toUnit);
         setToolWidth(converter.convert(toolWidth));
