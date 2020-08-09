@@ -164,7 +164,7 @@ public class Rectangle extends Shape<Rectangle.Handle> {
     }
 
     @Override
-    public Handle getHandle(Point2D point, Point2D mousePoint, double pixelsPerUnit) {
+    public Handle getHandle(Point2D point, Point2D mousePoint, double handleRadius) {
         double x = point.getX();
         double minX = getMinX();
         double maxX = getMaxX();

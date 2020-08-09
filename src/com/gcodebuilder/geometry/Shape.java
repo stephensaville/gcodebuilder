@@ -30,7 +30,7 @@ public abstract class Shape<H> implements Drawable {
     @JsonIgnore
     private boolean selected;
 
-    public abstract H getHandle(Point2D point, Point2D mousePoint, double pixelsPerUnit);
+    public abstract H getHandle(Point2D point, Point2D mousePoint, double handleRadius);
     public abstract boolean edit(H handle, InteractionEvent event);
     public abstract boolean move(H handle, InteractionEvent event);
 

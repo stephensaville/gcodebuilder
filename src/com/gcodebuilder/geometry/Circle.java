@@ -20,8 +20,6 @@ import org.apache.logging.log4j.Logger;
 public class Circle extends Shape<Circle.Handle> {
     private static final Logger log = LogManager.getLogger(Circle.class);
 
-    private static final int HANDLE_RADIUS = 5;
-
     @Getter
     private Point center;
 
@@ -90,9 +88,9 @@ public class Circle extends Shape<Circle.Handle> {
     }
 
     @Override
-    public Handle getHandle(Point2D point, Point2D mousePoint, double pixelsPerUnit) {
+    public Handle getHandle(Point2D point, Point2D mousePoint, double handleRadius) {
         double distanceToCenter = center.distance(mousePoint);
-        if (Math.abs(distanceToCenter - radius)*pixelsPerUnit < HANDLE_RADIUS) {
+        if (Math.abs(distanceToCenter - radius) < handleRadius) {
             return new Handle(center);
         }
         return null;

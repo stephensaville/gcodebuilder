@@ -3,16 +3,11 @@ package com.gcodebuilder.model;
 import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import si.uom.SI;
-import systems.uom.common.USCustomary;
 
-import javax.measure.MetricPrefix;
 import javax.measure.Unit;
-import javax.measure.UnitConverter;
 import javax.measure.quantity.Length;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 @RequiredArgsConstructor
 @Getter

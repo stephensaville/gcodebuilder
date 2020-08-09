@@ -6,6 +6,7 @@ import com.gcodebuilder.app.tools.EditTool;
 import com.gcodebuilder.app.tools.EraseTool;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.app.tools.MoveTool;
+import com.gcodebuilder.app.tools.PathTool;
 import com.gcodebuilder.app.tools.RectangleTool;
 import com.gcodebuilder.app.tools.SelectionTool;
 import com.gcodebuilder.app.tools.Tool;
@@ -81,6 +82,7 @@ public class DrawingWindowController {
 
     private RectangleTool rectangleTool = new RectangleTool();
     private CircleTool circleTool = new CircleTool();
+    private PathTool pathTool = new PathTool();
     private EditTool editTool = new EditTool();
     private MoveTool moveTool = new MoveTool();
     private EraseTool eraseTool = new EraseTool();
@@ -254,6 +256,10 @@ public class DrawingWindowController {
         setCurrentTool(editTool);
     }
 
+    public void selectPathTool() {
+        setCurrentTool(pathTool);
+    }
+
     public void selectMoveTool() {
         setCurrentTool(moveTool);
     }
@@ -269,13 +275,14 @@ public class DrawingWindowController {
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
         Point2D point = canvas.mouseToGrid(event, true);
         Point2D mousePoint = canvas.mouseToGrid(event, false);
+        double handleRadius = canvas.getSettings().getShapePointRadius() / canvas.getPixelsPerUnit();
         if (restart) {
             startPoint = point;
             mouseStartPoint = mousePoint;
             currentShape = null;
             currentHandle = null;
             for (Shape shape : drawing.getShapes()) {
-                currentHandle = shape.getHandle(point, mousePoint, canvas.getPixelsPerUnit());
+                currentHandle = shape.getHandle(point, mousePoint, handleRadius);
                 if (currentHandle != null) {
                     currentShape = shape;
                     break;
@@ -286,7 +293,8 @@ public class DrawingWindowController {
                 drawing, event,
                 point, startPoint,
                 mousePoint, mouseStartPoint,
-                currentShape, currentHandle);
+                currentShape, currentHandle,
+                handleRadius);
     }
 
     private void checkSelectedShapes() {

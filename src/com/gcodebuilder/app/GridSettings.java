@@ -28,6 +28,7 @@ public class GridSettings {
     private double axisLineWidth = 3;
 
     private double shapeLineWidth = 2;
+    private double shapePointRadius = 5;
     private Paint shapePaint = Color.BLACK;
     private Paint selectedShapePaint = Color.BLUE;
 }

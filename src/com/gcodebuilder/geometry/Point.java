@@ -35,7 +35,35 @@ public class Point {
         return this.point2D.distance(point2D);
     }
 
+    public double distance(Point otherPoint) {
+        return distance(otherPoint.asPoint2D());
+    }
+
     public Point add(Point2D point2D) {
         return new Point(this.point2D.add(point2D));
     }
+
+    public boolean isSame(Point otherPoint, double maxDistance) {
+        if (otherPoint == null) {
+            return false;
+        } else if (this.equals(otherPoint)) {
+            return true;
+        } else {
+            return this.distance(otherPoint) < maxDistance;
+        }
+    }
+
+    public boolean isSame(Point2D point2D, double maxDistance) {
+        if (point2D == null) {
+            return false;
+        } else {
+            return this.distance(point2D) < maxDistance;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Point(%f, %f)", point2D.getX(), point2D.getY());
+    }
 }
+
