@@ -90,4 +90,12 @@ public class Math2D {
     public static double convertToDegrees(double angleInRadians) {
         return angleInRadians * 180 / Math.PI;
     }
+
+    public static double lengthSquared(double x, double y) {
+        return (x * x) + (y * y);
+    }
+
+    public static double lengthSquared(Point2D vector) {
+        return lengthSquared(vector.getX(), vector.getY());
+    }
 }

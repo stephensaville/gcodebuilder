@@ -27,6 +27,10 @@ public class Line {
         return from.add(direction.multiply(distToProjection));
     }
 
+    public double getAngle() {
+        return getDirection().getAngle();
+    }
+
     @Override
     public String toString() {
         return String.format("Line(from=(%f,%f), direction=(%f,%f))",

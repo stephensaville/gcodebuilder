@@ -60,6 +60,16 @@ public class Segment extends Line {
         return intersectionPoint;
     }
 
+    public Point2D project(Point2D point) {
+        Point2D vectorToPoint = point.subtract(getFrom());
+        double distToProjection = vectorToPoint.dotProduct(getDirection());
+        if (distToProjection >= 0 && distToProjection <= length) {
+            return getFrom().add(getDirection().multiply(distToProjection));
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public String toString() {
         return String.format("Segment(from=(%f,%f), to=(%f,%f))",
