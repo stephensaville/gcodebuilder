@@ -4,8 +4,6 @@ import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import javax.measure.Unit;
-import javax.measure.quantity.Length;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -17,10 +15,6 @@ public enum LengthUnit {
 
     private final String label;
     private final UnitMode mode;
-
-    public Unit<Length> getUnit() {
-        return mode.getUnit();
-    }
 
     public double getUnitsPerInch() {
         return mode.getUnitsPerInch();
@@ -36,6 +30,14 @@ public enum LengthUnit {
 
     public static LengthUnit fromUnitMode(UnitMode mode) {
         return Preconditions.checkNotNull(modeToUnit.get(mode));
+    }
+
+    public LengthUnitConverter getConverterTo(UnitMode other) {
+        return mode.getConverterTo(other);
+    }
+
+    public LengthUnitConverter getConverterTo(LengthUnit other) {
+        return getConverterTo(other.mode);
     }
 
     public String toString() {

@@ -1,7 +1,5 @@
 package com.gcodebuilder.recipe;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gcodebuilder.geometry.Circle;
 import com.gcodebuilder.geometry.Rectangle;
 import com.gcodebuilder.geometry.Shape;
@@ -10,14 +8,12 @@ import com.gcodebuilder.model.DistanceMode;
 import com.gcodebuilder.model.FeedRateMode;
 import com.gcodebuilder.model.GCodeBuilder;
 import com.gcodebuilder.model.LengthUnit;
+import com.gcodebuilder.model.LengthUnitConverter;
 import com.gcodebuilder.model.MotionMode;
-import com.gcodebuilder.model.Side;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import javax.measure.UnitConverter;
 
 @Getter
 @Setter
@@ -46,7 +42,8 @@ public class GCodePocketRecipe extends GCodeRecipe {
     }
 
     public void convertToUnit(LengthUnit toUnit) {
-        UnitConverter converter = unit.getUnit().getConverterTo(toUnit.getUnit());
+        //UnitConverter converter = unit.getUnit().getConverterTo(toUnit.getUnit());
+        LengthUnitConverter converter = unit.getConverterTo(toUnit);
         setUnit(toUnit);
         setToolWidth(converter.convert(toolWidth));
         setDepth(converter.convert(depth));

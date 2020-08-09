@@ -9,14 +9,13 @@ import com.gcodebuilder.model.DistanceMode;
 import com.gcodebuilder.model.FeedRateMode;
 import com.gcodebuilder.model.GCodeBuilder;
 import com.gcodebuilder.model.LengthUnit;
+import com.gcodebuilder.model.LengthUnitConverter;
 import com.gcodebuilder.model.MotionMode;
 import com.gcodebuilder.model.Side;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import javax.measure.UnitConverter;
 
 @Getter
 @Setter
@@ -45,7 +44,7 @@ public class GCodeProfileRecipe extends GCodeRecipe {
     }
 
     public void convertToUnit(LengthUnit toUnit) {
-        UnitConverter converter = unit.getUnit().getConverterTo(toUnit.getUnit());
+        LengthUnitConverter converter = unit.getConverterTo(toUnit);
         setUnit(toUnit);
         setToolWidth(converter.convert(toolWidth));
         setDepth(converter.convert(depth));

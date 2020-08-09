@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import com.gcodebuilder.canvas.*?>
+<?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.input.*?>
@@ -74,10 +75,28 @@
                   <Circle fill="#46648c" radius="12.0" stroke="BLACK" strokeType="INSIDE" />
                </graphic>
             </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="62.0" mnemonicParsing="false" onAction="#selectPathTool" prefHeight="48.0" prefWidth="48.0" text="PATH" toggleGroup="$tools">
+            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="62.0" mnemonicParsing="false" onAction="#selectPathTool" prefHeight="48.0" prefWidth="48.0" toggleGroup="$tools">
                <font>
                   <Font size="10.0" />
                </font>
+               <graphic>
+                  <Polygon fill="#46648c" stroke="BLACK" strokeType="INSIDE">
+                     <points>
+                        <Double fx:value="0.0" />
+                        <Double fx:value="0.0" />
+                        <Double fx:value="24.0" />
+                        <Double fx:value="0.0" />
+                        <Double fx:value="18.0" />
+                        <Double fx:value="12.0" />
+                        <Double fx:value="24.0" />
+                        <Double fx:value="24.0" />
+                        <Double fx:value="0.0" />
+                        <Double fx:value="24.0" />
+                        <Double fx:value="6.0" />
+                        <Double fx:value="12.0" />
+                    </points>
+                  </Polygon>
+               </graphic>
             </ToggleButton>
             <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="62.0" mnemonicParsing="false" onAction="#selectEditTool" prefHeight="48.0" prefWidth="48.0" text="EDIT" toggleGroup="$tools">
                <font>
@@ -134,7 +153,7 @@
                         <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-                  <MenuItem onAction="#saveGCode" fx:id="saveGCodeItem" text="Save GCode" disable="true">
+                  <MenuItem fx:id="saveGCodeItem" disable="true" onAction="#saveGCode" text="Save GCode">
                      <accelerator>
                         <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
