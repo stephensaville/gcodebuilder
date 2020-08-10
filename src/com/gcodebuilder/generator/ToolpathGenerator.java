@@ -2,6 +2,7 @@ package com.gcodebuilder.generator;
 
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Path;
+import com.gcodebuilder.geometry.Point;
 import com.gcodebuilder.geometry.Segment;
 import com.gcodebuilder.geometry.UnitVector;
 import javafx.geometry.Point2D;
@@ -22,7 +23,7 @@ import java.util.ListIterator;
 import java.util.stream.Collectors;
 
 public class ToolpathGenerator {
-    private static final Paint DEFAULT_PAINT = Color.BLACK;
+    private static final Paint PATH_PAINT = Color.BLACK;
     private static final Paint VALID_PAINT = Color.GREEN;
     private static final Paint INVALID_PAINT = Color.RED;
     private static final Paint INSIDE_PAINT = Color.PURPLE;
@@ -467,7 +468,7 @@ public class ToolpathGenerator {
         }
         setValidStroke(ctx, toSideValid);
         drawLine(ctx, lastSplitPoint, toolpathSegment.getTo());
-        ctx.setStroke(DEFAULT_PAINT);
+        ctx.setStroke(PATH_PAINT);
         for (ToolpathSplitPoint splitPoint : toolpathSegment.getSplitPoints()) {
             drawPoint(ctx, splitPoint.getPoint());
         }
@@ -526,14 +527,14 @@ public class ToolpathGenerator {
         }
     }
 
-    private enum DisplayMode {
+    public enum DisplayMode {
         SPLIT_POINTS,
         VALID_SEGMENTS,
         PARTITIONED_TOOLPATHS,
         INSIDE_OUTSIDE
     }
 
-    private void drawToolpath(GraphicsContext ctx, DisplayMode displayMode) {
+    public void drawToolpath(GraphicsContext ctx, DisplayMode displayMode) {
         List<Segment> connectedEdges = new ArrayList<>();
         List<List<ToolpathSegment>> connectedToolpathSides = new ArrayList<>();
 
@@ -556,18 +557,22 @@ public class ToolpathGenerator {
                 connectToolpathSegments(rightToolpathSegments);
                 connectedToolpathSides.add(rightToolpathSegments);
             } else {
-                for (Segment segment : path.getSegments()) {
-                    drawPoint(ctx, segment.getFrom());
-                    drawLine(ctx, segment);
+                Point prevPoint = null;
+                for (Point point : path.getPoints()) {
+                    drawPoint(ctx, point.asPoint2D());
+                    if (prevPoint != null) {
+                        drawLine(ctx, prevPoint.asPoint2D(), point.asPoint2D());
+                    }
+                    prevPoint = point;
                 }
             }
         }
 
         if (!connectedToolpathSides.isEmpty()) {
             List<ToolpathSegment> allToolpathSegments = new ArrayList<>();
+            connectedToolpathSides.forEach(allToolpathSegments::addAll);
             for (List<ToolpathSegment> sameSideSegments : connectedToolpathSides) {
                 intersectWithSameSideCorners(sameSideSegments, allToolpathSegments);
-                allToolpathSegments.addAll(sameSideSegments);
             }
             for (int i = 0; i < allToolpathSegments.size(); ++i) {
                 intersectToolpathSegments(i, allToolpathSegments);
