@@ -72,6 +72,10 @@ public class Path extends Shape<Path.Handle> {
         segments = null;
     }
 
+    public void addPoint(Point2D point2D) {
+        addPoint(new Point(point2D));
+    }
+
     public boolean updatePoint(int pointIndex, Point newPoint) {
         if (pointIndex >= points.size()) {
             return false;

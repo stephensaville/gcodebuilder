@@ -22,11 +22,18 @@ public class PathBuilderController {
     @FXML private Canvas pathCanvas;
 
     private GraphicsContext ctx;
-    private List<Point2D> points = new ArrayList<>();
-    private Point2D startPoint = null;
-    private int currentPointIndex = 0;
-    private boolean pathClosed = false;
+    private ToolpathGenerator generator = new ToolpathGenerator();
+    private List<Path> paths = new ArrayList<>();
+    private Path currentPath;
+    private Point2D startPoint;
+    private int currentPointIndex;
     private DisplayMode displayMode = DisplayMode.SPLIT_POINTS;
+
+    public PathBuilderController() {
+        currentPath = new Path();
+        paths.add(currentPath);
+        generator.addPath(currentPath);
+    }
 
     @FXML
     public void initialize() {
@@ -50,59 +57,52 @@ public class PathBuilderController {
 
     private void redrawPath() {
         ctx.clearRect(0, 0, pathCanvas.getWidth(), pathCanvas.getHeight());
-
-        Path path = new Path();
-        points.forEach(point -> path.addPoint(new Point(point)));
-        path.setClosed(pathClosed);
-
-        ToolpathGenerator generator = new ToolpathGenerator();
-        generator.addPath(path);
         generator.drawToolpath(ctx, displayMode);
     }
 
     public void mousePressOnCanvas(MouseEvent ev) {
         startPoint = new Point2D(ev.getX(), ev.getY());
-        currentPointIndex = points.size();
+        currentPointIndex = currentPath.getPointCount();
 
         for (int pointIndex = 0; pointIndex < currentPointIndex; ++pointIndex) {
-            if (startPoint.distance(points.get(pointIndex)) <= POINT_RADIUS) {
+            if (currentPath.getPoint(pointIndex).isSame(startPoint, generator.getPointRadius())) {
                 currentPointIndex = pointIndex;
             }
         }
 
-        if (pathClosed) {
+        if (currentPath.isClosed()) {
             return;
         }
 
-        if (currentPointIndex == points.size()) {
-            points.add(startPoint);
+        if (currentPointIndex == currentPath.getPointCount()) {
+            currentPath.addPoint(startPoint);
         } else if (currentPointIndex == 0) {
-            pathClosed = true;
+            currentPath.setClosed(true);
         }
 
         redrawPath();
     }
 
-    private Point2D moveCurrentPoint(MouseEvent ev) {
+    private Point moveCurrentPoint(MouseEvent ev) {
         Point2D dragPoint = new Point2D(ev.getX(), ev.getY());
         Point2D offset = dragPoint.subtract(startPoint);
-        return points.get(currentPointIndex).add(offset);
+        return currentPath.getPoint(currentPointIndex).add(offset);
     }
 
     public void mouseReleaseOnCanvas(MouseEvent ev) {
-        if (startPoint != null && currentPointIndex < points.size()) {
-            points.set(currentPointIndex, moveCurrentPoint(ev));
+        if (startPoint != null && currentPointIndex < currentPath.getPointCount()) {
+            currentPath.updatePoint(currentPointIndex, moveCurrentPoint(ev));
             redrawPath();
         }
     }
 
     public void mouseDragOnCanvas(MouseEvent ev) {
-        if (startPoint != null && currentPointIndex < points.size()) {
-            Point2D origPoint = points.get(currentPointIndex);
-            Point2D movedPoint = moveCurrentPoint(ev);
-            points.set(currentPointIndex, movedPoint);
+        if (startPoint != null && currentPointIndex < currentPath.getPointCount()) {
+            Point origPoint = currentPath.getPoint(currentPointIndex);
+            Point movedPoint = moveCurrentPoint(ev);
+            currentPath.updatePoint(currentPointIndex, movedPoint);
             redrawPath();
-            points.set(currentPointIndex, origPoint);
+            currentPath.updatePoint(currentPointIndex, origPoint);
         }
     }
 
@@ -127,10 +127,11 @@ public class PathBuilderController {
     }
 
     public void resetPath() {
-        points.clear();
+        paths.clear();
+        currentPath = new Path();
+        paths.add(currentPath);
         startPoint = null;
         currentPointIndex = 0;
-        pathClosed = false;
         redrawPath();
     }
 }
