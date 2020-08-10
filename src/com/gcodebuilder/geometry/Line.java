@@ -31,6 +31,25 @@ public class Line {
         return getDirection().getAngle();
     }
 
+    /**
+     * Computes X coordinate of a point on the line with the given Y coordinate.
+     *
+     * @param y y coordinate of point on line
+     * @return x coordinate of point on line
+     */
+    public double calculateX(double y) {
+        double yOffset = y - from.getY();
+        if (direction.getY() != 0) {
+            return from.getX() + yOffset * direction.getX() / direction.getY();
+        } else if (yOffset > 0) {
+            return Double.POSITIVE_INFINITY;
+        } else if (yOffset < 0) {
+            return Double.NEGATIVE_INFINITY;
+        } else {
+            return from.getX();
+        }
+    }
+
     @Override
     public String toString() {
         return String.format("Line(from=(%f,%f), direction=(%f,%f))",

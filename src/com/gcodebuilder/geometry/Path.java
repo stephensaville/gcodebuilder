@@ -1,6 +1,7 @@
 package com.gcodebuilder.geometry;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
@@ -12,12 +13,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Path extends Shape<Path.Handle> {
     private static final Logger log = LogManager.getLogger(Path.class);
 
     private List<Point> points;
+    private List<Segment> segments;
 
     @Getter @Setter
     private boolean closed;
@@ -34,6 +37,28 @@ public class Path extends Shape<Path.Handle> {
         this.closed = false;
     }
 
+    public List<Point> getPoints() {
+        return Collections.unmodifiableList(points);
+    }
+
+    @JsonIgnore
+    public List<Segment> getSegments() {
+        if (points.size() < 2) {
+            return Collections.emptyList();
+        }
+        if (segments == null) {
+            segments = new ArrayList<>();
+            Point prevPoint = closed ? points.get(points.size() - 1) : null;
+            for (Point currentPoint : points) {
+                if (prevPoint != null) {
+                    segments.add(Segment.of(prevPoint.asPoint2D(), currentPoint.asPoint2D()));
+                }
+                prevPoint = currentPoint;
+            }
+        }
+        return segments;
+    }
+
     public int getPointCount() {
         return points.size();
     }
@@ -44,6 +69,7 @@ public class Path extends Shape<Path.Handle> {
 
     public void addPoint(Point point) {
         this.points.add(point);
+        segments = null;
     }
 
     public boolean updatePoint(int pointIndex, Point newPoint) {
@@ -51,6 +77,7 @@ public class Path extends Shape<Path.Handle> {
             return false;
         } else if (!newPoint.equals(points.get(pointIndex))) {
             points.set(pointIndex, newPoint);
+            segments = null;
             return true;
         } else {
             return false;

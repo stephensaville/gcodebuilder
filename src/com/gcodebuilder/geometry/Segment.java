@@ -5,6 +5,8 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+
 @Getter
 public class Segment extends Line {
     private static final Logger log = LogManager.getLogger(Segment.class);
@@ -68,6 +70,39 @@ public class Segment extends Line {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Returns true if the horizontal line passing through point intersects this segment, and the x coordinate of
+     * point is less than the x coordinate of the intersection point. In other words, if point is to the left of
+     * the intersection point in the typical right-handed cartesian coordinate system. This function can be used
+     * to build an algorithm to check if a point is inside a path composed of segments using an even-odd winding
+     * rule that flips between even and odd when this function returns true.
+     *
+     * @param point a point
+     * @return true if rule should flip between even and odd, false if not
+     */
+    public boolean isWindingMatch(Point2D point) {
+        return (point.getY() < getFrom().getY() != point.getY() < getTo().getY()) &&
+                point.getX() < calculateX(point.getY());
+    }
+
+    /**
+     * Checks if a point is inside the path defined by a list of segments. This function assumes the path is closed,
+     * but does not check if the path is closed, so this function should only be used with paths known to be closed.
+     *
+     * @param path path defined by a list of segments
+     * @param point a point
+     * @return true if point is inside the path, false if point is outside the path
+     */
+    public static boolean isPointInsidePath(List<Segment> path, Point2D point) {
+        boolean pointInPath = false;
+        for (Segment segment : path) {
+            if (segment.isWindingMatch(point)) {
+                pointInPath = !pointInPath;
+            }
+        }
+        return pointInPath;
     }
 
     @Override
