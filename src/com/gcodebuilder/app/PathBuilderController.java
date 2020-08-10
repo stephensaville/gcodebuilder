@@ -13,7 +13,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.ArcType;
-import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -115,8 +114,7 @@ public class PathBuilderController {
         private final Point2D point;
         private final boolean fromSideValid;
         private final boolean toSideValid;
-        private final Point2D edgePoint;
-        private final Point2D connectionPoint;
+        private final ToolpathConnection connection;
     }
 
     @RequiredArgsConstructor
@@ -127,38 +125,46 @@ public class PathBuilderController {
         public int compare(ToolpathSplitPoint left, ToolpathSplitPoint right) {
             double leftDistance = from.distance(left.getPoint());
             double rightDistance = from.distance(right.getPoint());
-            if (leftDistance < rightDistance) {
-                return -1;
-            } else if (leftDistance > rightDistance) {
-                return 1;
-            } else {
-                return 0;
-            }
+            return Double.compare(leftDistance, rightDistance);
         }
     }
 
+    // NOTE: must not use @Data because this class uses instance identity
     @Getter
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    @RequiredArgsConstructor
+    private static class ToolpathConnection {
+        private final Point2D connectionPoint;
+    }
+
+    @Getter
     private static class ToolpathSegment {
         private final Segment segment;
         private final double toolRadius;
         private final UnitVector towards;
         private final UnitVector away;
-        private final Point2D fromEdgePoint;
-        private final Point2D toEdgePoint;
 
         @Setter
-        private Point2D fromConnectionPoint = null;
+        private ToolpathConnection fromConnection;
 
         @Setter
-        private Point2D toConnectionPoint = null;
+        private ToolpathConnection toConnection;
 
         private final List<ToolpathSplitPoint> splitPoints = new ArrayList<>();
         private boolean splitPointsSorted = true;
 
+        public ToolpathSegment(Segment segment, double toolRadius, UnitVector towards, UnitVector away,
+                               ToolpathConnection fromConnection, ToolpathConnection toConnection) {
+            this.segment = segment;
+            this.toolRadius = toolRadius;
+            this.towards = towards;
+            this.away = away;
+            this.fromConnection = fromConnection;
+            this.toConnection = toConnection;
+        }
+
         public static ToolpathSegment fromEdge(Segment edge, double toolRadius, UnitVector towards, UnitVector away) {
-            return new ToolpathSegment(edge.move(away.multiply(toolRadius)),
-                    toolRadius, towards, away, edge.getFrom(), edge.getTo());
+            return new ToolpathSegment(edge.move(away.multiply(toolRadius)), toolRadius, towards, away,
+                    new ToolpathConnection(edge.getFrom()), new ToolpathConnection(edge.getTo()));
         }
 
         public Point2D intersect(ToolpathSegment other) {
@@ -173,14 +179,13 @@ public class PathBuilderController {
             return segment.getTo();
         }
 
-        public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid, Point2D edgePoint,
-                          Point2D connectionPoint) {
-            splitPoints.add(new ToolpathSplitPoint(splitPoint, fromSideValid, toSideValid, edgePoint, connectionPoint));
+        public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid, ToolpathConnection connection) {
+            splitPoints.add(new ToolpathSplitPoint(splitPoint, fromSideValid, toSideValid, connection));
             splitPointsSorted = false;
         }
 
         public ToolpathSegment flip() {
-            return new ToolpathSegment(segment.flip(), toolRadius, towards, away, toEdgePoint, fromEdgePoint);
+            return new ToolpathSegment(segment.flip(), toolRadius, towards, away, toConnection, fromConnection);
         }
 
         public void sortSplitPoints() {
@@ -222,15 +227,13 @@ public class PathBuilderController {
             List<ToolpathSegment> validSegments = new ArrayList<>();
             sortSplitPoints();
             ToolpathSplitPoint prevSplitPoint = new ToolpathSplitPoint(segment.getFrom(),
-                true, true, fromEdgePoint, fromConnectionPoint);
+                true, true, fromConnection);
             for (ToolpathSplitPoint splitPoint : splitPoints) {
                 if (prevSplitPoint.isToSideValid() && splitPoint.isFromSideValid()) {
                     ToolpathSegment validSegment = new ToolpathSegment(
                             Segment.of(prevSplitPoint.getPoint(), splitPoint.getPoint()),
-                            toolRadius, towards, away, prevSplitPoint.getEdgePoint(),
-                            splitPoint.getEdgePoint());
-                    validSegment.setFromConnectionPoint(prevSplitPoint.getConnectionPoint());
-                    validSegment.setToConnectionPoint(splitPoint.getConnectionPoint());
+                            toolRadius, towards, away, prevSplitPoint.getConnection(),
+                            splitPoint.getConnection());
                     validSegments.add(validSegment);
                 }
                 prevSplitPoint = splitPoint;
@@ -238,10 +241,8 @@ public class PathBuilderController {
             if (prevSplitPoint.isToSideValid()) {
                 ToolpathSegment validSegment = new ToolpathSegment(
                         Segment.of(prevSplitPoint.getPoint(), segment.getTo()),
-                        toolRadius, towards, away, prevSplitPoint.getEdgePoint(),
-                        toEdgePoint);
-                validSegment.setFromConnectionPoint(prevSplitPoint.getConnectionPoint());
-                validSegment.setToConnectionPoint(toConnectionPoint);
+                        toolRadius, towards, away, prevSplitPoint.getConnection(),
+                        toConnection);
                 validSegments.add(validSegment);
             }
             return validSegments;
@@ -261,8 +262,7 @@ public class PathBuilderController {
     private void connectToolpathSegments(List<ToolpathSegment> sameSideSegments) {
         ToolpathSegment prev = sameSideSegments.get(sameSideSegments.size() - 1);
         for (ToolpathSegment current : sameSideSegments) {
-            current.setFromConnectionPoint(prev.getTo());
-            prev.setToConnectionPoint(current.getFrom());
+            prev.setToConnection(current.getFromConnection());
             prev = current;
         }
     }
@@ -273,17 +273,17 @@ public class PathBuilderController {
             ToolpathSegment other = toolpathSegments.get(j);
             Point2D intersectionPoint = current.intersect(other);
             if (intersectionPoint != null) {
+                ToolpathConnection connection = new ToolpathConnection(intersectionPoint);
+
                 double angleFromCurrentToTowards = Math.abs(Math2D.subtractAngle(
                         other.getTowards().getAngle(), current.getSegment().getAngle()));
                 boolean currentFromSideValid = (angleFromCurrentToTowards <= Math.PI/2);
-                current.split(intersectionPoint, currentFromSideValid, !currentFromSideValid,
-                        null, intersectionPoint);
+                current.split(intersectionPoint, currentFromSideValid, !currentFromSideValid, connection);
 
                 double angleFromOtherToTowards = Math.abs(Math2D.subtractAngle(
                         current.getTowards().getAngle(), other.getSegment().getAngle()));
                 boolean otherFromSideValid = (angleFromOtherToTowards <= Math.PI/2);
-                other.split(intersectionPoint, otherFromSideValid, !otherFromSideValid,
-                        null, intersectionPoint);
+                other.split(intersectionPoint, otherFromSideValid, !otherFromSideValid, connection);
             }
         }
     }
@@ -296,7 +296,7 @@ public class PathBuilderController {
             return;
         }
 
-        Point2D cornerPoint = current.getToEdgePoint();
+        Point2D cornerPoint = current.getToConnection().getConnectionPoint();
         if (cornerPoint == null) {
             return;
         }
@@ -325,14 +325,14 @@ public class PathBuilderController {
 
             Point2D projectionPoint = otherSegment.getSegment().project(cornerPoint);
             if (projectionPoint == null) {
-                // projected corner is outside segment
+                // projected corner outside segment
                 continue;
             }
 
             Segment cornerToProjection = Segment.of(cornerPoint, projectionPoint);
             double cornerToProjectionLengthSquared = Math2D.lengthSquared(cornerToProjection.getVector());
             if (cornerToProjectionLengthSquared >= toolRadiusSquared) {
-                // corner is too far from segment
+                // corner too far from segment
                 continue;
             }
 
@@ -347,12 +347,13 @@ public class PathBuilderController {
             Segment cornerToLeftIntersection = Segment.of(cornerPoint, leftIntersectionPoint);
             double angleToLeftIntersection = Math2D.subtractAngle(cornerToLeftIntersection.getAngle(), arcBegin.getAngle());
             if (angleToLeftIntersection > 0 && angleToLeftIntersection < arcAngle) {
-                // left intersection is inside arc
-                otherSegment.split(leftIntersectionPoint, fromToLeft, !fromToLeft, cornerPoint, arcEnd.getTo());
+                // left intersection inside corner arc
+                ToolpathConnection connection = new ToolpathConnection(cornerPoint);
+                otherSegment.split(leftIntersectionPoint, fromToLeft, !fromToLeft, connection);
                 if (arcEnd == arcCurrent) {
-                    current.setToConnectionPoint(leftIntersectionPoint);
+                    current.setToConnection(connection);
                 } else {
-                    next.setFromConnectionPoint(leftIntersectionPoint);
+                    next.setFromConnection(connection);
                 }
             }
 
@@ -361,12 +362,14 @@ public class PathBuilderController {
             Segment cornerToRightIntersection = Segment.of(cornerPoint, rightToIntersectionPoint);
             double angleToRightIntersection = Math2D.subtractAngle(cornerToRightIntersection.getAngle(), arcBegin.getAngle());
             if (angleToRightIntersection > 0 && angleToRightIntersection < arcAngle) {
-                // right intersection is inside arc
-                otherSegment.split(rightToIntersectionPoint, !fromToLeft, fromToLeft, cornerPoint, arcBegin.getTo());
+                // right intersection inside corner arc
+                ToolpathConnection connection = new ToolpathConnection(cornerPoint);
+                otherSegment.split(rightToIntersectionPoint, !fromToLeft, fromToLeft, connection);
                 if (arcBegin == arcCurrent) {
-                    current.setToConnectionPoint(rightToIntersectionPoint);
+                    current.setToConnection(connection);
                 } else {
-                    next.setFromConnectionPoint(rightToIntersectionPoint);
+                    next.setFromConnection(connection);
+
                 }
             }
         }
@@ -399,19 +402,36 @@ public class PathBuilderController {
         return p1.distance(p2) < MIN_POINT_DISTANCE;
     }
 
+    private static boolean isConnected(ToolpathSegment prev, ToolpathSegment next) {
+        if (prev.getToConnection().equals(next.getFromConnection())) {
+            return true;
+        }
+        return isSamePoint(prev.getToConnection().getConnectionPoint(),
+                next.getFromConnection().getConnectionPoint());
+    }
+
     private static boolean isToolpathClosed(List<ToolpathSegment> toolpath) {
-        if (toolpath.size() <= 1) {
+        if (toolpath.size() < 3) {
             return false;
         }
         ToolpathSegment first = toolpath.get(0);
         ToolpathSegment last = toolpath.get(toolpath.size() - 1);
-        if (isSamePoint(first.getFrom(), last.getTo())) {
-            return true;
-        }
-        Point2D firstEdgePoint = first.getFromEdgePoint();
-        Point2D lastEdgePoint = last.getToEdgePoint();
-        if (isSamePoint(firstEdgePoint, lastEdgePoint)) {
-            return true;
+        return isConnected(last, first);
+    }
+
+    private static boolean closeToolpath(List<ToolpathSegment> toolpath) {
+        for (int firstIndex = 0; firstIndex < toolpath.size() - 2; ++firstIndex) {
+            for (int lastIndex = toolpath.size() - 1; lastIndex > firstIndex + 1; --lastIndex) {
+                if (isConnected(toolpath.get(lastIndex), toolpath.get(firstIndex))) {
+                    if (lastIndex < toolpath.size() - 1) {
+                        toolpath.subList(lastIndex + 1, toolpath.size()).clear();
+                    }
+                    if (firstIndex > 0) {
+                        toolpath.subList(0, firstIndex).clear();
+                    }
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -429,23 +449,34 @@ public class PathBuilderController {
             ListIterator<ToolpathSegment> segmentIterator = remainingSegments.listIterator();
             while (segmentIterator.hasNext()) {
                 ToolpathSegment other = segmentIterator.next();
-                if (isSamePoint(current.getToConnectionPoint(), other.getFrom())) {
+                if (current.getToConnection().equals(other.getFromConnection())) {
                     next = other;
                     segmentIterator.remove();
                     break;
                 }
-                if (isSamePoint(current.getToConnectionPoint(), other.getTo())) {
+                if (current.getToConnection().equals(other.getToConnection())) {
                     next = other.flip();
                     segmentIterator.remove();
                     break;
                 }
-                if (isSamePoint(current.getTo(), other.getFromConnectionPoint())) {
-                    next = other;
-                    segmentIterator.remove();
-                }
-                if (isSamePoint(current.getTo(), other.getToConnectionPoint())) {
-                    next = other.flip();
-                    segmentIterator.remove();;
+            }
+
+            if (next == null) {
+                segmentIterator = remainingSegments.listIterator();
+                while (segmentIterator.hasNext()) {
+                    ToolpathSegment other = segmentIterator.next();
+                    if (isSamePoint(current.getToConnection().getConnectionPoint(),
+                            other.getFromConnection().getConnectionPoint())) {
+                        next = other;
+                        segmentIterator.remove();
+                        break;
+                    }
+                    if (isSamePoint(current.getToConnection().getConnectionPoint(),
+                            other.getToConnection().getConnectionPoint())) {
+                        next = other.flip();
+                        segmentIterator.remove();
+                        break;
+                    }
                 }
             }
 
@@ -454,7 +485,7 @@ public class PathBuilderController {
                 current = next;
             } else {
                 // next not found; finish current toolpath
-                if (isToolpathClosed(currentToolpath)) {
+                if (closeToolpath(currentToolpath)) {
                     result.add(currentToolpath);
                 }
                 currentToolpath = new ArrayList<>();
@@ -539,12 +570,12 @@ public class PathBuilderController {
     private void drawValidSegment(ToolpathSegment toolpathSegment) {
         ctx.setStroke(VALID_PAINT);
         drawToolpathSegment(toolpathSegment);
-        Point2D fromConnectionPoint = toolpathSegment.getFromConnectionPoint();
+        Point2D fromConnectionPoint = toolpathSegment.getFromConnection().getConnectionPoint();
         if (fromConnectionPoint != null) {
             ctx.setStroke(FROM_PAINT);
             drawLine(toolpathSegment.getFrom(), fromConnectionPoint);
         }
-        Point2D toConnectionPoint = toolpathSegment.getToConnectionPoint();
+        Point2D toConnectionPoint = toolpathSegment.getToConnection().getConnectionPoint();
         if (toConnectionPoint != null) {
             ctx.setStroke(TO_PAINT);
             drawLine(toolpathSegment.getTo(), toConnectionPoint);
@@ -556,30 +587,35 @@ public class PathBuilderController {
         for (List<ToolpathSegment> toolpath : toolpaths) {
             ++toolpathIndex;
 
-            ToolpathSegment prevSegment = toolpath.get(toolpath.size() - 1);
-            for (ToolpathSegment segment : toolpath) {
-                Point2D textOffset = segment.getTowards().multiply(segment.getToolRadius() / 3);
-                Point2D textPoint = segment.getFrom()
-                        .midpoint(segment.getTo())
-                        .add(textOffset);
-                ctx.strokeText(String.valueOf(toolpathIndex), textPoint.getX(), textPoint.getY());
+            boolean closed = isToolpathClosed(toolpath);
 
-                if (!isSamePoint(prevSegment.getTo(), segment.getFrom())) {
+            ToolpathSegment prevSegment = toolpath.get(toolpath.size() - 1);
+            int segmentIndex = 0;
+            for (ToolpathSegment segment : toolpath) {
+                ++segmentIndex;
+
+                Point2D textPoint = segment.getFrom().midpoint(segment.getTo());
+                ctx.strokeText(String.format("%d.%d", toolpathIndex, segmentIndex),
+                        textPoint.getX(), textPoint.getY());
+
+                if (!closed) {
+                    ctx.setLineDashes(POINT_RADIUS, POINT_RADIUS);
+                }
+                Point2D connectionPoint = segment.getFromConnection().getConnectionPoint();
+                if (!isSamePoint(segment.getFrom(), connectionPoint)) {
                     // draw an arc to join outside corner segments
-                    if (segment.getFromEdgePoint() != null) {
-                        drawArc(segment.getFromEdgePoint(), prevSegment.getTo(), segment.getFrom());
-                    }
+                    drawArc(connectionPoint, prevSegment.getTo(), segment.getFrom());
                 }
                 drawToolpathSegment(segment);
+                ctx.setLineDashes();
 
                 prevSegment = segment;
             }
+
         }
     }
 
     private void redrawPath() {
-        System.out.println("redrawPath");
-
         ctx.clearRect(0, 0, pathCanvas.getWidth(), pathCanvas.getHeight());
 
         if (pathClosed) {
