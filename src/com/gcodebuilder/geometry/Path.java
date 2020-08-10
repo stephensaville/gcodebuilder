@@ -123,6 +123,10 @@ public class Path extends Shape<Path.Handle> {
         return null;
     }
 
+    public Handle getHandle(int pointIndex) {
+        return new Handle(pointIndex);
+    }
+
     private boolean hasHandleMoved(Handle handle, InteractionEvent event) {
         if (!handle.isMoved() && !event.getPoint().equals(event.getStartPoint())) {
             handle.setMoved(true);

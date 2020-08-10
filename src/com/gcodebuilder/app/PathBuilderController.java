@@ -16,8 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PathBuilderController {
-    private static final double POINT_RADIUS = 5;
-
     @FXML private BorderPane rootPane;
     @FXML private Canvas pathCanvas;
 
@@ -25,8 +23,7 @@ public class PathBuilderController {
     private ToolpathGenerator generator = new ToolpathGenerator();
     private List<Path> paths = new ArrayList<>();
     private Path currentPath;
-    private Point2D startPoint;
-    private int currentPointIndex;
+    private Path.Handle currentHandle;
     private DisplayMode displayMode = DisplayMode.SPLIT_POINTS;
 
     public PathBuilderController() {
@@ -61,48 +58,44 @@ public class PathBuilderController {
     }
 
     public void mousePressOnCanvas(MouseEvent ev) {
-        startPoint = new Point2D(ev.getX(), ev.getY());
-        currentPointIndex = currentPath.getPointCount();
+        Point2D mousePoint = new Point2D(ev.getX(), ev.getY());
 
-        for (int pointIndex = 0; pointIndex < currentPointIndex; ++pointIndex) {
-            if (currentPath.getPoint(pointIndex).isSame(startPoint, generator.getPointRadius())) {
-                currentPointIndex = pointIndex;
+        currentHandle = null;
+        for (Path path : paths) {
+            currentHandle = path.getHandle(mousePoint, mousePoint, generator.getPointRadius());
+            if (currentHandle != null) {
+                currentPath = path;
+                break;
             }
         }
 
-        if (currentPath.isClosed()) {
-            return;
-        }
-
-        if (currentPointIndex == currentPath.getPointCount()) {
-            currentPath.addPoint(startPoint);
-        } else if (currentPointIndex == 0) {
+        if (currentHandle == null) {
+            currentPath = paths.get(paths.size() - 1);
+            int newPointIndex = currentPath.getPointCount();
+            currentPath.addPoint(mousePoint);
+            currentHandle = currentPath.getHandle(newPointIndex);
+        } else if (!currentPath.isClosed() && currentHandle.getPointIndex() == 0 && currentPath.getPointCount() > 2) {
             currentPath.setClosed(true);
+
+            Path newPath = new Path();
+            paths.add(newPath);
+            generator.addPath(newPath);
         }
 
         redrawPath();
     }
 
-    private Point moveCurrentPoint(MouseEvent ev) {
-        Point2D dragPoint = new Point2D(ev.getX(), ev.getY());
-        Point2D offset = dragPoint.subtract(startPoint);
-        return currentPath.getPoint(currentPointIndex).add(offset);
-    }
-
     public void mouseReleaseOnCanvas(MouseEvent ev) {
-        if (startPoint != null && currentPointIndex < currentPath.getPointCount()) {
-            currentPath.updatePoint(currentPointIndex, moveCurrentPoint(ev));
+        if (currentHandle != null) {
+            currentPath.updatePoint(currentHandle.getPointIndex(), new Point(ev.getX(), ev.getY()));
             redrawPath();
         }
     }
 
     public void mouseDragOnCanvas(MouseEvent ev) {
-        if (startPoint != null && currentPointIndex < currentPath.getPointCount()) {
-            Point origPoint = currentPath.getPoint(currentPointIndex);
-            Point movedPoint = moveCurrentPoint(ev);
-            currentPath.updatePoint(currentPointIndex, movedPoint);
+        if (currentHandle != null) {
+            currentPath.updatePoint(currentHandle.getPointIndex(), new Point(ev.getX(), ev.getY()));
             redrawPath();
-            currentPath.updatePoint(currentPointIndex, origPoint);
         }
     }
 
@@ -128,10 +121,11 @@ public class PathBuilderController {
 
     public void resetPath() {
         paths.clear();
+        generator.clearPaths();
         currentPath = new Path();
         paths.add(currentPath);
-        startPoint = null;
-        currentPointIndex = 0;
+        generator.addPath(currentPath);
+        currentHandle = null;
         redrawPath();
     }
 }

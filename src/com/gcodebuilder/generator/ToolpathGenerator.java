@@ -45,6 +45,14 @@ public class ToolpathGenerator {
         paths.add(path);
     }
 
+    public boolean removePath(Path path) {
+        return paths.remove(path);
+    }
+
+    public void clearPaths() {
+        paths.clear();
+    }
+
     @Data
     private static class ToolpathSplitPoint {
         private final Point2D point;
