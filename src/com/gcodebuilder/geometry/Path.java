@@ -172,4 +172,9 @@ public class Path extends Shape<Path.Handle> {
             prevPoint = point;
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("Path(%s)", points);
+    }
 }

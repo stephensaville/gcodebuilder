@@ -11,6 +11,7 @@ import com.gcodebuilder.app.tools.RectangleTool;
 import com.gcodebuilder.app.tools.SelectionTool;
 import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.canvas.GCodeCanvas;
+import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.ArcDistanceMode;
@@ -419,10 +420,16 @@ public class DrawingWindowController {
                 continue;
             }
 
-            GCodeRecipe recipe = drawing.getRecipe(recipeId);
+            GCodeRecipe recipe = drawing.getRecipe(recipeId).getRecipeForUnit(drawing.getLengthUnit());
+            GCodeGenerator generator = recipe.getGCodeGenerator(shape);
             builder.emptyLine();
-            builder.comment(String.format("shape:%s recipe:%s", shape, recipe));
-            recipe.generateGCode(shape, builder);
+            if (generator != null) {
+                builder.comment(String.format("shape:%s recipe:%s", shape, recipe));
+                generator.generateGCode(builder);
+            } else {
+                log.warn("Recipe:{} returned null generator for shape:{}", recipe, shape);
+                builder.comment(String.format("shape:%s recipe:%s !!! no generator available !!!", shape, recipe));
+            }
         }
 
         gCodeProgram = builder.build();

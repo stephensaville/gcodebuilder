@@ -2,8 +2,11 @@ package com.gcodebuilder.recipe;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.GCodeBuilder;
+import com.gcodebuilder.model.LengthUnit;
+import com.gcodebuilder.model.UnitMode;
 import com.google.common.base.Preconditions;
 import lombok.Data;
 
@@ -34,7 +37,21 @@ public abstract class GCodeRecipe implements Cloneable {
         }
     }
 
-    public abstract void generateGCode(Shape<?> shape, GCodeBuilder builder);
+    public abstract LengthUnit getUnit();
+
+    public abstract void convertToUnit(LengthUnit toUnit);
+
+    public GCodeRecipe getRecipeForUnit(LengthUnit unit) {
+        if (getUnit() != unit) {
+            GCodeRecipe recipe = clone();
+            recipe.convertToUnit(unit);
+            return recipe;
+        } else {
+            return this;
+        }
+    }
+
+    public abstract GCodeGenerator getGCodeGenerator(Shape<?> shape);
 
     @Override
     public String toString() {
