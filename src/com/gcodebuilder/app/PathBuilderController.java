@@ -5,12 +5,14 @@ import com.gcodebuilder.generator.ToolpathGenerator.DisplayMode;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Point;
 import javafx.beans.binding.DoubleBinding;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.transform.NonInvertibleTransformException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +52,13 @@ public class PathBuilderController {
                 .subtract(NodeSize.measureHeight(rootPane.getTop()))
                 .subtract(NodeSize.measureHeight(rootPane.getBottom()));
         pathCanvas.heightProperty().bind(heightBinding);
+
+        pathCanvas.heightProperty().addListener((obs, oldValue, newValue) -> resize());
+        resize();
+    }
+
+    private void resize() {
+        ctx.setTransform(1.0, 0.0, 0.0, -1.0, 0.0, pathCanvas.getHeight());
     }
 
     private void redrawPath() {
@@ -57,8 +66,16 @@ public class PathBuilderController {
         generator.drawToolpath(ctx, displayMode);
     }
 
+    private Point2D getMousePoint(MouseEvent ev) {
+        try {
+            return ctx.getTransform().inverseTransform(ev.getX(), ev.getY());
+        } catch (NonInvertibleTransformException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     public void mousePressOnCanvas(MouseEvent ev) {
-        Point2D mousePoint = new Point2D(ev.getX(), ev.getY());
+        Point2D mousePoint = getMousePoint(ev);
 
         currentHandle = null;
         for (Path path : paths) {
@@ -87,14 +104,14 @@ public class PathBuilderController {
 
     public void mouseReleaseOnCanvas(MouseEvent ev) {
         if (currentHandle != null) {
-            currentPath.updatePoint(currentHandle.getPointIndex(), new Point(ev.getX(), ev.getY()));
+            currentPath.updatePoint(currentHandle.getPointIndex(), new Point(getMousePoint(ev)));
             redrawPath();
         }
     }
 
     public void mouseDragOnCanvas(MouseEvent ev) {
         if (currentHandle != null) {
-            currentPath.updatePoint(currentHandle.getPointIndex(), new Point(ev.getX(), ev.getY()));
+            currentPath.updatePoint(currentHandle.getPointIndex(), new Point(getMousePoint(ev)));
             redrawPath();
         }
     }
@@ -109,13 +126,18 @@ public class PathBuilderController {
         redrawPath();
     }
 
+    public void displayInsideOutside() {
+        displayMode = DisplayMode.INSIDE_OUTSIDE;
+        redrawPath();
+    }
+
     public void displayPartitionedToolpaths() {
         displayMode = DisplayMode.PARTITIONED_TOOLPATHS;
         redrawPath();
     }
 
-    public void displayInsideOutside() {
-        displayMode = DisplayMode.INSIDE_OUTSIDE;
+    public void displayOrientedToolpaths() {
+        displayMode = DisplayMode.ORIENTED_TOOLPATHS;
         redrawPath();
     }
 

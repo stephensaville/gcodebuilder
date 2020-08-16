@@ -18,6 +18,7 @@
             <RadioButton mnemonicParsing="false" onAction="#displayValidSegments" text="Valid Segments" toggleGroup="$displayModeGroup" ButtonBar.buttonData="LEFT" />
             <RadioButton mnemonicParsing="false" onAction="#displayInsideOutside" text="Inside / Outside" toggleGroup="$displayModeGroup" ButtonBar.buttonData="LEFT" />
             <RadioButton mnemonicParsing="false" onAction="#displayPartitionedToolpaths" text="Partitioned Toolpaths" toggleGroup="$displayModeGroup" ButtonBar.buttonData="LEFT" />
+            <RadioButton mnemonicParsing="false" onAction="#displayOrientedToolpaths" text="Oriented Toolpaths" toggleGroup="$displayModeGroup" ButtonBar.buttonData="LEFT" />
          </buttons>
       </ButtonBar>
    </top>
