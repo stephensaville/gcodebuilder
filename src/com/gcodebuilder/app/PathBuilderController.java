@@ -1,11 +1,10 @@
 package com.gcodebuilder.app;
 
-import com.gcodebuilder.generator.ToolpathGenerator;
-import com.gcodebuilder.generator.ToolpathGenerator.DisplayMode;
+import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
+import com.gcodebuilder.generator.toolpath.ToolpathGenerator.DisplayMode;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Point;
 import javafx.beans.binding.DoubleBinding;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;

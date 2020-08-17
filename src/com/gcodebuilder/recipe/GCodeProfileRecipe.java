@@ -2,8 +2,10 @@ package com.gcodebuilder.recipe;
 
 import com.gcodebuilder.generator.GCodeCircleProfileGenerator;
 import com.gcodebuilder.generator.GCodeGenerator;
+import com.gcodebuilder.generator.GCodePathProfileGenerator;
 import com.gcodebuilder.generator.GCodeRectangleProfileGenerator;
 import com.gcodebuilder.geometry.Circle;
+import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Rectangle;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.Direction;
@@ -59,7 +61,9 @@ public class GCodeProfileRecipe extends GCodeRecipe {
         if (shape instanceof Rectangle) {
             return new GCodeRectangleProfileGenerator(this, (Rectangle)shape);
         } else if (shape instanceof Circle) {
-            return new GCodeCircleProfileGenerator(this, (Circle)shape);
+            return new GCodeCircleProfileGenerator(this, (Circle) shape);
+        } else if (shape instanceof Path) {
+            return new GCodePathProfileGenerator(this, (Path)shape);
         } else {
             return null;
         }
