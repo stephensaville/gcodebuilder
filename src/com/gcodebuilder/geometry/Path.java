@@ -3,6 +3,7 @@ package com.gcodebuilder.geometry;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import javafx.geometry.Point2D;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@JsonTypeName("PATH")
 public class Path extends Shape<Path.Handle> {
     private static final Logger log = LogManager.getLogger(Path.class);
 
@@ -59,6 +61,7 @@ public class Path extends Shape<Path.Handle> {
         return segments;
     }
 
+    @JsonIgnore
     public int getPointCount() {
         return points.size();
     }

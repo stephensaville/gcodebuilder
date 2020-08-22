@@ -424,11 +424,13 @@ public class DrawingWindowController {
             GCodeGenerator generator = recipe.getGCodeGenerator(shape);
             builder.emptyLine();
             if (generator != null) {
-                builder.comment(String.format("shape:%s recipe:%s", shape, recipe));
+                builder.comment(String.format("shape:%s recipe:%s",
+                        shape.getClass().getSimpleName(), recipe.getName()));
                 generator.generateGCode(builder);
             } else {
                 log.warn("Recipe:{} returned null generator for shape:{}", recipe, shape);
-                builder.comment(String.format("shape:%s recipe:%s !!! no generator available !!!", shape, recipe));
+                builder.comment(String.format("shape:%s recipe:%s - no generator available",
+                        shape.getClass().getSimpleName(), recipe.getName()));
             }
         }
 

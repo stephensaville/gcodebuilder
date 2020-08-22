@@ -6,6 +6,7 @@ import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.UnitVector;
+import com.gcodebuilder.model.ArcDistanceMode;
 import com.gcodebuilder.model.DistanceMode;
 import com.gcodebuilder.model.FeedRateMode;
 import com.gcodebuilder.model.GCodeBuilder;
@@ -36,6 +37,7 @@ public class GCodePathProfileGenerator implements GCodeGenerator {
                 recipe.getSide(), recipe.getDirection());
 
         builder .distanceMode(DistanceMode.ABSOLUTE)
+                .arcDistanceMode(ArcDistanceMode.INCREMENTAL)
                 .feedRateMode(FeedRateMode.UNITS_PER_MIN);
 
         double currentZ = recipe.getStockSurface();
@@ -71,7 +73,7 @@ public class GCodePathProfileGenerator implements GCodeGenerator {
 
                         builder.motionMode(arcMode).feedRate(recipe.getFeedRate())
                                 .XY(segment.getFrom().getX(), segment.getFrom().getY())
-                                .IJ(arcCenter.getY(), arcCenter.getY())
+                                .IJ(arcCenter.getX() - prevPoint.getX(), arcCenter.getY() - prevPoint.getY())
                                 .endLine();
                     }
 

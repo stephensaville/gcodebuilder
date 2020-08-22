@@ -1,10 +1,8 @@
 package com.gcodebuilder.model;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Data;
 
-@RequiredArgsConstructor
-@Getter
+@Data
 public class FeedRate implements GCodeWord {
     private final int rate;
 

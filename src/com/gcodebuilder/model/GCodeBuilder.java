@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class GCodeBuilder {
     @Getter
@@ -20,6 +21,9 @@ public class GCodeBuilder {
 
     @Getter
     private ArcDistanceMode arcDistanceMode;
+
+    @Getter
+    private FeedRate feedRate;
 
     private List<GCodeLine> lines = new ArrayList<>();
     private List<GCodeWord> currentLine = new ArrayList<>();
@@ -56,15 +60,30 @@ public class GCodeBuilder {
         return this;
     }
 
-    private <T extends GCodeWord> T emitOnModeChange(T currentMode, T newMode) {
+    private <T extends Enum<T> & GCodeWord> T emitOnModeChange(T currentMode, T newMode) {
         if (newMode != currentMode) {
             add(newMode);
+            return newMode;
+        } else {
+            return currentMode;
         }
-        return newMode;
+    }
+
+    private <T extends GCodeWord> T emitOnValueChange(T currentValue, T newValue) {
+        if (!Objects.equals(newValue, currentValue)) {
+            add(newValue);
+            return newValue;
+        } else {
+            return currentValue;
+        }
     }
 
     public GCodeBuilder motionMode(MotionMode motionMode) {
-        this.motionMode = emitOnModeChange(this.motionMode, motionMode);
+        if (motionMode != this.motionMode) {
+            add(motionMode);
+            this.motionMode = motionMode;
+            this.feedRate = null;
+        }
         return this;
     }
 
@@ -89,7 +108,8 @@ public class GCodeBuilder {
     }
 
     public GCodeBuilder feedRate(int feedRate) {
-        return add(new FeedRate(feedRate));
+        this.feedRate = emitOnValueChange(this.feedRate, new FeedRate(feedRate));
+        return this;
     }
 
     public GCodeBuilder X(double value) {

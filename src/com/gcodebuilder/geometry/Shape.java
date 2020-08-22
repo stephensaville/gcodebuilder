@@ -16,7 +16,8 @@ import org.apache.logging.log4j.Logger;
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="type")
 @JsonSubTypes({
         @JsonSubTypes.Type(Rectangle.class),
-        @JsonSubTypes.Type(Circle.class)
+        @JsonSubTypes.Type(Circle.class),
+        @JsonSubTypes.Type(Path.class)
 })
 public abstract class Shape<H> implements Drawable {
     private static final Logger log = LogManager.getLogger(Shape.class);
