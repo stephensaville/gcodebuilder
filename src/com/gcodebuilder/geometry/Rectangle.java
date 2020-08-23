@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
+import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
@@ -286,6 +287,22 @@ public class Rectangle extends Shape<Rectangle.Handle> {
     @Override
     public boolean resize(Handle handle, InteractionEvent event) {
         return scale(handle.getType().scale(this, event));
+    }
+
+    @Override
+    public Snapshot<Rectangle> save() {
+        return new Snapshot<>() {
+            private final double minX = getMinX();
+            private final double minY = getMinY();
+            private final double width = getWidth();
+            private final double height = getHeight();
+
+            @Override
+            public Rectangle restore() {
+                update(minX, minY, width, height);
+                return Rectangle.this;
+            }
+        };
     }
 
     @Override

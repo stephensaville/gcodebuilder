@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
+import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
@@ -29,6 +30,7 @@ public class Circle extends Shape<Circle.Handle> {
         private final Point originalCenter;
         private boolean moved = false;
     }
+
 
     @JsonCreator
     public Circle(@JsonProperty("center") Point center,
@@ -118,6 +120,20 @@ public class Circle extends Shape<Circle.Handle> {
     @Override
     public boolean resize(Handle handle, InteractionEvent event) {
         return edit(handle, event);
+    }
+
+    @Override
+    public Snapshot<Circle> save() {
+        return new Snapshot<>() {
+            private final Point center = getCenter();
+            private final double radius = getRadius();
+
+            @Override
+            public Circle restore() {
+                update(center, radius);
+                return Circle.this;
+            }
+        };
     }
 
     @Override

@@ -14,9 +14,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,6 +51,10 @@ public class Drawing implements Drawable {
             return true;
         }
         return false;
+    }
+
+    public boolean contains(Shape<?> shape) {
+        return shapes.contains(shape);
     }
 
     public GCodeRecipe getRecipe(int recipeId) {
@@ -93,6 +100,23 @@ public class Drawing implements Drawable {
                 return 0;
             }
         }).sum();
+    }
+
+    public boolean setSelectedShapes(Set<Shape<?>> selectedShapes) {
+        boolean selectionChanged = false;
+        for (Shape<?> shape : shapes) {
+            boolean selected = selectedShapes.contains(shape);
+            if (selected != shape.isSelected()) {
+                shape.setSelected(selected);
+                selectionChanged = true;
+            }
+        }
+        return selectionChanged;
+    }
+
+    public boolean setSelectedShapes(Shape<?>... selectedShapes) {
+        return setSelectedShapes(Arrays.asList(selectedShapes).stream()
+                .filter(Objects::nonNull).collect(Collectors.toSet()));
     }
 
     @Override

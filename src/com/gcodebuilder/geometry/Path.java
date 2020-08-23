@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
+import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
@@ -216,6 +217,22 @@ public class Path extends Shape<Path.Handle> {
             updated = updatePoint(pointIndex, newPoint) || updated;
         }
         return updated;
+    }
+
+    @Override
+    public Snapshot<Path> save() {
+        return new Snapshot<>() {
+            private final List<Point> points = new ArrayList<>(getPoints());
+            private final boolean closed = isClosed();
+
+            @Override
+            public Path restore() {
+                Path.this.points.clear();
+                Path.this.points.addAll(points);
+                Path.this.closed = closed;
+                return Path.this;
+            }
+        };
     }
 
     @Override

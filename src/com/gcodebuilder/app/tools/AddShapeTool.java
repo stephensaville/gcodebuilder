@@ -1,11 +1,16 @@
 package com.gcodebuilder.app.tools;
 
+import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
+import com.gcodebuilder.changelog.AddShapeChange;
+import com.gcodebuilder.changelog.Change;
 
-public abstract class ShapeTool<S extends Shape<?>> implements Tool {
+import java.util.function.Supplier;
+
+public abstract class AddShapeTool<S extends Shape<?>> implements Tool {
     private final Class<S> shapeClass;
 
-    protected ShapeTool(Class<S> shapeClass) {
+    protected AddShapeTool(Class<S> shapeClass) {
         this.shapeClass = shapeClass;
     }
 
@@ -39,5 +44,16 @@ public abstract class ShapeTool<S extends Shape<?>> implements Tool {
         if (!shape.isVisible()) {
             event.getDrawing().remove(shape);
         }
+    }
+
+    @Override
+    public Supplier<Change> prepareChange(final Drawing drawing, final Shape<?> shape) {
+        return () -> {
+            if (shape.isVisible()) {
+                return new AddShapeChange(shapeClass.getSimpleName(), drawing, shape.save());
+            } else {
+                return null;
+            }
+        };
     }
 }

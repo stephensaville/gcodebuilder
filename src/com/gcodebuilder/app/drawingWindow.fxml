@@ -146,6 +146,20 @@
                   </MenuItem>
                </items>
             </Menu>
+            <Menu text="_Edit">
+              <items>
+                <MenuItem fx:id="undoItem" disable="true" onAction="#undoChange" text="_Undo">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="redoItem" disable="true" onAction="#redoChange" text="_Redo">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+              </items>
+            </Menu>
             <Menu text="_GCode">
                <items>
                   <MenuItem onAction="#generateGCode" text="Generate GCode">

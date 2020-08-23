@@ -12,6 +12,9 @@ import com.gcodebuilder.app.tools.ResizeTool;
 import com.gcodebuilder.app.tools.SelectionTool;
 import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.canvas.GCodeCanvas;
+import com.gcodebuilder.changelog.Change;
+import com.gcodebuilder.changelog.ChangeLog;
+import com.gcodebuilder.changelog.SelectionChange;
 import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
@@ -42,6 +45,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class DrawingWindowController {
@@ -82,6 +86,12 @@ public class DrawingWindowController {
     @FXML
     private MenuItem saveGCodeItem;
 
+    @FXML
+    private MenuItem undoItem;
+
+    @FXML
+    private MenuItem redoItem;
+
     private RectangleTool rectangleTool = new RectangleTool();
     private CircleTool circleTool = new CircleTool();
     private PathTool pathTool = new PathTool();
@@ -100,6 +110,9 @@ public class DrawingWindowController {
     private Object currentHandle;
 
     private Set<Shape<?>> currentSelectedShapes = Collections.emptySet();
+
+    private final ChangeLog changeLog = new ChangeLog();
+    private Supplier<Change> changeSupplier = null;
 
     private FileOperations<Drawing> drawingFileOperations;
     private FileOperations<GCodeProgram> gCodeFileOperations;
@@ -279,6 +292,44 @@ public class DrawingWindowController {
         setCurrentTool(resizeTool);
     }
 
+    private void updateChangeLogMenuItems() {
+        if (changeLog.isUndoEnabled()) {
+            undoItem.setText(String.format("_Undo %s", changeLog.getUndoDescription()));
+            undoItem.setDisable(false);
+        } else {
+            undoItem.setText("_Undo");
+            undoItem.setDisable(true);
+        }
+        if (changeLog.isRedoEnabled()) {
+            redoItem.setText(String.format("_Redo %s", changeLog.getRedoDescription()));
+            redoItem.setDisable(false);
+        } else {
+            redoItem.setText("_Redo");
+            redoItem.setDisable(true);
+        }
+    }
+
+    public void doChange(Change change) {
+        if (change != null) {
+            changeLog.doChange(change);
+            updateChangeLogMenuItems();
+        }
+    }
+
+    public void undoChange() {
+        changeLog.undoChange();
+        updateChangeLogMenuItems();
+        checkSelectedShapes();
+        canvas.refresh();
+    }
+
+    public void redoChange() {
+        changeLog.redoChange();
+        updateChangeLogMenuItems();
+        checkSelectedShapes();
+        canvas.refresh();
+    }
+
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
         Point2D point = canvas.mouseToGrid(event, true);
         Point2D mousePoint = canvas.mouseToGrid(event, false);
@@ -304,9 +355,8 @@ public class DrawingWindowController {
                 handleRadius);
     }
 
-    private void checkSelectedShapes() {
+    private void checkSelectedShapes(Set<Shape<?>> selectedShapes) {
         // switch to recipe attached to selected shape
-        Set<Shape<?>> selectedShapes = drawing.getSelectedShapes();
         if (currentSelectedShapes.equals(selectedShapes)) {
             return;
         }
@@ -336,6 +386,10 @@ public class DrawingWindowController {
         drawing.setDirty(true);
     }
 
+    private void checkSelectedShapes() {
+        checkSelectedShapes(drawing.getSelectedShapes());
+    }
+
     private void refreshDrawingWhenDirty() {
         if (drawing.isDirty()) {
             canvas.refresh();
@@ -347,18 +401,22 @@ public class DrawingWindowController {
         if (currentTool != null) {
             currentShape = currentTool.down(toolEvent);
             if (currentTool.isSelectionTool()) {
+                final Set<Shape<?>> selectionBefore = currentSelectedShapes;
+                changeSupplier = () -> {
+                    Set<Shape<?>> selectionAfter = drawing.getSelectedShapes();
+                    if (selectionBefore.equals(selectionAfter)) {
+                        return null;
+                    } else {
+                        return new SelectionChange("Select", drawing, selectionBefore, selectionAfter);
+                    }
+                };
+
                 checkSelectedShapes();
             } else {
                 // default behavior select current shape for non-selection tools
-                boolean selectionChanged = false;
-                if (drawing.unselectAllShapes() > 0) {
-                    selectionChanged = true;
-                }
-                if (currentShape != null) {
-                    currentShape.setSelected(true);
-                    selectionChanged = true;
-                }
-                if (selectionChanged) {
+                changeSupplier = currentTool.prepareChange(drawing, currentShape);
+
+                if (drawing.setSelectedShapes(currentShape)) {
                     checkSelectedShapes();
                 }
             }
@@ -370,6 +428,7 @@ public class DrawingWindowController {
         InteractionEvent toolEvent = makeToolEvent(event, false);
         if (currentTool != null) {
             currentTool.drag(toolEvent);
+
             if (currentTool.isSelectionTool()) {
                 checkSelectedShapes();
             }
@@ -381,6 +440,12 @@ public class DrawingWindowController {
         InteractionEvent toolEvent = makeToolEvent(event, false);
         if (currentTool != null) {
             currentTool.up(toolEvent);
+
+            if (changeSupplier != null) {
+                doChange(changeSupplier.get());
+                changeSupplier = null;
+            }
+
             if (currentTool.isSelectionTool()) {
                 checkSelectedShapes();
             }

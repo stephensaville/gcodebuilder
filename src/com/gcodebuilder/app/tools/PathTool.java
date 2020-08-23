@@ -1,12 +1,16 @@
 package com.gcodebuilder.app.tools;
 
+import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Point;
 import com.gcodebuilder.geometry.Shape;
+import com.gcodebuilder.changelog.AddShapeChange;
+import com.gcodebuilder.changelog.Change;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class PathTool implements Tool {
     private static final Logger log = LogManager.getLogger(Path.class);
@@ -57,5 +61,10 @@ public class PathTool implements Tool {
     @Override
     public void up(InteractionEvent event) {
         updateCurrentPath(event);
+    }
+
+    @Override
+    public Supplier<Change> prepareChange(Drawing drawing, Shape<?> shape) {
+        return () -> new AddShapeChange("Path", drawing, shape.save());
     }
 }

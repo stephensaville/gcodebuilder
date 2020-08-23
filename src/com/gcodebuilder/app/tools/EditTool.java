@@ -1,28 +1,17 @@
 package com.gcodebuilder.app.tools;
 
-import com.gcodebuilder.geometry.Shape;
-
-public class EditTool implements Tool {
+public class EditTool extends UpdateShapeTool {
     @Override
-    public Shape<?> down(InteractionEvent event) {
-        return event.getShape();
+    protected String getDescription() {
+        return "Edit";
     }
 
-    private void editShape(InteractionEvent event) {
+    @Override
+    protected void updateShape(InteractionEvent event) {
         if (event.getHandle() != null && event.getShape() != null) {
             if (event.getShape().castAndEdit(event.getHandle(), event)) {
                 event.getDrawing().setDirty(true);
             }
         }
-    }
-
-    @Override
-    public void drag(InteractionEvent event) {
-        editShape(event);
-    }
-
-    @Override
-    public void up(InteractionEvent event) {
-        editShape(event);
     }
 }

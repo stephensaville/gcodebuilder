@@ -1,28 +1,17 @@
 package com.gcodebuilder.app.tools;
 
-import com.gcodebuilder.geometry.Shape;
-
-public class ResizeTool implements Tool {
+public class ResizeTool extends UpdateShapeTool {
     @Override
-    public Shape<?> down(InteractionEvent event) {
-        return event.getShape();
+    protected String getDescription() {
+        return "Resize";
     }
 
-    private void resizeShape(InteractionEvent event) {
+    @Override
+    protected void updateShape(InteractionEvent event) {
         if (event.getHandle() != null && event.getShape() != null) {
             if (event.getShape().castAndResize(event.getHandle(), event)) {
                 event.getDrawing().setDirty(true);
             }
         }
-    }
-
-    @Override
-    public void drag(InteractionEvent event) {
-        resizeShape(event);
-    }
-
-    @Override
-    public void up(InteractionEvent event) {
-        resizeShape(event);
     }
 }

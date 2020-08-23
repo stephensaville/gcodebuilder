@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.canvas.Drawable;
+import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
@@ -39,6 +40,7 @@ public abstract class Shape<H> implements Drawable {
     public abstract boolean edit(H handle, InteractionEvent event);
     public abstract boolean move(H handle, InteractionEvent event);
     public abstract boolean resize(H handle, InteractionEvent event);
+    public abstract Snapshot<? extends Shape<?>> save();
 
     public boolean castAndEdit(Object handle, InteractionEvent event) {
         return edit(handleClass.cast(handle), event);

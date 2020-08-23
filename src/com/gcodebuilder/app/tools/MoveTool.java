@@ -1,28 +1,17 @@
 package com.gcodebuilder.app.tools;
 
-import com.gcodebuilder.geometry.Shape;
-
-public class MoveTool implements Tool {
+public class MoveTool extends UpdateShapeTool {
     @Override
-    public Shape<?> down(InteractionEvent event) {
-        return event.getShape();
+    protected String getDescription() {
+        return "Move";
     }
 
-    private void moveShape(InteractionEvent event) {
+    @Override
+    protected void updateShape(InteractionEvent event) {
         if (event.getHandle() != null && event.getShape() != null) {
             if (event.getShape().castAndMove(event.getHandle(), event)) {
                 event.getDrawing().setDirty(true);
             }
         }
-    }
-
-    @Override
-    public void drag(InteractionEvent event) {
-        moveShape(event);
-    }
-
-    @Override
-    public void up(InteractionEvent event) {
-        moveShape(event);
     }
 }

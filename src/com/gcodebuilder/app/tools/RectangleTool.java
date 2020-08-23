@@ -2,7 +2,7 @@ package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Rectangle;
 
-public class RectangleTool extends ShapeTool<Rectangle> {
+public class RectangleTool extends AddShapeTool<Rectangle> {
     @FunctionalInterface
     private interface RectangleFunction<T> {
         T apply(double minX, double minY, double width, double height);

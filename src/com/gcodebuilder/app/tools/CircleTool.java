@@ -3,7 +3,7 @@ package com.gcodebuilder.app.tools;
 import com.gcodebuilder.geometry.Circle;
 import com.gcodebuilder.geometry.Point;
 
-public class CircleTool extends ShapeTool<Circle> {
+public class CircleTool extends AddShapeTool<Circle> {
     @FunctionalInterface
     private interface CircleFunction<T> {
         T apply(Point center, double radius);
