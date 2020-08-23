@@ -34,6 +34,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextArea;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
@@ -43,6 +44,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -82,6 +85,9 @@ public class DrawingWindowController {
 
     @FXML
     private AnchorPane recipeEditorPane;
+
+    @FXML
+    private TextArea gcodeEditor;
 
     @FXML
     private MenuItem saveGCodeItem;
@@ -517,7 +523,9 @@ public class DrawingWindowController {
 
         gCodeProgram = builder.build();
 
-        gCodeProgram.print(System.out);
+        StringWriter gcodeWriter = new StringWriter();
+        gCodeProgram.print(new PrintWriter(gcodeWriter));
+        gcodeEditor.setText(gcodeWriter.toString());
 
         saveGCodeItem.setDisable(false);
     }

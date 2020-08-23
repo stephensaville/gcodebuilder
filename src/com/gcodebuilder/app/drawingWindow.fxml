@@ -185,6 +185,11 @@
               <AnchorPane fx:id="recipeEditorPane" minHeight="0.0" minWidth="0.0" />
             </content>
           </TitledPane>
+            <TitledPane prefHeight="200.0" prefWidth="200.0" text="GCode">
+               <content>
+                  <TextArea fx:id="gcodeEditor" editable="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+               </content>
+            </TitledPane>
         </panes>
       </Accordion>
    </right>
