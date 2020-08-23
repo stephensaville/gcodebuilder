@@ -99,24 +99,19 @@
                </graphic>
             </ToggleButton>
             <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="62.0" mnemonicParsing="false" onAction="#selectEditTool" prefHeight="48.0" prefWidth="48.0" text="EDIT" toggleGroup="$tools">
-               <font>
-                  <Font size="10.0" />
-               </font>
+               <font><Font size="10.0" /></font>
             </ToggleButton>
             <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="114.0" mnemonicParsing="false" onAction="#selectMoveTool" prefHeight="48.0" prefWidth="48.0" text="MOVE" toggleGroup="$tools">
-               <font>
-                  <Font size="10.0" />
-               </font>
+               <font><Font size="10.0" /></font>
             </ToggleButton>
             <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="166.0" mnemonicParsing="false" onAction="#selectEraseTool" prefHeight="48.0" prefWidth="48.0" text="ERASE" toggleGroup="$tools">
-               <font>
-                  <Font size="10.0" />
-               </font>
+               <font><Font size="10.0" /></font>
             </ToggleButton>
             <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="218.0" mnemonicParsing="false" onAction="#selectSelectionTool" prefHeight="48.0" prefWidth="48.0" text="SELECT" toggleGroup="$tools">
-               <font>
-                  <Font size="9.0" />
-               </font>
+               <font><Font size="9.0" /></font>
+            </ToggleButton>
+            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="218.0" mnemonicParsing="false" onAction="#selectResizeTool" prefHeight="48.0" prefWidth="48.0" text="RESIZE" toggleGroup="$tools">
+               <font><Font size="9.0" /></font>
             </ToggleButton>
          </children>
          <BorderPane.margin>
@@ -137,6 +132,11 @@
                   <MenuItem onAction="#saveDrawing" text="_Save">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem onAction="#newDrawing" text="_New">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
                   <MenuItem onAction="#closeWindow" text="Close">

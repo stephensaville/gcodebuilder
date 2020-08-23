@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,11 +31,13 @@ public class Path extends Shape<Path.Handle> {
     @JsonCreator
     public Path(@JsonProperty("points") List<Point> points,
                 @JsonProperty("closed") boolean closed) {
+        super(Handle.class);
         this.points = new ArrayList<>(points);
         this.closed = closed;
     }
 
     public Path() {
+        super(Handle.class);
         this.points = new ArrayList<>();
         this.closed = false;
     }
@@ -91,7 +94,24 @@ public class Path extends Shape<Path.Handle> {
         }
     }
 
+    public static Rectangle2D computeBoundingBox(List<Point> points) {
+        Point first = points.get(0);
+        double minX = first.getX();
+        double maxX = minX;
+        double minY = first.getY();
+        double maxY = minY;
+        for (int pointIndex = 1; pointIndex < points.size(); ++pointIndex) {
+            Point point = points.get(pointIndex);
+            minX = Math.min(minX, point.getX());
+            maxX = Math.max(maxX, point.getX());
+            minY = Math.min(minY, point.getY());
+            maxY = Math.max(maxY, point.getY());
+        }
+        return new Rectangle2D(minX, minY, maxX - minX, maxY - minY);
+    }
+
     public class Handle {
+        @Getter
         private final List<Point> originalPoints;
 
         @Getter
@@ -160,6 +180,42 @@ public class Path extends Shape<Path.Handle> {
         } else {
             return false;
         }
+    }
+
+    private static double scaleFactor(double center, double original, double event) {
+        if (original > center) {
+            event = Math.max(event, center);
+            return 1.0 + (event - original) / (original - center);
+        } else if (original < center) {
+            event = Math.min(event, center);
+            return 1.0 + (original - event) / (center - original);
+        } else {
+            return 0.0;
+        }
+    }
+
+    private static double scale(double center, double original, double scaleFactor) {
+        return center + scaleFactor * (original - center);
+    }
+
+    @Override
+    public boolean resize(Handle handle, InteractionEvent event) {
+        Rectangle2D originalBoundingBox = computeBoundingBox(handle.getOriginalPoints());
+        Point originalPoint = handle.getOriginalPoint();
+        double centerX = originalBoundingBox.getMinX() + originalBoundingBox.getWidth() / 2;
+        double centerY = originalBoundingBox.getMinY() + originalBoundingBox.getHeight() / 2;
+        double scaleFactor = Math.max(
+            scaleFactor(centerX, originalPoint.getX(), event.getPoint().getX()),
+            scaleFactor(centerY, originalPoint.getY(), event.getPoint().getY()));
+        boolean updated = false;
+        for (int pointIndex = 0; pointIndex < getPointCount(); ++pointIndex) {
+            Point point = handle.getOriginalPoint(pointIndex);
+            Point newPoint = new Point(
+                    scale(centerX, point.getX(), scaleFactor),
+                    scale(centerY, point.getY(), scaleFactor));
+            updated = updatePoint(pointIndex, newPoint) || updated;
+        }
+        return updated;
     }
 
     @Override

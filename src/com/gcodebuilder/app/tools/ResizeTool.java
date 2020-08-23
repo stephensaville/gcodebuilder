@@ -2,15 +2,15 @@ package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Shape;
 
-public class EditTool implements Tool {
+public class ResizeTool implements Tool {
     @Override
     public Shape<?> down(InteractionEvent event) {
         return event.getShape();
     }
 
-    private void editShape(InteractionEvent event) {
+    private void resizeShape(InteractionEvent event) {
         if (event.getHandle() != null && event.getShape() != null) {
-            if (event.getShape().castAndEdit(event.getHandle(), event)) {
+            if (event.getShape().castAndResize(event.getHandle(), event)) {
                 event.getDrawing().setDirty(true);
             }
         }
@@ -18,11 +18,11 @@ public class EditTool implements Tool {
 
     @Override
     public void drag(InteractionEvent event) {
-        editShape(event);
+        resizeShape(event);
     }
 
     @Override
     public void up(InteractionEvent event) {
-        editShape(event);
+        resizeShape(event);
     }
 }

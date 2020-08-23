@@ -14,7 +14,7 @@ public class InteractionEvent {
     private final Point2D startPoint;
     private final Point2D mousePoint;
     private final Point2D mouseStartPoint;
-    private final Shape shape;
+    private final Shape<?> shape;
     private final Object handle;
     private final double handleRadius;
 }

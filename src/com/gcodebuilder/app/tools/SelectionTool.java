@@ -9,11 +9,11 @@ public class SelectionTool implements Tool {
     }
 
     @Override
-    public Shape down(InteractionEvent event) {
+    public Shape<?> down(InteractionEvent event) {
         if (event.getDrawing().unselectAllShapes() > 0) {
             event.getDrawing().setDirty(true);
         }
-        Shape currentShape = event.getShape();
+        Shape<?> currentShape = event.getShape();
         if (currentShape != null) {
             event.getShape().setSelected(true);
             event.getDrawing().setDirty(true);

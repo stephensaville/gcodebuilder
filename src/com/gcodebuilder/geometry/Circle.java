@@ -33,6 +33,7 @@ public class Circle extends Shape<Circle.Handle> {
     @JsonCreator
     public Circle(@JsonProperty("center") Point center,
                   @JsonProperty("radius") double radius) {
+        super(Handle.class);
         this.center = center;
         this.radius = radius;
         log.debug("new {}", this);
@@ -112,6 +113,11 @@ public class Circle extends Shape<Circle.Handle> {
     public boolean move(Handle handle, InteractionEvent event) {
         Point2D delta = event.getPoint().subtract(event.getStartPoint());
         return updateCenter(handle.getOriginalCenter().add(delta));
+    }
+
+    @Override
+    public boolean resize(Handle handle, InteractionEvent event) {
+        return edit(handle, event);
     }
 
     @Override

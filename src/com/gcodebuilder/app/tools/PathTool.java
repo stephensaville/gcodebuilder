@@ -14,12 +14,12 @@ public class PathTool implements Tool {
     private int currentPointIndex = -1;
 
     @Override
-    public Shape down(InteractionEvent event) {
-        Set<Shape> selectedShapes = event.getDrawing().getSelectedShapes();
+    public Path down(InteractionEvent event) {
+        Set<Shape<?>> selectedShapes = event.getDrawing().getSelectedShapes();
         Path currentPath = null;
         Point newPoint = new Point(event.getPoint());
         if (selectedShapes.size() == 1) {
-            Shape selectedShape = selectedShapes.iterator().next();
+            Shape<?> selectedShape = selectedShapes.iterator().next();
             if (selectedShape instanceof Path) {
                 currentPath = (Path)selectedShape;
                 if (currentPath.isClosed()) {

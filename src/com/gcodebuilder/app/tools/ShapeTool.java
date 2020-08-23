@@ -14,7 +14,7 @@ public abstract class ShapeTool<S extends Shape<?>> implements Tool {
     protected abstract boolean updateShape(InteractionEvent event, S currentShape);
 
     @Override
-    public Shape down(InteractionEvent event) {
+    public S down(InteractionEvent event) {
         S newShape = createShape(event);
         event.getDrawing().add(newShape);
         return newShape;

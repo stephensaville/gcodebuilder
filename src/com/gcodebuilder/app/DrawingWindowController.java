@@ -8,6 +8,7 @@ import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.app.tools.MoveTool;
 import com.gcodebuilder.app.tools.PathTool;
 import com.gcodebuilder.app.tools.RectangleTool;
+import com.gcodebuilder.app.tools.ResizeTool;
 import com.gcodebuilder.app.tools.SelectionTool;
 import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.canvas.GCodeCanvas;
@@ -88,16 +89,17 @@ public class DrawingWindowController {
     private MoveTool moveTool = new MoveTool();
     private EraseTool eraseTool = new EraseTool();
     private SelectionTool selectionTool = new SelectionTool();
+    private ResizeTool resizeTool = new ResizeTool();
     private Tool currentTool = rectangleTool;
 
     private Drawing drawing = new Drawing();
 
     private Point2D startPoint = Point2D.ZERO;
     private Point2D mouseStartPoint = Point2D.ZERO;
-    private Shape currentShape;
+    private Shape<?> currentShape;
     private Object currentHandle;
 
-    private Set<Shape> currentSelectedShapes = Collections.emptySet();
+    private Set<Shape<?>> currentSelectedShapes = Collections.emptySet();
 
     private FileOperations<Drawing> drawingFileOperations;
     private FileOperations<GCodeProgram> gCodeFileOperations;
@@ -192,7 +194,7 @@ public class DrawingWindowController {
                 drawing.putRecipe(newRecipe);
                 newRecipeId = newRecipe.getId();
             }
-            for (Shape shape : currentSelectedShapes) {
+            for (Shape<?> shape : currentSelectedShapes) {
                 shape.setRecipeId(newRecipeId);
             }
         });
@@ -273,6 +275,10 @@ public class DrawingWindowController {
         setCurrentTool(selectionTool);
     }
 
+    public void selectResizeTool() {
+        setCurrentTool(resizeTool);
+    }
+
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
         Point2D point = canvas.mouseToGrid(event, true);
         Point2D mousePoint = canvas.mouseToGrid(event, false);
@@ -282,7 +288,7 @@ public class DrawingWindowController {
             mouseStartPoint = mousePoint;
             currentShape = null;
             currentHandle = null;
-            for (Shape shape : drawing.getShapes()) {
+            for (Shape<?> shape : drawing.getShapes()) {
                 currentHandle = shape.getHandle(point, mousePoint, handleRadius);
                 if (currentHandle != null) {
                     currentShape = shape;
@@ -300,7 +306,7 @@ public class DrawingWindowController {
 
     private void checkSelectedShapes() {
         // switch to recipe attached to selected shape
-        Set<Shape> selectedShapes = drawing.getSelectedShapes();
+        Set<Shape<?>> selectedShapes = drawing.getSelectedShapes();
         if (currentSelectedShapes.equals(selectedShapes)) {
             return;
         }
@@ -382,24 +388,34 @@ public class DrawingWindowController {
         refreshDrawingWhenDirty();
     }
 
+    public void setDrawing(Drawing newDrawing) {
+        canvas.getDrawables().remove(drawing);
+        drawing = newDrawing;
+        unitCtl.setValue(newDrawing.getLengthUnit());
+        canvas.getDrawables().add(newDrawing);
+
+        recipeEditorController.clearCurrentRecipe();
+        recipeEditorController.getRecipes().clear();
+        recipeEditorController.getRecipes().addAll(newDrawing.getRecipes());
+
+        canvas.refresh();
+    }
+
     public void openDrawing() {
         Drawing newDrawing = drawingFileOperations.open();
         if (newDrawing != null) {
-            canvas.getDrawables().remove(drawing);
-            drawing = newDrawing;
-            unitCtl.setValue(newDrawing.getLengthUnit());
-            canvas.getDrawables().add(newDrawing);
-
-            recipeEditorController.clearCurrentRecipe();
-            recipeEditorController.getRecipes().clear();
-            recipeEditorController.getRecipes().addAll(newDrawing.getRecipes());
-
-            canvas.refresh();
+            setDrawing(newDrawing);
         }
     }
 
     public void saveDrawing() {
         drawingFileOperations.save(drawing);
+    }
+
+    public void newDrawing() {
+        Drawing newDrawing = new Drawing();
+        newDrawing.setLengthUnit(unitCtl.getValue());
+        setDrawing(newDrawing);
     }
 
     public void closeWindow() {
@@ -414,7 +430,7 @@ public class DrawingWindowController {
                 .arcDistanceMode(ArcDistanceMode.INCREMENTAL)
                 .feedRateMode(FeedRateMode.UNITS_PER_MIN);
 
-        for (Shape shape : drawing.getShapes()) {
+        for (Shape<?> shape : drawing.getShapes()) {
             int recipeId = shape.getRecipeId();
             if (recipeId <= 0) {
                 continue;

@@ -4,7 +4,7 @@ import com.gcodebuilder.geometry.Shape;
 
 public class EraseTool implements Tool {
     @Override
-    public Shape down(InteractionEvent event) {
+    public Shape<?> down(InteractionEvent event) {
         if (event.getShape() != null) {
             event.getDrawing().remove(event.getShape());
         }

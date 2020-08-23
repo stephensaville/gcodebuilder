@@ -17,6 +17,16 @@ import org.apache.logging.log4j.Logger;
 public class Rectangle extends Shape<Rectangle.Handle> {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
+    private static double scaleFactorMin(double originalMin, double eventValue, double span) {
+        double eventMin = Math.min(eventValue, originalMin + span / 2.0);
+        return 1.0 + 2.0 * (originalMin - eventMin) / span;
+    }
+
+    private static double scaleFactorMax(double originalMax, double eventValue, double span) {
+        double eventMax = Math.max(eventValue, originalMax - span / 2.0);
+        return 1.0 + 2.0 * (eventMax - originalMax) / span;
+    }
+
     public enum HandleType {
         BOTTOM_LEFT {
             public boolean move(Rectangle rect, InteractionEvent event) {
@@ -24,11 +34,23 @@ public class Rectangle extends Shape<Rectangle.Handle> {
                 double minY = Math.min(event.getPoint().getY(), rect.getMaxY());
                 return rect.update(minX, minY, rect.getMaxX() - minX, rect.getMaxY() - minY);
             }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return Math.max(
+                    scaleFactorMin(rect.getMinX(), event.getPoint().getX(), rect.getWidth()),
+                    scaleFactorMin(rect.getMinY(), event.getPoint().getY(), rect.getHeight()));
+            }
         },
         LEFT {
             public boolean move(Rectangle rect, InteractionEvent event) {
                 double minX = Math.min(event.getPoint().getX(), rect.getMaxX());
                 return rect.update(minX, rect.getMinY(), rect.getMaxX() - minX, rect.getHeight());
+            }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return scaleFactorMin(rect.getMinX(), event.getPoint().getX(), rect.getWidth());
             }
         },
         TOP_LEFT {
@@ -37,11 +59,23 @@ public class Rectangle extends Shape<Rectangle.Handle> {
                 double maxY = Math.max(event.getPoint().getY(), rect.getMinY());
                 return rect.update(minX, rect.getMinY(), rect.getMaxX() - minX, maxY - rect.getMinY());
             }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return Math.max(
+                        scaleFactorMin(rect.getMinX(), event.getPoint().getX(), rect.getWidth()),
+                        scaleFactorMax(rect.getMaxY(), event.getPoint().getY(), rect.getHeight()));
+            }
         },
         TOP {
             public boolean move(Rectangle rect, InteractionEvent event) {
                 double maxY = Math.max(event.getPoint().getY(), rect.getMinY());
                 return rect.update(rect.getMinX(), rect.getMinY(), rect.getWidth(), maxY - rect.getMinY());
+            }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return scaleFactorMax(rect.getMaxY(), event.getPoint().getY(), rect.getHeight());
             }
         },
         TOP_RIGHT {
@@ -50,11 +84,23 @@ public class Rectangle extends Shape<Rectangle.Handle> {
                 double maxY = Math.max(event.getPoint().getY(), rect.getMinY());
                 return rect.update(rect.getMinX(), rect.getMinY(), maxX - rect.getMinX(), maxY - rect.getMinY());
             }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return Math.max(
+                        scaleFactorMax(rect.getMaxX(), event.getPoint().getX(), rect.getWidth()),
+                        scaleFactorMax(rect.getMaxY(), event.getPoint().getY(), rect.getHeight()));
+            }
         },
         RIGHT {
             public boolean move(Rectangle rect, InteractionEvent event) {
                 double maxX = Math.max(event.getPoint().getX(), rect.getMinX());
                 return rect.update(rect.getMinX(), rect.getMinY(), maxX - rect.getMinX(), rect.getHeight());
+            }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return scaleFactorMax(rect.getMaxX(), event.getPoint().getX(), rect.getWidth());
             }
         },
         BOTTOM_RIGHT {
@@ -63,15 +109,28 @@ public class Rectangle extends Shape<Rectangle.Handle> {
                 double minY = Math.min(event.getPoint().getY(), rect.getMaxY());
                 return rect.update(rect.getMinX(), minY, maxX - rect.getMinX(), rect.getMaxY() - minY);
             }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return Math.max(
+                        scaleFactorMax(rect.getMaxX(), event.getPoint().getX(), rect.getWidth()),
+                        scaleFactorMin(rect.getMinY(), event.getPoint().getY(), rect.getHeight()));
+            }
         },
         BOTTOM {
             public boolean move(Rectangle rect, InteractionEvent event) {
                 double minY = Math.min(event.getPoint().getY(), rect.getMaxY());
                 return rect.update(rect.getMinX(), minY, rect.getWidth(), rect.getMaxY() - minY);
             }
+
+            @Override
+            public double scale(Rectangle rect, InteractionEvent event) {
+                return scaleFactorMin(rect.getMinY(), event.getPoint().getY(), rect.getHeight());
+            }
         };
 
         public abstract boolean move(Rectangle rect, InteractionEvent event);
+        public abstract double scale(Rectangle rect, InteractionEvent event);
     }
 
     @Data
@@ -98,6 +157,7 @@ public class Rectangle extends Shape<Rectangle.Handle> {
                      @JsonProperty("minY") double minY,
                      @JsonProperty("width") double width,
                      @JsonProperty("height") double height) {
+        super(Handle.class);
         this.minX = minX;
         this.minY = minY;
         this.width = width;
@@ -161,6 +221,18 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         return updated;
     }
 
+    public boolean scale(double scaleFactor) {
+        if (scaleFactor != 1.0) {
+            double newWidth = getWidth() * scaleFactor;
+            double newHeight = getHeight() * scaleFactor;
+            double newMinX = minX + (getWidth() - newWidth) / 2;
+            double newMinY = minY + (getHeight() - newHeight) / 2;
+            return update(newMinX, newMinY, newWidth, newHeight);
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public Handle getHandle(Point2D point, Point2D mousePoint, double handleRadius) {
         double x = point.getX();
@@ -209,6 +281,11 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         return updatePosition(
                 handle.getOriginalMinX() + delta.getX(),
                 handle.getOriginalMinY() + delta.getY());
+    }
+
+    @Override
+    public boolean resize(Handle handle, InteractionEvent event) {
+        return scale(handle.getType().scale(this, event));
     }
 
     @Override

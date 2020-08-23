@@ -28,7 +28,7 @@ public class Drawing implements Drawable {
     private LengthUnit lengthUnit = LengthUnit.INCH;
 
     @Getter
-    private final List<Shape> shapes = new ArrayList<>();
+    private final List<Shape<?>> shapes = new ArrayList<>();
 
     private final Map<Integer, GCodeRecipe> recipes = new HashMap<>();
 
@@ -37,12 +37,12 @@ public class Drawing implements Drawable {
     @JsonIgnore
     private boolean dirty = true;
 
-    public void add(Shape shape) {
+    public void add(Shape<?> shape) {
         shapes.add(shape);
         dirty = true;
     }
 
-    public boolean remove(Shape shape) {
+    public boolean remove(Shape<?> shape) {
         if (shapes.remove(shape)) {
             dirty = true;
             return true;
@@ -80,7 +80,7 @@ public class Drawing implements Drawable {
     }
 
     @JsonIgnore
-    public Set<Shape> getSelectedShapes() {
+    public Set<Shape<?>> getSelectedShapes() {
         return shapes.stream().filter(Shape::isSelected).collect(Collectors.toUnmodifiableSet());
     }
 

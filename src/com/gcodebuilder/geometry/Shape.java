@@ -9,6 +9,7 @@ import com.gcodebuilder.canvas.Drawable;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,8 +20,11 @@ import org.apache.logging.log4j.Logger;
         @JsonSubTypes.Type(Circle.class),
         @JsonSubTypes.Type(Path.class)
 })
+@RequiredArgsConstructor
 public abstract class Shape<H> implements Drawable {
     private static final Logger log = LogManager.getLogger(Shape.class);
+
+    private final Class<H> handleClass;
 
     @Getter
     @Setter
@@ -34,6 +38,19 @@ public abstract class Shape<H> implements Drawable {
     public abstract H getHandle(Point2D point, Point2D mousePoint, double handleRadius);
     public abstract boolean edit(H handle, InteractionEvent event);
     public abstract boolean move(H handle, InteractionEvent event);
+    public abstract boolean resize(H handle, InteractionEvent event);
+
+    public boolean castAndEdit(Object handle, InteractionEvent event) {
+        return edit(handleClass.cast(handle), event);
+    }
+
+    public boolean castAndMove(Object handle, InteractionEvent event) {
+        return move(handleClass.cast(handle), event);
+    }
+
+    public boolean castAndResize(Object handle, InteractionEvent event) {
+        return resize(handleClass.cast(handle), event);
+    }
 
     protected void prepareToDraw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
         ctx.setLineWidth(settings.getShapeLineWidth() / pixelsPerUnit);
