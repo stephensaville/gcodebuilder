@@ -483,6 +483,10 @@ public class DrawingWindowController {
         drawingFileOperations.save(drawing);
     }
 
+    public void saveDrawingAs() {
+        drawingFileOperations.saveAs(drawing);
+    }
+
     public void newDrawing() {
         Drawing newDrawing = new Drawing();
         newDrawing.setLengthUnit(unitCtl.getValue());

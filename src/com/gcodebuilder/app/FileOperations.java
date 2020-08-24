@@ -39,6 +39,8 @@ public class FileOperations<T> {
 
     private final FileChooser chooser;
 
+    private File currentFile;
+
     public FileOperations(Node root,
                           LoadFunction<T> loadFunction,
                           SaveFunction<T> saveFunction,
@@ -102,7 +104,9 @@ public class FileOperations<T> {
         if (openFile != null) {
             try {
                 try (FileInputStream in = new FileInputStream(openFile)) {
-                    return loadFunction.load(in);
+                    T document = loadFunction.load(in);
+                    currentFile = openFile;
+                    return document;
                 }
             } catch (IOException ex) {
                 showError("Open Failed", String.format("Failed to open file: %s", openFile), ex);
@@ -111,17 +115,31 @@ public class FileOperations<T> {
         return null;
     }
 
-    public void save(T document) {
+    public void saveAs(T document) {
         chooser.setTitle(String.format("Save %s", documentType));
         File saveFile = chooser.showSaveDialog(root.getScene().getWindow());
         if (saveFile != null) {
             try {
                 try (FileOutputStream out = new FileOutputStream(saveFile)) {
                     saveFunction.save(document, out);
+                    currentFile = saveFile;
                 }
             } catch (IOException ex) {
                 showError("Save Failed", String.format("Failed to save file: %s", saveFile), ex);
+                currentFile = null;
             }
+        }
+    }
+
+    public void save(T document) {
+        if (currentFile != null) {
+            try (FileOutputStream out = new FileOutputStream(currentFile)) {
+                saveFunction.save(document, out);
+            } catch (IOException ex) {
+                showError("Save Failed", String.format("Failed to save file: %s", currentFile), ex);
+            }
+        } else {
+            saveAs(document);
         }
     }
 }
