@@ -26,6 +26,7 @@ import com.gcodebuilder.model.GCodeProgram;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.beans.binding.DoubleBinding;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
@@ -215,6 +216,14 @@ public class DrawingWindowController {
             }
             for (Shape<?> shape : currentSelectedShapes) {
                 shape.setRecipeId(newRecipeId);
+            }
+        });
+
+        recipeEditorController.getRecipes().addListener((ListChangeListener<GCodeRecipe>) change -> {
+            while (change.next()) {
+                for (GCodeRecipe removed : change.getRemoved()) {
+                    drawing.removeRecipe(removed);
+                }
             }
         });
     }

@@ -77,6 +77,10 @@ public class Drawing implements Drawable {
         return removed;
     }
 
+    public boolean removeRecipe(GCodeRecipe recipe) {
+        return removeRecipe(recipe.getId()) != null;
+    }
+
     public List<GCodeRecipe> getRecipes() {
         return new ArrayList<>(recipes.values());
     }
