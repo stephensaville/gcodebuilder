@@ -1,5 +1,7 @@
 package com.gcodebuilder.app.tools;
 
+import com.gcodebuilder.changelog.Snapshot;
+import com.gcodebuilder.changelog.UpdateShapeChange;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Point;
@@ -16,6 +18,7 @@ public class PathTool implements Tool {
     private static final Logger log = LogManager.getLogger(Path.class);
 
     private Path.Handle currentHandle;
+    private Snapshot<Path> pathBefore;
 
     private Path getSelectedPath(InteractionEvent event) {
         Set<Shape<?>> selectedShapes = event.getDrawing().getSelectedShapes();
@@ -33,6 +36,7 @@ public class PathTool implements Tool {
         Point newPoint = new Point(event.getPoint());
         Path currentPath = getSelectedPath(event);
         if (currentPath != null) {
+            pathBefore = currentPath.save();
             currentHandle = currentPath.getHandle(event.getPoint(), event.getMousePoint(), event.getHandleRadius());
             if (currentHandle != null) {
                 if (event.getInputEvent().getClickCount() > 1 && !currentHandle.isProjectedPoint()) {
@@ -54,14 +58,18 @@ public class PathTool implements Tool {
         }
         if (currentHandle == null && (event.getShape() instanceof Path)) {
             currentPath = (Path) event.getShape();
+            pathBefore = currentPath.save();
             currentHandle = (Path.Handle) event.getHandle();
             log.info("Switched to editing point or segment in a different path: {}", currentPath);
             return currentPath;
         }
         if (currentPath == null || currentPath.isClosed()) {
             currentPath = new Path();
+            pathBefore = null;
             event.getDrawing().add(currentPath);
             log.info("Created new path.");
+        } else {
+            pathBefore = currentPath.save();
         }
         int newPointIndex = currentPath.getPointCount();
         currentPath.addPoint(newPoint);
@@ -92,6 +100,11 @@ public class PathTool implements Tool {
 
     @Override
     public Supplier<Change> prepareChange(Drawing drawing, Shape<?> shape) {
-        return () -> new AddShapeChange("Path", drawing, shape.save());
+        if (pathBefore == null) {
+            return () -> new AddShapeChange("Add Path", drawing, shape.save());
+        } else {
+            final Snapshot<Path> before = pathBefore;
+            return () -> new UpdateShapeChange("Edit Path", drawing, before, shape.save());
+        }
     }
 }
