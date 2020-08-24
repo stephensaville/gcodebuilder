@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.geometry.Point2D;
 
 public class Point {
+    private static final double DEFAULT_MAX_DISTANCE = 0.0001;
+
     private final Point2D point2D;
 
     @JsonCreator
@@ -53,12 +55,20 @@ public class Point {
         }
     }
 
+    public boolean isSame(Point otherPoint) {
+        return isSame(otherPoint, DEFAULT_MAX_DISTANCE);
+    }
+
     public boolean isSame(Point2D point2D, double maxDistance) {
         if (point2D == null) {
             return false;
         } else {
             return this.distance(point2D) < maxDistance;
         }
+    }
+
+    public boolean isSame(Point2D point2D) {
+        return isSame(point2D, DEFAULT_MAX_DISTANCE);
     }
 
     @Override

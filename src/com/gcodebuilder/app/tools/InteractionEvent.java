@@ -3,13 +3,13 @@ package com.gcodebuilder.app.tools;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
 import javafx.geometry.Point2D;
-import javafx.scene.input.InputEvent;
+import javafx.scene.input.MouseEvent;
 import lombok.Data;
 
 @Data
 public class InteractionEvent {
     private final Drawing drawing;
-    private final InputEvent inputEvent;
+    private final MouseEvent inputEvent;
     private final Point2D point;
     private final Point2D startPoint;
     private final Point2D mousePoint;

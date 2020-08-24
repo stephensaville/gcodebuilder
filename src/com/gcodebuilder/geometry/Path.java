@@ -86,13 +86,43 @@ public class Path extends Shape<Path.Handle> {
     public boolean updatePoint(int pointIndex, Point newPoint) {
         if (pointIndex >= points.size()) {
             return false;
-        } else if (!newPoint.equals(points.get(pointIndex))) {
+        } else if (!newPoint.isSame(points.get(pointIndex))) {
             points.set(pointIndex, newPoint);
             segments = null;
             return true;
         } else {
             return false;
         }
+    }
+
+    public boolean insertPoint(int pointIndex, Point newPoint) {
+        if (pointIndex <= points.size()) {
+            points.add(pointIndex, newPoint);
+            segments = null;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean removePoint(int pointIndex) {
+        if (pointIndex < points.size()) {
+            points.remove(pointIndex);
+            segments = null;
+            if (points.size() < 3) {
+                setClosed(false);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean closePath() {
+        if (points.size() > 2) {
+            setClosed(true);
+        }
+        return isClosed();
     }
 
     public static Rectangle2D computeBoundingBox(List<Point> points) {
@@ -118,12 +148,25 @@ public class Path extends Shape<Path.Handle> {
         @Getter
         private final int pointIndex;
 
+        @Getter
+        private final Point2D projectedPoint;
+
         @Getter @Setter
         private boolean moved = false;
+
+        @Getter @Setter
+        private Point newPoint;
 
         public Handle(int pointIndex) {
             this.originalPoints = new ArrayList<>(points);
             this.pointIndex = pointIndex;
+            this.projectedPoint = null;
+        }
+
+        public Handle(int pointIndex, Point2D projectedPoint) {
+            this.originalPoints = new ArrayList<>(points);
+            this.pointIndex = pointIndex;
+            this.projectedPoint = projectedPoint;
         }
 
         public Point getOriginalPoint() {
@@ -132,6 +175,14 @@ public class Path extends Shape<Path.Handle> {
 
         public Point getOriginalPoint(int pointIndex) {
             return originalPoints.get(pointIndex);
+        }
+
+        public boolean isProjectedPoint() {
+            return projectedPoint != null;
+        }
+
+        public Point2D getHandlePoint() {
+            return isProjectedPoint() ? projectedPoint : getOriginalPoint().asPoint2D();
         }
     }
 
@@ -142,6 +193,19 @@ public class Path extends Shape<Path.Handle> {
             if (originalPoint.isSame(mousePoint, handleRadius)) {
                 log.info("Created handle for point: {}", originalPoint);
                 return new Handle(pointIndex);
+            }
+        }
+        List<Segment> segments = getSegments();
+        for (int segmentIndex = 0; segmentIndex < segments.size(); ++segmentIndex) {
+            Segment segment = segments.get(segmentIndex);
+            Point2D projectedPoint = segment.project(mousePoint);
+            if (projectedPoint != null) {
+                double distanceToMousePoint = projectedPoint.distance(mousePoint);
+                if (distanceToMousePoint < handleRadius) {
+                    int pointIndex = closed ? ((segmentIndex - 1) % points.size()) : segmentIndex;
+                    log.info("Created handle for point: {} on segment: {}", projectedPoint, segment);
+                    return new Handle(pointIndex, projectedPoint);
+                }
             }
         }
         return null;
@@ -161,7 +225,21 @@ public class Path extends Shape<Path.Handle> {
     @Override
     public boolean edit(Handle handle, InteractionEvent event) {
         if (hasHandleMoved(handle, event)) {
-            return updatePoint(handle.getPointIndex(), new Point(event.getPoint()));
+            if (handle.isProjectedPoint()) {
+                Point newPoint = new Point(event.getPoint());
+                boolean updated = false;
+                if (handle.getNewPoint() == null) {
+                    updated = insertPoint(handle.getPointIndex() + 1, newPoint);
+                } else {
+                    updated = updatePoint(handle.getPointIndex() + 1, newPoint);
+                }
+                if (updated) {
+                    handle.setNewPoint(newPoint);
+                }
+                return updated;
+            } else {
+                return updatePoint(handle.getPointIndex(), new Point(event.getPoint()));
+            }
         } else {
             return false;
         }
@@ -170,7 +248,7 @@ public class Path extends Shape<Path.Handle> {
     @Override
     public boolean move(Handle handle, InteractionEvent event) {
         if (hasHandleMoved(handle, event)) {
-            Point2D delta = event.getPoint().subtract(handle.getOriginalPoint().asPoint2D());
+            Point2D delta = event.getPoint().subtract(handle.getHandlePoint());
             boolean updated = false;
             for (int pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
                 if (updatePoint(pointIndex, handle.getOriginalPoint(pointIndex).add(delta))) {
@@ -202,12 +280,12 @@ public class Path extends Shape<Path.Handle> {
     @Override
     public boolean resize(Handle handle, InteractionEvent event) {
         Rectangle2D originalBoundingBox = computeBoundingBox(handle.getOriginalPoints());
-        Point originalPoint = handle.getOriginalPoint();
+        Point2D handlePoint = handle.getHandlePoint();
         double centerX = originalBoundingBox.getMinX() + originalBoundingBox.getWidth() / 2;
         double centerY = originalBoundingBox.getMinY() + originalBoundingBox.getHeight() / 2;
         double scaleFactor = Math.max(
-            scaleFactor(centerX, originalPoint.getX(), event.getPoint().getX()),
-            scaleFactor(centerY, originalPoint.getY(), event.getPoint().getY()));
+            scaleFactor(centerX, handlePoint.getX(), event.getPoint().getX()),
+            scaleFactor(centerY, handlePoint.getY(), event.getPoint().getY()));
         boolean updated = false;
         for (int pointIndex = 0; pointIndex < getPointCount(); ++pointIndex) {
             Point point = handle.getOriginalPoint(pointIndex);

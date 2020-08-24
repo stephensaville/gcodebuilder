@@ -15,41 +15,68 @@ import java.util.function.Supplier;
 public class PathTool implements Tool {
     private static final Logger log = LogManager.getLogger(Path.class);
 
-    private int currentPointIndex = -1;
+    private Path.Handle currentHandle;
 
-    @Override
-    public Path down(InteractionEvent event) {
+    private Path getSelectedPath(InteractionEvent event) {
         Set<Shape<?>> selectedShapes = event.getDrawing().getSelectedShapes();
-        Path currentPath = null;
-        Point newPoint = new Point(event.getPoint());
         if (selectedShapes.size() == 1) {
             Shape<?> selectedShape = selectedShapes.iterator().next();
             if (selectedShape instanceof Path) {
-                currentPath = (Path)selectedShape;
-                if (currentPath.isClosed()) {
-                    currentPath = null;
-                } else if (newPoint.isSame(currentPath.getPoint(0), event.getHandleRadius())) {
-                    currentPath.setClosed(true);
-                    log.info("Closed path: {}", currentPath);
-                    currentPointIndex = 0;
-                    return currentPath;
-                }
+                return (Path) selectedShape;
             }
         }
-        if (currentPath == null) {
+        return null;
+    }
+
+    @Override
+    public Path down(InteractionEvent event) {
+        Point newPoint = new Point(event.getPoint());
+        Path currentPath = getSelectedPath(event);
+        if (currentPath != null) {
+            currentHandle = currentPath.getHandle(event.getPoint(), event.getMousePoint(), event.getHandleRadius());
+            if (currentHandle != null) {
+                if (event.getInputEvent().getClickCount() > 1 && !currentHandle.isProjectedPoint()) {
+                    // double-click to remove point from path
+                    if (currentPath.removePoint(currentHandle.getPointIndex())) {
+                        event.getDrawing().setDirty(true);
+                    }
+                    currentHandle = null;
+                    return currentPath;
+                }
+                log.info("Editing point or segment in currently selected path.");
+                if (currentHandle.getPointIndex() == 0 && !currentHandle.isProjectedPoint() && !currentPath.isClosed()) {
+                    currentPath.closePath();
+                    event.getDrawing().setDirty(true);
+                    log.info("Closed path: " + currentPath);
+                }
+                return currentPath;
+            }
+        }
+        if (currentHandle == null && (event.getShape() instanceof Path)) {
+            currentPath = (Path) event.getShape();
+            currentHandle = (Path.Handle) event.getHandle();
+            log.info("Switched to editing point or segment in a different path: {}", currentPath);
+            return currentPath;
+        }
+        if (currentPath == null || currentPath.isClosed()) {
             currentPath = new Path();
             event.getDrawing().add(currentPath);
+            log.info("Created new path.");
         }
-        currentPointIndex = currentPath.getPointCount();
-        currentPath.addPoint(new Point(event.getPoint()));
+        int newPointIndex = currentPath.getPointCount();
+        currentPath.addPoint(newPoint);
+        currentHandle = currentPath.getHandle(newPointIndex);
+        event.getDrawing().setDirty(true);
+        log.info("Added new point: {} to path: {}", newPoint, currentPath);
         return currentPath;
     }
 
     private void updateCurrentPath(InteractionEvent event) {
-        Path currentPath = (Path)event.getShape();
-        Point newPoint = new Point(event.getPoint());
-        if (currentPath.updatePoint(currentPointIndex, newPoint)) {
-            event.getDrawing().setDirty(true);
+        if (currentHandle != null) {
+            Path currentPath = (Path) event.getShape();
+            if (currentPath.edit(currentHandle, event)) {
+                event.getDrawing().setDirty(true);
+            }
         }
     }
 

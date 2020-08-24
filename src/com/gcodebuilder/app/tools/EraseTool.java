@@ -29,7 +29,11 @@ public class EraseTool implements Tool {
 
     @Override
     public Supplier<Change> prepareChange(Drawing drawing, Shape<?> shape) {
-        final Snapshot<? extends Shape<?>> before = shape.save();
-        return () -> new RemoveShapeChange("Erase", drawing, before);
+        if (shape != null) {
+            final Snapshot<? extends Shape<?>> before = shape.save();
+            return () -> new RemoveShapeChange("Erase", drawing, before);
+        } else {
+            return null;
+        }
     }
 }
