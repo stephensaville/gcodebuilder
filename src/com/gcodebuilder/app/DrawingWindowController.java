@@ -1,6 +1,7 @@
 package com.gcodebuilder.app;
 
 import com.gcodebuilder.app.recipe.RecipeEditorController;
+import com.gcodebuilder.app.shapes.ObservableShape;
 import com.gcodebuilder.app.shapes.ShapesTableController;
 import com.gcodebuilder.app.tools.CircleTool;
 import com.gcodebuilder.app.tools.EditTool;
@@ -219,6 +220,34 @@ public class DrawingWindowController {
             }
         });
 
+        shapesTableController.getSelectedShapes()
+                .getSelectedItems().addListener((ListChangeListener<ObservableShape>) change -> {
+            boolean selectedChanged = false;
+            while (change.next()) {
+                if (change.wasAdded()) {
+                    for (ObservableShape obsShape : change.getAddedSubList()) {
+                        if (!obsShape.getShape().isSelected()) {
+                            obsShape.getShape().setSelected(true);
+                            selectedChanged = true;
+                        }
+                    }
+                }
+                if (change.wasRemoved()) {
+                    for (ObservableShape obsShape : change.getRemoved()) {
+                        if (obsShape.getShape().isSelected()) {
+                            obsShape.getShape().setSelected(false);
+                            selectedChanged = true;
+                        }
+                    }
+                }
+            }
+            if (selectedChanged) {
+                drawing.setDirty(true);
+                canvas.refresh();
+                checkSelectedShapes();
+            }
+        });
+
         recipeEditorController = RecipeEditorController.attach(recipeEditorPane);
 
         recipeEditorController.currentRecipeProperty().addListener((obs, oldRecipe, newRecipe) -> {
@@ -397,6 +426,7 @@ public class DrawingWindowController {
         currentSelectedShapes = Collections.emptySet();
         if (selectedShapes.isEmpty()) {
             recipeEditorController.clearCurrentRecipe();
+
         } else {
             Set<Integer> selectedShapeRecipes =
                     selectedShapes.stream()

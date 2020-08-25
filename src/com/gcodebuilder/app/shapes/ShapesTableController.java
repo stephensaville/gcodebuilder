@@ -10,6 +10,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -170,6 +171,11 @@ public class ShapesTableController {
                     current.syncProperties();
                 }
             }
+            if (shape.isSelected()) {
+                shapeTable.getSelectionModel().select(shapeIndex);
+            } else {
+                shapeTable.getSelectionModel().clearSelection(shapeIndex);
+            }
             ++shapeIndex;
         }
         if (shapeIndex < shapes.size()) {
@@ -197,5 +203,9 @@ public class ShapesTableController {
             }
             ++shapeIndex;
         }
+    }
+
+    public MultipleSelectionModel<ObservableShape> getSelectedShapes() {
+        return shapeTable.getSelectionModel();
     }
 }
