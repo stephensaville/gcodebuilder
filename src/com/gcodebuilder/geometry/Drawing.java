@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +42,22 @@ public class Drawing implements Drawable {
     public void add(Shape<?> shape) {
         shapes.add(shape);
         dirty = true;
+    }
+
+    public void add(int index, Shape<?> shape) {
+        int currentShapeIndex = shapes.indexOf(shape);
+        if (currentShapeIndex < 0) {
+            shapes.add(index, shape);
+            dirty = true;
+        } else if (currentShapeIndex < index) {
+            shapes.remove(currentShapeIndex);
+            shapes.add(index - 1, shape);
+            dirty = true;
+        } else if (currentShapeIndex > index) {
+            shapes.remove(currentShapeIndex);
+            shapes.add(index, shape);
+            dirty = true;
+        }
     }
 
     public boolean remove(Shape<?> shape) {
@@ -131,20 +146,36 @@ public class Drawing implements Drawable {
         dirty = false;
     }
 
+    public static void save(OutputStream out, Object object) throws IOException {
+        OM.writeValue(out, object);
+    }
+
     public void save(OutputStream out) throws IOException {
-        OM.writeValue(out, this);
+        save(out, this);
+    }
+
+    public static String saveAsString(Object object) throws IOException {
+        return OM.writeValueAsString(object);
     }
 
     public String saveAsString() throws IOException {
-        return OM.writeValueAsString(this);
+        return saveAsString(this);
+    }
+
+    public static <T> T load(InputStream in, Class<T> type) throws IOException {
+        return OM.readValue(in, type);
     }
 
     public static Drawing load(InputStream in) throws IOException {
-        return OM.readValue(in, Drawing.class);
+        return load(in, Drawing.class);
+    }
+
+    public static <T> T loadFromString(String saved, Class<T> type) throws IOException {
+        return OM.readValue(saved, type);
     }
 
     public static Drawing loadFromString(String saved) throws IOException {
-        return OM.readValue(saved, Drawing.class);
+        return loadFromString(saved, Drawing.class);
     }
 
     @Override

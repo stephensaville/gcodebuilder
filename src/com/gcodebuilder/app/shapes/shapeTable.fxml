@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.shapes.ShapesTableController">
+    <children>
+        <TableView fx:id="shapeTable" fixedCellSize="24.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="52.0">
+            <columns>
+                <TableColumn fx:id="shapeTypeColumn" prefWidth="75.0" text="Shape" />
+                <TableColumn fx:id="recipeNameColumn" prefWidth="175.0" text="Recipe" />
+            </columns>
+            <placeholder>
+                <Label text="drawing is empty" />
+            </placeholder>
+      </TableView>
+   </children>
+</VBox>

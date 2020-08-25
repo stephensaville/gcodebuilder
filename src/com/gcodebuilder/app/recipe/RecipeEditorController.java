@@ -15,6 +15,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.AnchorPane;
 import lombok.Data;
 import lombok.Getter;
@@ -161,14 +162,11 @@ public class RecipeEditorController {
                 "pocketRecipeEditor.fxml");
     }
 
-    public static RecipeEditorController attach(AnchorPane parent) throws IOException {
+    public static RecipeEditorController attach(TitledPane parent) throws IOException {
         FXMLLoader recipeEditorLoader = new FXMLLoader();
         Node recipeEditor = recipeEditorLoader.load(
                 RecipeEditorController.class.getResourceAsStream("recipeEditor.fxml"));
-        AnchorPane.setTopAnchor(recipeEditor, 5.0);
-        AnchorPane.setLeftAnchor(recipeEditor, 5.0);
-        AnchorPane.setRightAnchor(recipeEditor, 5.0);
-        parent.getChildren().add(recipeEditor);
+        parent.setContent(recipeEditor);
         return recipeEditorLoader.getController();
     }
 

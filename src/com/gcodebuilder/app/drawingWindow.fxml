@@ -181,12 +181,9 @@
    <right>
       <Accordion BorderPane.alignment="CENTER">
         <panes>
-          <TitledPane text="Recipes">
-            <content>
-              <AnchorPane fx:id="recipeEditorPane" minHeight="0.0" minWidth="0.0" />
-            </content>
-          </TitledPane>
-            <TitledPane prefHeight="200.0" prefWidth="200.0" text="GCode">
+           <TitledPane text="Shapes" fx:id="shapesPane"/>
+           <TitledPane text="Recipes" fx:id="recipeEditorPane"/>
+           <TitledPane prefWidth="200" text="GCode">
                <content>
                   <TextArea fx:id="gcodeEditor" editable="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
                </content>

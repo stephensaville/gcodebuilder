@@ -1,6 +1,7 @@
 package com.gcodebuilder.app;
 
 import com.gcodebuilder.app.recipe.RecipeEditorController;
+import com.gcodebuilder.app.shapes.ShapesTableController;
 import com.gcodebuilder.app.tools.CircleTool;
 import com.gcodebuilder.app.tools.EditTool;
 import com.gcodebuilder.app.tools.EraseTool;
@@ -36,6 +37,7 @@ import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
@@ -85,7 +87,10 @@ public class DrawingWindowController {
     private ScrollBar vScrollBar;
 
     @FXML
-    private AnchorPane recipeEditorPane;
+    private TitledPane shapesPane;
+
+    @FXML
+    private TitledPane recipeEditorPane;
 
     @FXML
     private TextArea gcodeEditor;
@@ -124,6 +129,7 @@ public class DrawingWindowController {
     private FileOperations<Drawing> drawingFileOperations;
     private FileOperations<GCodeProgram> gCodeFileOperations;
 
+    private ShapesTableController shapesTableController;
     private RecipeEditorController recipeEditorController;
 
     private GCodeProgram gCodeProgram;
@@ -205,6 +211,14 @@ public class DrawingWindowController {
                 "GCode", "toolpath.nc",
                 new FileChooser.ExtensionFilter("GCode", "*.nc"));
 
+        shapesTableController = ShapesTableController.attach(shapesPane);
+
+        shapesPane.expandedProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue) {
+                shapesTableController.syncShapes(drawing);
+            }
+        });
+
         recipeEditorController = RecipeEditorController.attach(recipeEditorPane);
 
         recipeEditorController.currentRecipeProperty().addListener((obs, oldRecipe, newRecipe) -> {
@@ -221,8 +235,10 @@ public class DrawingWindowController {
 
         recipeEditorController.getRecipes().addListener((ListChangeListener<GCodeRecipe>) change -> {
             while (change.next()) {
-                for (GCodeRecipe removed : change.getRemoved()) {
-                    drawing.removeRecipe(removed);
+                if (change.wasRemoved()) {
+                    for (GCodeRecipe removed : change.getRemoved()) {
+                        drawing.removeRecipe(removed);
+                    }
                 }
             }
         });
@@ -333,16 +349,18 @@ public class DrawingWindowController {
 
     public void undoChange() {
         changeLog.undoChange();
+        drawing.setDirty(true);
         updateChangeLogMenuItems();
         checkSelectedShapes();
-        canvas.refresh();
+        refreshDrawingWhenDirty();
     }
 
     public void redoChange() {
         changeLog.redoChange();
+        drawing.setDirty(true);
         updateChangeLogMenuItems();
         checkSelectedShapes();
-        canvas.refresh();
+        refreshDrawingWhenDirty();
     }
 
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
@@ -408,6 +426,7 @@ public class DrawingWindowController {
     private void refreshDrawingWhenDirty() {
         if (drawing.isDirty()) {
             canvas.refresh();
+            shapesTableController.syncShapes(drawing);
         }
     }
 
@@ -473,6 +492,8 @@ public class DrawingWindowController {
         drawing = newDrawing;
         unitCtl.setValue(newDrawing.getLengthUnit());
         canvas.getDrawables().add(newDrawing);
+
+        shapesTableController.syncShapes(newDrawing);
 
         recipeEditorController.clearCurrentRecipe();
         recipeEditorController.getRecipes().clear();
