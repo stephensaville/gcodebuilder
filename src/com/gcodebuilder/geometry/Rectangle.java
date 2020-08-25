@@ -305,6 +305,16 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         };
     }
 
+    public Path convertToPath() {
+        Path path = new Path();
+        path.addPoint(getMinX(), getMinY());
+        path.addPoint(getMinX(), getMaxY());
+        path.addPoint(getMaxX(), getMaxY());
+        path.addPoint(getMaxX(), getMinY());
+        path.closePath();
+        return path;
+    }
+
     @Override
     public boolean isVisible() {
         return getWidth() > 0 || getHeight() > 0;

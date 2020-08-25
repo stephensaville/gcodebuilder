@@ -79,6 +79,10 @@ public class Path extends Shape<Path.Handle> {
         segments = null;
     }
 
+    public void addPoint(double x, double y) {
+        addPoint(new Point(x, y));
+    }
+
     public void addPoint(Point2D point2D) {
         addPoint(new Point(point2D));
     }
