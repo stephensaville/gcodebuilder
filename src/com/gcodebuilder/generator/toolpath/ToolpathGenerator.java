@@ -427,29 +427,32 @@ public class ToolpathGenerator {
         insideToolpaths.forEach(toolpath -> allSegments.addAll(toolpath.getSegments()));
 
         List<Toolpath> pocketToolpaths = new ArrayList<>(insideToolpaths);
-        Queue<Toolpath> enclosingToolpathQueue = new LinkedList<>(insideToolpaths);
-        Queue<List<Segment>> enclosingPathQueue = insideToolpaths.stream()
-                .map(ToolpathGenerator::computeEnclosingPath)
-                .collect(Collectors.toCollection(LinkedList::new));
+        List<Toolpath> enclosingLayer = insideToolpaths;
 
-        while (!enclosingToolpathQueue.isEmpty()) {
-            Toolpath enclosingToolpath = enclosingToolpathQueue.remove();
-            List<Segment> connectedPath = enclosingPathQueue.stream().flatMap(List::stream).collect(Collectors.toList());
-            List<Segment> enclosingPath = enclosingPathQueue.remove();
-            List<Toolpath.Segment> pocketSegments = computePocketSegments(enclosingToolpath, enclosingPath);
+        while (!enclosingLayer.isEmpty()) {
+            List<Segment> connectedPath = new ArrayList<>();
+            List<Toolpath.Segment> layerSegments = new ArrayList<>();
+            List<List<Toolpath.Segment>> connectedLayerSegments = new ArrayList<>();
 
-            connectToolpathSegments(pocketSegments);
+            for (Toolpath toolpath : enclosingLayer) {
+                List<Segment> enclosingPath = computeEnclosingPath(toolpath);
+                connectedPath.addAll(enclosingPath);
+
+                List<Toolpath.Segment> pocketSegments = computePocketSegments(toolpath, enclosingPath);
+                connectToolpathSegments(pocketSegments);
+                layerSegments.addAll(pocketSegments);
+                connectedLayerSegments.add(pocketSegments);
+            }
 
             int pocketStartIndex = allSegments.size();
-            allSegments.addAll(pocketSegments);
-            intersectWithSameSideCorners(pocketSegments, allSegments);
-
+            allSegments.addAll(layerSegments);
+            intersectConnectedToolpathCorners(connectedLayerSegments, allSegments);
             for (int i = pocketStartIndex; i < allSegments.size(); ++i) {
                 intersectToolpathSegments(allSegments.get(i), allSegments.subList(0, pocketStartIndex));
                 intersectToolpathSegments(allSegments.get(i), allSegments.subList(i + 1, allSegments.size()));
             }
 
-            List<Toolpath.Segment> validPocketSegments = getAllValidSegments(pocketSegments);
+            List<Toolpath.Segment> validPocketSegments = getAllValidSegments(layerSegments);
 
             List<Toolpath.Segment> insidePocketSegments = validPocketSegments.stream()
                     .filter(segment -> isInsideSegment(connectedPath, segment))
@@ -458,16 +461,17 @@ public class ToolpathGenerator {
             List<Toolpath> partitionedPocketToolpaths = partitionToolpaths(insidePocketSegments);
 
             pocketToolpaths.addAll(partitionedPocketToolpaths);
-            enclosingToolpathQueue.addAll(partitionedPocketToolpaths);
-            partitionedPocketToolpaths.stream()
-                    .map(ToolpathGenerator::computeEnclosingPath)
-                    .forEach(enclosingPathQueue::add);
+            enclosingLayer = partitionedPocketToolpaths;
         }
         return pocketToolpaths;
     }
 
     private List<Toolpath> connectPockets(List<Toolpath> pocketToolpaths) {
         List<Toolpath> allConnectedPockets = new ArrayList<>();
+        List<Segment> allPocketPathSegments = pocketToolpaths.stream()
+                .map(ToolpathGenerator::computeEnclosingPath)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
         LinkedList<Toolpath> remainingPockets = new LinkedList<>(pocketToolpaths);
         Toolpath currentPocket = remainingPockets.pollFirst();
         while (currentPocket != null) {
@@ -484,7 +488,10 @@ public class ToolpathGenerator {
                 Point2D startPoint = otherPocket.getLastSegment().getTo();
                 if (Segment.isPointInsidePath(pocketPath, startPoint)) {
                     double pocketDistance = currentPoint.distance(startPoint);
-                    if (pocketDistance < nextPocketDistance) {
+                    Segment connection = Segment.of(currentPoint, startPoint);
+                    if (pocketDistance < nextPocketDistance &&
+                            allPocketPathSegments.stream()
+                                    .allMatch(segment -> segment.intersect(connection) == null)) {
                         if (nextPocket != null) {
                             toolpathIterator.set(nextPocket);
                         } else {
