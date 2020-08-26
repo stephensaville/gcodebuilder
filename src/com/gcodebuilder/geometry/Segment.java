@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.naming.MalformedLinkException;
 import java.util.List;
 
 @Getter
@@ -45,21 +46,28 @@ public class Segment extends Line {
         return new Segment(getTo(), getFrom(), getVector().multiply(-1), getDirection().invert(), getLength());
     }
 
-    public Point2D intersect(Segment other) {
+    public Point2D intersect(Segment other, boolean allowOutside) {
         Point2D between = getTo().subtract(other.getTo());
 
         double denominator = Math2D.det(getVector(), other.getVector());
         double thisParam = Math2D.det(between, other.getVector()) / denominator;
-        double otherParam = Math2D.det(getVector(), between) / denominator;
 
-        Point2D intersectionPoint = null;
+        boolean allowed = allowOutside;
+        if (!allowed) {
+            double otherParam = Math2D.det(getVector(), between) / denominator;
 
-        if (thisParam > 0 && thisParam < 1 &&
-                otherParam > -1 && otherParam < 0) {
-            intersectionPoint = getTo().add(getVector().multiply(-thisParam));
+            allowed = thisParam > 0 && thisParam < 1 && otherParam > -1 && otherParam < 0;
         }
 
-        return intersectionPoint;
+        if (allowed) {
+            return getTo().add(getVector().multiply(-thisParam));
+        } else {
+            return null;
+        }
+    }
+
+    public Point2D intersect(Segment other) {
+        return intersect(other, false);
     }
 
     public Point2D project(Point2D point) {

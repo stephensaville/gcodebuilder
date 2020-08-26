@@ -140,6 +140,16 @@ public class PathBuilderController {
         redrawPath();
     }
 
+    public void displayPockets() {
+        displayMode = DisplayMode.POCKETS;
+        redrawPath();
+    }
+
+    public void displayConnectedPockets() {
+        displayMode = DisplayMode.CONNECTED_POCKETS;
+        redrawPath();
+    }
+
     public void resetPath() {
         paths.clear();
         generator.clearPaths();
