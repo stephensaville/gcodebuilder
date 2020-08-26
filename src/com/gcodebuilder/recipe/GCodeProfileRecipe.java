@@ -61,7 +61,7 @@ public class GCodeProfileRecipe extends GCodeRecipe {
         if (shape instanceof Rectangle) {
             return new GCodeRectangleProfileGenerator(this, (Rectangle)shape);
         } else if (shape instanceof Circle) {
-            return new GCodeCircleProfileGenerator(this, (Circle) shape);
+            return new GCodeCircleProfileGenerator(this, (Circle)shape);
         } else if (shape instanceof Path) {
             return new GCodePathProfileGenerator(this, (Path)shape);
         } else {

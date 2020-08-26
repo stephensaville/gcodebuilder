@@ -1,6 +1,5 @@
 package com.gcodebuilder.generator.toolpath;
 
-import com.gcodebuilder.app.tools.Tool;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Point;
@@ -25,7 +24,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Queue;
 import java.util.stream.Collectors;
 
 public class ToolpathGenerator {
@@ -329,7 +327,7 @@ public class ToolpathGenerator {
         return !Segment.isPointInsidePath(path, segment.getFrom()) && !Segment.isPointInsidePath(path, segment.getTo());
     }
 
-    public List<Toolpath> computeToolpaths(Side side, Direction direction) {
+    public List<Toolpath> computeProfileToolpaths(Side side, Direction direction) {
         List<Segment> connectedEdges = new ArrayList<>();
         List<List<Toolpath.Segment>> connectedToolpathSides = new ArrayList<>();
 
@@ -511,6 +509,12 @@ public class ToolpathGenerator {
             }
         }
         return allConnectedPockets;
+    }
+
+    public List<Toolpath> computePocketToolpaths(Direction direction) {
+        List<Toolpath> insideToolpaths = computeProfileToolpaths(Side.INSIDE, direction);
+        List<Toolpath> pocketToolpaths = computePockets(insideToolpaths);
+        return connectPockets(pocketToolpaths);
     }
 
     private static void drawCircle(GraphicsContext ctx, Point2D center, double radius) {
