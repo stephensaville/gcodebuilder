@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane fx:id="rootPane" prefHeight="900.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.PathBuilderController">
+<BorderPane fx:id="rootPane" prefHeight="900.0" prefWidth="1500.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.PathBuilderController">
     <center>
         <Canvas fx:id="pathCanvas" onMouseDragged="#mouseDragOnCanvas" onMousePressed="#mousePressOnCanvas" onMouseReleased="#mouseReleaseOnCanvas" />
     </center>

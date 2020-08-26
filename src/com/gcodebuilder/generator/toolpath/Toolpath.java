@@ -1,6 +1,8 @@
 package com.gcodebuilder.generator.toolpath;
 
+import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.UnitVector;
+import com.gcodebuilder.model.Direction;
 import javafx.geometry.Point2D;
 import lombok.Data;
 import lombok.Getter;
@@ -136,11 +138,52 @@ public class Toolpath {
 
     private final List<Segment> segments;
 
+    @Getter @Setter
+    private Toolpath next;
+
+    private Direction direction;
+
+    public boolean hasNext() {
+        return next != null;
+    }
+
     public Segment getFirstSegment() {
         return segments.get(0);
     }
 
     public Segment getLastSegment() {
         return segments.get(segments.size() - 1);
+    }
+
+    public Direction getDirection() {
+        if (direction == null) {
+            double totalAngleDiff = 0.0;
+            Toolpath.Segment prevSegment = getLastSegment();
+            for (Toolpath.Segment segment : segments) {
+                totalAngleDiff += Math2D.subtractAngle(segment.getSegment().getAngle(),
+                        prevSegment.getSegment().getAngle());
+                prevSegment = segment;
+            }
+            return (totalAngleDiff > 0) ? Direction.COUNTER_CLOCKWISE : Direction.CLOCKWISE;
+        }
+        return direction;
+    }
+
+    public Toolpath reverse() {
+        List<Toolpath.Segment> reversed = new ArrayList<>(segments.size());
+        for (int i = segments.size() - 1; i >= 0; --i) {
+            reversed.add(segments.get(i).flip());
+        }
+        return new Toolpath(reversed);
+    }
+
+    public Toolpath orient(Direction direction) {
+        if (direction == getDirection()) {
+            return this;
+        } else {
+            Toolpath oriented = reverse();
+            oriented.direction = direction;
+            return oriented;
+        }
     }
 }

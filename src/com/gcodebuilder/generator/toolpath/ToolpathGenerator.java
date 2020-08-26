@@ -82,10 +82,8 @@ public class ToolpathGenerator {
         }
     }
 
-    private void intersectToolpathSegments(int i, List<Toolpath.Segment> segments) {
-        Toolpath.Segment current = segments.get(i);
-        for (int j = i + 1; j < segments.size(); ++j) {
-            Toolpath.Segment other = segments.get(j);
+    private void intersectToolpathSegments(Toolpath.Segment current, List<Toolpath.Segment> others) {
+        for (Toolpath.Segment other : others) {
             Point2D intersectionPoint = current.intersect(other);
             if (intersectionPoint != null) {
                 Toolpath.Connection connection = new Toolpath.Connection(intersectionPoint);
@@ -100,6 +98,12 @@ public class ToolpathGenerator {
                 boolean otherFromSideValid = (angleFromOtherToTowards <= Math.PI/2);
                 other.split(intersectionPoint, otherFromSideValid, !otherFromSideValid, connection);
             }
+        }
+    }
+
+    private void intersectAllToolpathSegments(List<Toolpath.Segment> allSegments) {
+        for (int i = 0; i < allSegments.size(); ++i) {
+            intersectToolpathSegments(allSegments.get(i), allSegments.subList(i + 1, allSegments.size()));
         }
     }
 
@@ -201,6 +205,13 @@ public class ToolpathGenerator {
         }
     }
 
+    private void intersectConnectedToolpathCorners(List<List<Toolpath.Segment>> connectedToolpathSides,
+                                                   List<Toolpath.Segment> allSegments) {
+        for (List<Toolpath.Segment> sameSideSegments : connectedToolpathSides) {
+            intersectWithSameSideCorners(sameSideSegments, allSegments);
+        }
+    }
+
     private static List<Toolpath.Segment> getAllValidSegments(List<Toolpath.Segment> segments) {
         return segments.stream()
                 .flatMap(segment -> segment.getValidSegments().stream())
@@ -251,8 +262,8 @@ public class ToolpathGenerator {
         return false;
     }
 
-    private static List<List<Toolpath.Segment>> partitionToolpaths(List<Toolpath.Segment> validSegments) {
-        List<List<Toolpath.Segment>> result = new ArrayList<>();
+    private static List<Toolpath> partitionToolpaths(List<Toolpath.Segment> validSegments) {
+        List<Toolpath> result = new ArrayList<>();
         List<Toolpath.Segment> currentToolpath = new ArrayList<>();
         LinkedList<Toolpath.Segment> remainingSegments = new LinkedList<>(validSegments);
         Toolpath.Segment current = remainingSegments.pollFirst();
@@ -301,7 +312,7 @@ public class ToolpathGenerator {
             } else {
                 // next not found; finish current toolpath
                 if (closeToolpath(currentToolpath)) {
-                    result.add(currentToolpath);
+                    result.add(new Toolpath(currentToolpath));
                 }
                 currentToolpath = new ArrayList<>();
                 current = remainingSegments.pollFirst();
@@ -316,33 +327,6 @@ public class ToolpathGenerator {
 
     private boolean isOutsideSegment(List<Segment> path, Toolpath.Segment segment) {
         return !Segment.isPointInsidePath(path, segment.getFrom()) && !Segment.isPointInsidePath(path, segment.getTo());
-    }
-
-    private Direction getToolpathDirection(List<Toolpath.Segment> toolpath) {
-        double totalAngleDiff = 0.0;
-        Toolpath.Segment prevSegment = toolpath.get(toolpath.size() - 1);
-        for (Toolpath.Segment segment : toolpath) {
-            totalAngleDiff += Math2D.subtractAngle(segment.getSegment().getAngle(),
-                    prevSegment.getSegment().getAngle());
-            prevSegment = segment;
-        }
-        return (totalAngleDiff > 0) ? Direction.COUNTER_CLOCKWISE : Direction.CLOCKWISE;
-    }
-
-    private List<Toolpath.Segment> reverseToolpath(List<Toolpath.Segment> toolpath) {
-        List<Toolpath.Segment> reversed = new ArrayList<>(toolpath.size());
-        for (int i = toolpath.size() - 1; i >= 0; --i) {
-            reversed.add(toolpath.get(i).flip());
-        }
-        return reversed;
-    }
-
-    private List<Toolpath.Segment> orientToolpath(List<Toolpath.Segment> toolpath, Direction direction) {
-        if (getToolpathDirection(toolpath) == direction) {
-            return toolpath;
-        } else {
-            return reverseToolpath(toolpath);
-        }
     }
 
     public List<Toolpath> computeToolpaths(Side side, Direction direction) {
@@ -370,12 +354,8 @@ public class ToolpathGenerator {
         if (!connectedToolpathSides.isEmpty()) {
             List<Toolpath.Segment> allSegments = new ArrayList<>();
             connectedToolpathSides.forEach(allSegments::addAll);
-            for (List<Toolpath.Segment> sameSideSegments : connectedToolpathSides) {
-                intersectWithSameSideCorners(sameSideSegments, allSegments);
-            }
-            for (int i = 0; i < allSegments.size(); ++i) {
-                intersectToolpathSegments(i, allSegments);
-            }
+            intersectConnectedToolpathCorners(connectedToolpathSides, allSegments);
+            intersectAllToolpathSegments(allSegments);
             List<Toolpath.Segment> allValidSegments = getAllValidSegments(allSegments);
             List<Toolpath.Segment> sideSegments;
             switch (side) {
@@ -393,32 +373,32 @@ public class ToolpathGenerator {
                 sideSegments = Collections.emptyList();
                 break;
             }
-            List<List<Toolpath.Segment>> partitionedToolpaths = partitionToolpaths(sideSegments);
+            List<Toolpath> partitionedToolpaths = partitionToolpaths(sideSegments);
             return partitionedToolpaths.stream()
-                    .map(toolpath -> orientToolpath(toolpath, direction))
-                    .map(Toolpath::new)
+                    .map(toolpath -> toolpath.orient(direction))
                     .collect(Collectors.toList());
         }
 
         return Collections.emptyList();
     }
 
-    private List<Segment> computeEnclosingPath(List<Toolpath.Segment> enclosingToolpath) {
-        List<Segment> enclosingPath = new ArrayList<>(enclosingToolpath.size());
-        for (int i = 0; i < enclosingToolpath.size(); ++i) {
-            Toolpath.Segment current = enclosingToolpath.get(i);
+    private List<Segment> computeEnclosingPath(Toolpath enclosingToolpath) {
+        List<Toolpath.Segment> enclosingToolpathSegments = enclosingToolpath.getSegments();
+        List<Segment> enclosingPath = new ArrayList<>(enclosingToolpathSegments.size());
+        for (int i = 0; i < enclosingToolpathSegments.size(); ++i) {
+            Toolpath.Segment current = enclosingToolpathSegments.get(i);
 
             Point2D from = current.getFrom();
             if (!isSamePoint(from, current.getFromConnection().getConnectionPoint())) {
-                int prevIndex = (i > 0) ? (i - 1) : (enclosingToolpath.size() - 1);
-                Toolpath.Segment prev = enclosingToolpath.get(prevIndex);
+                int prevIndex = (i > 0) ? (i - 1) : (enclosingToolpathSegments.size() - 1);
+                Toolpath.Segment prev = enclosingToolpathSegments.get(prevIndex);
                 from = current.getSegment().intersect(prev.getSegment(), true);
             }
 
             Point2D to = current.getTo();
             if (!isSamePoint(to, current.getToConnection().getConnectionPoint())) {
-                int nextIndex = (i + 1 < enclosingToolpath.size()) ? (i + 1) : 0;
-                Toolpath.Segment next = enclosingToolpath.get(nextIndex);
+                int nextIndex = (i + 1 < enclosingToolpathSegments.size()) ? (i + 1) : 0;
+                Toolpath.Segment next = enclosingToolpathSegments.get(nextIndex);
                 to = current.getSegment().intersect(next.getSegment(), true);
             }
 
@@ -427,11 +407,11 @@ public class ToolpathGenerator {
         return enclosingPath;
     }
 
-    private List<Toolpath.Segment> computePocketSegments(List<Toolpath.Segment> enclosingToolpath,
-                                                         List<Segment> enclosingPath) {
-        List<Toolpath.Segment> pocketSegments = new ArrayList<>(enclosingToolpath.size());
+    private List<Toolpath.Segment> computePocketSegments(Toolpath enclosingToolpath, List<Segment> enclosingPath) {
+        List<Toolpath.Segment> enclosingToolpathSegments = enclosingToolpath.getSegments();
+        List<Toolpath.Segment> pocketSegments = new ArrayList<>(enclosingToolpathSegments.size());
         Iterator<Segment> pathIterator = enclosingPath.iterator();
-        for (Toolpath.Segment toolpathSegment : enclosingToolpath) {
+        for (Toolpath.Segment toolpathSegment : enclosingToolpathSegments) {
             pocketSegments.add(Toolpath.Segment.fromEdge(
                     pathIterator.next(),
                     toolRadius*stepOver*2.0,
@@ -442,28 +422,15 @@ public class ToolpathGenerator {
         return pocketSegments;
     }
 
-    private List<List<Toolpath.Segment>> computePockets(List<List<Toolpath.Segment>> insideToolpaths) {
+    private List<Toolpath> computePockets(List<Toolpath> insideToolpaths) {
         List<Toolpath.Segment> allSegments = new ArrayList<>();
-        insideToolpaths.forEach(allSegments::addAll);
+        insideToolpaths.forEach(toolpath -> allSegments.addAll(toolpath.getSegments()));
 
-        List<List<Toolpath.Segment>> pocketToolpaths = new ArrayList<>();
-        pocketToolpaths.addAll(insideToolpaths);
-
-        Queue<List<Toolpath.Segment>> enclosingToolpathQueue = new LinkedList<>();
-        enclosingToolpathQueue.addAll(insideToolpaths);
-
-        final int maxIterationCount = insideToolpaths.size() * 10;
-        int iterationCount = 0;
+        List<Toolpath> pocketToolpaths = new ArrayList<>(insideToolpaths);
+        Queue<Toolpath> enclosingToolpathQueue = new LinkedList<>(insideToolpaths);
 
         while (!enclosingToolpathQueue.isEmpty()) {
-            if (maxIterationCount <= iterationCount++) {
-                log.info("Reached max iterations!");
-                break;
-            } else {
-                log.info("Iteration #{}", iterationCount);
-            }
-
-            List<Toolpath.Segment> enclosingToolpath = enclosingToolpathQueue.remove();
+            Toolpath enclosingToolpath = enclosingToolpathQueue.remove();
             List<Segment> enclosingPath = computeEnclosingPath(enclosingToolpath);
             List<Toolpath.Segment> pocketSegments = computePocketSegments(enclosingToolpath, enclosingPath);
 
@@ -472,8 +439,10 @@ public class ToolpathGenerator {
             int pocketStartIndex = allSegments.size();
             allSegments.addAll(pocketSegments);
             intersectWithSameSideCorners(pocketSegments, allSegments);
+
             for (int i = pocketStartIndex; i < allSegments.size(); ++i) {
-                intersectToolpathSegments(i, allSegments);
+                intersectToolpathSegments(allSegments.get(i), allSegments.subList(0, pocketStartIndex));
+                intersectToolpathSegments(allSegments.get(i), allSegments.subList(i + 1, allSegments.size()));
             }
 
             List<Toolpath.Segment> validPocketSegments = getAllValidSegments(pocketSegments);
@@ -482,7 +451,7 @@ public class ToolpathGenerator {
                     .filter(segment -> isInsideSegment(enclosingPath, segment))
                     .collect(Collectors.toList());
 
-            List<List<Toolpath.Segment>> partitionedPocketToolpaths = partitionToolpaths(insidePocketSegments);
+            List<Toolpath> partitionedPocketToolpaths = partitionToolpaths(insidePocketSegments);
 
             pocketToolpaths.addAll(partitionedPocketToolpaths);
             enclosingToolpathQueue.addAll(partitionedPocketToolpaths);
@@ -490,23 +459,22 @@ public class ToolpathGenerator {
         return pocketToolpaths;
     }
 
-    private List<List<List<Toolpath.Segment>>> connectPockets(List<List<Toolpath.Segment>> pocketToolpaths) {
-        List<List<List<Toolpath.Segment>>> allConnectedPockets = new ArrayList<>();
-        LinkedList<List<Toolpath.Segment>> remainingPockets = new LinkedList<>(pocketToolpaths);
-        List<List<Toolpath.Segment>> currentConnectedPockets = new ArrayList<>();
-        List<Toolpath.Segment> currentPocket = remainingPockets.pollFirst();
+    private List<Toolpath> connectPockets(List<Toolpath> pocketToolpaths) {
+        List<Toolpath> allConnectedPockets = new ArrayList<>();
+        LinkedList<Toolpath> remainingPockets = new LinkedList<>(pocketToolpaths);
+        Toolpath currentPocket = remainingPockets.pollFirst();
         while (currentPocket != null) {
-            currentConnectedPockets.add(currentPocket);
+            allConnectedPockets.add(currentPocket);
             List<Segment> pocketPath = computeEnclosingPath(currentPocket);
-            Point2D currentPoint = currentPocket.get(currentPocket.size() - 1).getTo();
+            Point2D currentPoint = currentPocket.getLastSegment().getTo();
 
-            List<Toolpath.Segment> nextPocket = null;
+            Toolpath nextPocket = null;
             double nextPocketDistance = Double.MAX_VALUE;
 
-            ListIterator<List<Toolpath.Segment>> toolpathIterator = remainingPockets.listIterator();
+            ListIterator<Toolpath> toolpathIterator = remainingPockets.listIterator();
             while (toolpathIterator.hasNext()) {
-                List<Toolpath.Segment> otherPocket = toolpathIterator.next();
-                Point2D startPoint = otherPocket.get(otherPocket.size() - 1).getTo();
+                Toolpath otherPocket = toolpathIterator.next();
+                Point2D startPoint = otherPocket.getLastSegment().getTo();
                 if (Segment.isPointInsidePath(pocketPath, startPoint)) {
                     double pocketDistance = currentPoint.distance(startPoint);
                     if (pocketDistance < nextPocketDistance) {
@@ -522,10 +490,9 @@ public class ToolpathGenerator {
             }
 
             if (nextPocket != null) {
+                currentPocket.setNext(nextPocket);
                 currentPocket = nextPocket;
             } else {
-                allConnectedPockets.add(currentConnectedPockets);
-                currentConnectedPockets = new ArrayList<>();
                 currentPocket = remainingPockets.pollFirst();
             }
         }
@@ -626,26 +593,19 @@ public class ToolpathGenerator {
         }
     }
 
-    private void drawPartitionedToolpaths(GraphicsContext ctx, List<List<Toolpath.Segment>> toolpaths,
-                                          boolean connected, int startingToolpathIndex) {
-        int toolpathIndex = startingToolpathIndex;
-        Toolpath.Segment prevToolpathSegment = null;
-        for (List<Toolpath.Segment> toolpath : toolpaths) {
+    private void drawToolpaths(GraphicsContext ctx, List<Toolpath> toolpaths) {
+        int toolpathIndex = 0;
+        for (Toolpath toolpath : toolpaths) {
             ++toolpathIndex;
 
-            boolean closed = isToolpathClosed(toolpath);
+            boolean closed = isToolpathClosed(toolpath.getSegments());
 
-            Direction toolpathDirection = getToolpathDirection(toolpath);
+            Direction toolpathDirection = toolpath.getDirection();
             String directionText = (toolpathDirection == Direction.CLOCKWISE) ? "CW" : "CCW";
 
-            Toolpath.Segment prevSegment = toolpath.get(toolpath.size() - 1);
-            if (connected && prevToolpathSegment != null) {
-                drawLine(ctx, prevToolpathSegment.getTo(), prevSegment.getTo());
-            }
-            prevToolpathSegment = prevSegment;
-
+            Toolpath.Segment prevSegment = toolpath.getLastSegment();
             int segmentIndex = 0;
-            for (Toolpath.Segment segment : toolpath) {
+            for (Toolpath.Segment segment : toolpath.getSegments()) {
                 ++segmentIndex;
 
                 Point2D textPoint = segment.getFrom().midpoint(segment.getTo());
@@ -671,11 +631,12 @@ public class ToolpathGenerator {
 
                 prevSegment = segment;
             }
-        }
-    }
 
-    private void drawPartitionedToolpaths(GraphicsContext ctx, List<List<Toolpath.Segment>> toolpaths) {
-        drawPartitionedToolpaths(ctx, toolpaths, false, 0);
+            if (toolpath.hasNext()) {
+                drawLine(ctx, toolpath.getLastSegment().getTo(),
+                        toolpath.getNext().getLastSegment().getTo());
+            }
+        }
     }
 
     public enum DisplayMode {
@@ -725,12 +686,8 @@ public class ToolpathGenerator {
         if (!connectedToolpathSides.isEmpty()) {
             List<Toolpath.Segment> allSegments = new ArrayList<>();
             connectedToolpathSides.forEach(allSegments::addAll);
-            for (List<Toolpath.Segment> sameSideSegments : connectedToolpathSides) {
-                intersectWithSameSideCorners(sameSideSegments, allSegments);
-            }
-            for (int i = 0; i < allSegments.size(); ++i) {
-                intersectToolpathSegments(i, allSegments);
-            }
+            intersectConnectedToolpathCorners(connectedToolpathSides, allSegments);
+            intersectAllToolpathSegments(allSegments);
             if (displayMode == DisplayMode.SPLIT_POINTS) {
                 allSegments.forEach(segment -> drawSplitPoints(ctx, segment));
             } else {
@@ -745,9 +702,11 @@ public class ToolpathGenerator {
                     }
                 } else {
                     List<Toolpath.Segment> insideSegments = allValidSegments.stream()
-                            .filter(segment -> isInsideSegment(connectedEdges, segment)).collect(Collectors.toList());
+                            .filter(segment -> isInsideSegment(connectedEdges, segment))
+                            .collect(Collectors.toList());
                     List<Toolpath.Segment> outsideSegments = allValidSegments.stream()
-                            .filter(segment -> isOutsideSegment(connectedEdges, segment)).collect(Collectors.toList());
+                            .filter(segment -> isOutsideSegment(connectedEdges, segment))
+                            .collect(Collectors.toList());
                     if (displayMode == DisplayMode.INSIDE_OUTSIDE) {
                         ctx.save();
                         try {
@@ -759,56 +718,51 @@ public class ToolpathGenerator {
                             ctx.restore();
                         }
                     } else {
-                        List<List<Toolpath.Segment>> insideToolpaths = partitionToolpaths(insideSegments);
-                        List<List<Toolpath.Segment>> outsideToolpaths = partitionToolpaths(outsideSegments);
+                        List<Toolpath> insideToolpaths = partitionToolpaths(insideSegments);
+                        List<Toolpath> outsideToolpaths = partitionToolpaths(outsideSegments);
                         if (displayMode == DisplayMode.PARTITIONED_TOOLPATHS) {
                             ctx.save();
                             try {
                                 ctx.setStroke(INSIDE_PAINT);
-                                drawPartitionedToolpaths(ctx, insideToolpaths);
+                                drawToolpaths(ctx, insideToolpaths);
                                 ctx.setStroke(OUTSIDE_PAINT);
-                                drawPartitionedToolpaths(ctx, outsideToolpaths);
+                                drawToolpaths(ctx, outsideToolpaths);
                             } finally {
                                 ctx.restore();
                             }
                         } else {
                             insideToolpaths = insideToolpaths.stream()
-                                    .map(toolpath -> orientToolpath(toolpath, Direction.CLOCKWISE))
+                                    .map(toolpath -> toolpath.orient(Direction.CLOCKWISE))
                                     .collect(Collectors.toList());
                             outsideToolpaths = outsideToolpaths.stream()
-                                    .map(toolpath -> orientToolpath(toolpath, Direction.CLOCKWISE))
+                                    .map(toolpath -> toolpath.orient(Direction.CLOCKWISE))
                                     .collect(Collectors.toList());
                             if (displayMode == DisplayMode.ORIENTED_TOOLPATHS) {
                                 ctx.save();
                                 try {
                                     ctx.setStroke(INSIDE_PAINT);
-                                    drawPartitionedToolpaths(ctx, insideToolpaths);
+                                    drawToolpaths(ctx, insideToolpaths);
                                     ctx.setStroke(OUTSIDE_PAINT);
-                                    drawPartitionedToolpaths(ctx, outsideToolpaths);
+                                    drawToolpaths(ctx, outsideToolpaths);
                                 } finally {
                                     ctx.restore();
                                 }
                             } else {
-                                List<List<Toolpath.Segment>> pocketToolpaths = computePockets(insideToolpaths);
+                                List<Toolpath> pocketToolpaths = computePockets(insideToolpaths);
                                 if (displayMode == DisplayMode.POCKETS) {
                                     ctx.save();
                                     try {
                                         ctx.setStroke(INSIDE_PAINT);
-                                        drawPartitionedToolpaths(ctx, pocketToolpaths);
+                                        drawToolpaths(ctx, pocketToolpaths);
                                     } finally {
                                         ctx.restore();
                                     }
                                 } else if (displayMode == DisplayMode.CONNECTED_POCKETS) {
-                                    List<List<List<Toolpath.Segment>>> connectedPocketToolpaths =
-                                            connectPockets(pocketToolpaths);
+                                    List<Toolpath> connectedPocketToolpaths = connectPockets(pocketToolpaths);
                                     ctx.save();
                                     try {
                                         ctx.setStroke(INSIDE_PAINT);
-                                        int startingToolpathIndex = 0;
-                                        for (List<List<Toolpath.Segment>> connectedPockets : connectedPocketToolpaths) {
-                                            drawPartitionedToolpaths(ctx, connectedPockets, true, startingToolpathIndex);
-                                            startingToolpathIndex += connectedPockets.size();
-                                        }
+                                        drawToolpaths(ctx, connectedPocketToolpaths);
                                     } finally {
                                         ctx.restore();
                                     }
