@@ -382,7 +382,7 @@ public class ToolpathGenerator {
         return Collections.emptyList();
     }
 
-    private List<Segment> computeEnclosingPath(Toolpath enclosingToolpath) {
+    private static List<Segment> computeEnclosingPath(Toolpath enclosingToolpath) {
         List<Toolpath.Segment> enclosingToolpathSegments = enclosingToolpath.getSegments();
         List<Segment> enclosingPath = new ArrayList<>(enclosingToolpathSegments.size());
         for (int i = 0; i < enclosingToolpathSegments.size(); ++i) {
@@ -428,10 +428,14 @@ public class ToolpathGenerator {
 
         List<Toolpath> pocketToolpaths = new ArrayList<>(insideToolpaths);
         Queue<Toolpath> enclosingToolpathQueue = new LinkedList<>(insideToolpaths);
+        Queue<List<Segment>> enclosingPathQueue = insideToolpaths.stream()
+                .map(ToolpathGenerator::computeEnclosingPath)
+                .collect(Collectors.toCollection(LinkedList::new));
 
         while (!enclosingToolpathQueue.isEmpty()) {
             Toolpath enclosingToolpath = enclosingToolpathQueue.remove();
-            List<Segment> enclosingPath = computeEnclosingPath(enclosingToolpath);
+            List<Segment> connectedPath = enclosingPathQueue.stream().flatMap(List::stream).collect(Collectors.toList());
+            List<Segment> enclosingPath = enclosingPathQueue.remove();
             List<Toolpath.Segment> pocketSegments = computePocketSegments(enclosingToolpath, enclosingPath);
 
             connectToolpathSegments(pocketSegments);
@@ -448,13 +452,16 @@ public class ToolpathGenerator {
             List<Toolpath.Segment> validPocketSegments = getAllValidSegments(pocketSegments);
 
             List<Toolpath.Segment> insidePocketSegments = validPocketSegments.stream()
-                    .filter(segment -> isInsideSegment(enclosingPath, segment))
+                    .filter(segment -> isInsideSegment(connectedPath, segment))
                     .collect(Collectors.toList());
 
             List<Toolpath> partitionedPocketToolpaths = partitionToolpaths(insidePocketSegments);
 
             pocketToolpaths.addAll(partitionedPocketToolpaths);
             enclosingToolpathQueue.addAll(partitionedPocketToolpaths);
+            partitionedPocketToolpaths.stream()
+                    .map(ToolpathGenerator::computeEnclosingPath)
+                    .forEach(enclosingPathQueue::add);
         }
         return pocketToolpaths;
     }
