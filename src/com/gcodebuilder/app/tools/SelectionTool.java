@@ -1,8 +1,12 @@
 package com.gcodebuilder.app.tools;
 
 import com.gcodebuilder.geometry.Shape;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SelectionTool implements Tool {
+    private static final Logger log = LogManager.getLogger(SelectionTool.class);
+
     @Override
     public boolean isSelectionTool() {
         return true;
@@ -10,15 +14,22 @@ public class SelectionTool implements Tool {
 
     @Override
     public Shape<?> down(InteractionEvent event) {
-        if (event.getDrawing().unselectAllShapes() > 0) {
-            event.getDrawing().setDirty(true);
-        }
         Shape<?> currentShape = event.getShape();
-        if (currentShape != null) {
-            event.getShape().setSelected(true);
-            event.getDrawing().setDirty(true);
+        if (event.getInputEvent().isControlDown()) {
+            // update existing selection when control is down
+            if (currentShape != null) {
+                event.getShape().setSelected(!event.getShape().isSelected());
+                event.getDrawing().setDirty(true);
+                log.info("Added to selection: " + currentShape);
+            }
+        } else {
+            // reset selection when control is up
+            if (event.getDrawing().setSelectedShapes(currentShape)) {
+                event.getDrawing().setDirty(true);
+                log.info("Set selection to only: " + currentShape);
+            }
         }
-        return event.getShape();
+        return currentShape;
     }
 
     @Override

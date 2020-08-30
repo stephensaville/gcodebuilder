@@ -7,8 +7,8 @@
     <children>
         <TableView fx:id="shapeTable" fixedCellSize="24.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="52.0">
             <columns>
-                <TableColumn fx:id="shapeTypeColumn" prefWidth="75.0" text="Shape" />
-                <TableColumn fx:id="recipeNameColumn" prefWidth="175.0" text="Recipe" />
+                <TableColumn fx:id="shapeTypeColumn" prefWidth="90.0" text="Shape" />
+                <TableColumn fx:id="recipeNameColumn" prefWidth="180.0" text="Recipe" />
             </columns>
             <placeholder>
                 <Label text="drawing is empty" />

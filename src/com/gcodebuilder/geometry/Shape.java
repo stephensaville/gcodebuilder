@@ -25,7 +25,8 @@ import java.io.IOException;
 @JsonSubTypes({
         @JsonSubTypes.Type(Rectangle.class),
         @JsonSubTypes.Type(Circle.class),
-        @JsonSubTypes.Type(Path.class)
+        @JsonSubTypes.Type(Path.class),
+        @JsonSubTypes.Type(PathGroup.class)
 })
 @RequiredArgsConstructor
 public abstract class Shape<H> implements Drawable {

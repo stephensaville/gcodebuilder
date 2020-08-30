@@ -6,6 +6,7 @@ import com.gcodebuilder.generator.GCodePathPocketGenerator;
 import com.gcodebuilder.generator.GCodeRectanglePocketGenerator;
 import com.gcodebuilder.geometry.Circle;
 import com.gcodebuilder.geometry.Path;
+import com.gcodebuilder.geometry.PathGroup;
 import com.gcodebuilder.geometry.Rectangle;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.Direction;
@@ -62,7 +63,9 @@ public class GCodePocketRecipe extends GCodeRecipe {
         } else if (shape instanceof Circle) {
             return new GCodeCirclePocketGenerator(this, (Circle)shape);
         } else if (shape instanceof Path) {
-            return new GCodePathPocketGenerator(this, (Path)shape);
+            return new GCodePathPocketGenerator(this, (Path) shape);
+        } else if (shape instanceof PathGroup) {
+            return new GCodePathPocketGenerator(this, ((PathGroup)shape).getPaths());
         } else {
             return null;
         }

@@ -11,6 +11,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.MultipleSelectionModel;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -135,16 +136,15 @@ public class ShapesTableController {
 
         recipeNameColumn.setCellValueFactory(cdf -> cdf.getValue().recipeNameProperty());
 
-        final Callback<TableView<ObservableShape>, TableRow<ObservableShape>> defaultRowFactory =
-                shapeTable.getRowFactory();
-         shapeTable.setRowFactory(tableView -> {
-             TableRow<ObservableShape> tableRow = new TableRow<>();
-             tableRow.setBorder(DRAG_DONE_BORDER);
-             return tableRow;
-         });
+        shapeTable.setRowFactory(tableView -> {
+            TableRow<ObservableShape> tableRow = new TableRow<>();
+            tableRow.setBorder(DRAG_DONE_BORDER);
+            return tableRow;
+        });
 
         shapeTable.setItems(shapes);
         shapeTable.setSortPolicy(table -> false);
+        shapeTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 
     public static ShapesTableController attach(TitledPane parent) throws IOException {

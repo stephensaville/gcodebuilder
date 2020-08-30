@@ -16,6 +16,7 @@ import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Data
@@ -23,15 +24,25 @@ public class GCodePathProfileGenerator implements GCodeGenerator {
     private static final Logger log = LogManager.getLogger(GCodePathProfileGenerator.class);
 
     private final GCodeProfileRecipe recipe;
-    private final Path shape;
+    private final List<Path> paths;
+
+    public GCodePathProfileGenerator(GCodeProfileRecipe recipe, Path... paths) {
+        this.recipe = recipe;
+        this.paths = Arrays.asList(paths);
+    }
+
+    public GCodePathProfileGenerator(GCodeProfileRecipe recipe, List<Path> paths) {
+        this.recipe = recipe;
+        this.paths = paths;
+    }
 
     @Override
     public void generateGCode(GCodeBuilder builder) {
-        log.info("Generating GCode for:{}", shape);
+        log.info("Generating GCode for:{}", paths);
 
         ToolpathGenerator generator = new ToolpathGenerator();
         generator.setToolRadius(recipe.getToolWidth()/2);
-        generator.addPath(shape);
+        paths.forEach(generator::addPath);
         List<Toolpath> toolpaths = generator.computeProfileToolpaths(
                 recipe.getSide(), recipe.getDirection());
 

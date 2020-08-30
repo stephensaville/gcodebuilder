@@ -17,8 +17,12 @@ import com.gcodebuilder.canvas.GCodeCanvas;
 import com.gcodebuilder.changelog.Change;
 import com.gcodebuilder.changelog.ChangeLog;
 import com.gcodebuilder.changelog.SelectionChange;
+import com.gcodebuilder.changelog.ShapeListChange;
+import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.geometry.Drawing;
+import com.gcodebuilder.geometry.Path;
+import com.gcodebuilder.geometry.PathGroup;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.ArcDistanceMode;
 import com.gcodebuilder.model.DistanceMode;
@@ -40,7 +44,6 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -51,6 +54,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -104,6 +108,12 @@ public class DrawingWindowController {
 
     @FXML
     private MenuItem redoItem;
+
+    @FXML
+    private MenuItem groupPathsItem;
+
+    @FXML
+    private MenuItem ungroupPathsItem;
 
     private RectangleTool rectangleTool = new RectangleTool();
     private CircleTool circleTool = new CircleTool();
@@ -392,6 +402,48 @@ public class DrawingWindowController {
         refreshDrawingWhenDirty();
     }
 
+    private void updateGroupPathsMenuItems() {
+        int pathsSelected = 0;
+        int pathGroupsSelected = 0;
+        for (Shape<?> shape : currentSelectedShapes) {
+            if (shape instanceof Path) {
+                ++pathsSelected;
+            } else if (shape instanceof PathGroup) {
+                ++pathGroupsSelected;
+            }
+        }
+        groupPathsItem.setDisable(pathsSelected + pathGroupsSelected < 2);
+        ungroupPathsItem.setDisable(pathGroupsSelected < 1);
+    }
+
+    public void groupPaths() {
+        Snapshot<List<Shape<?>>> shapesBefore = drawing.saveShapes();
+        PathGroup group = PathGroup.groupSelected(drawing);
+        if (group.isVisible()) {
+            group.setSelected(true);
+            doChange(new ShapeListChange("Group Paths", shapesBefore, drawing.saveShapes()));
+            drawing.setDirty(true);
+        }
+        checkSelectedShapes();
+        refreshDrawingWhenDirty();
+    }
+
+    public void ungroupPaths() {
+        Snapshot<List<Shape<?>>> shapesBefore = drawing.saveShapes();
+        boolean shapesChanged = false;
+        for (PathGroup pathGroup : drawing.getSelectedShapes(PathGroup.class)) {
+            List<Path> paths = pathGroup.ungroup(drawing);
+            paths.forEach(path -> path.setSelected(true));
+            shapesChanged = true;
+        }
+        if (shapesChanged) {
+            doChange(new ShapeListChange("Ungroup Paths", shapesBefore, drawing.saveShapes()));
+            drawing.setDirty(true);
+        }
+        checkSelectedShapes();
+        refreshDrawingWhenDirty();
+    }
+
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
         Point2D point = canvas.mouseToGrid(event, true);
         Point2D mousePoint = canvas.mouseToGrid(event, false);
@@ -446,6 +498,7 @@ public class DrawingWindowController {
             }
         }
         currentSelectedShapes = selectedShapes;
+        updateGroupPathsMenuItems();
         drawing.setDirty(true);
     }
 

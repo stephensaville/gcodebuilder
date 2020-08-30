@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.canvas.Drawable;
+import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.scene.canvas.GraphicsContext;
@@ -15,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,12 +62,28 @@ public class Drawing implements Drawable {
         }
     }
 
+    public boolean addAll(Collection<? extends Shape<?>> shapes) {
+        boolean changed = this.shapes.addAll(shapes);
+        if (changed) {
+            dirty = true;
+        }
+        return changed;
+    }
+
     public boolean remove(Shape<?> shape) {
         if (shapes.remove(shape)) {
             dirty = true;
             return true;
         }
         return false;
+    }
+
+    public boolean removeAll(Collection<? extends Shape<?>> shapes) {
+        boolean changed = this.shapes.removeAll(shapes);
+        if (changed) {
+            dirty = true;
+        }
+        return changed;
     }
 
     public boolean contains(Shape<?> shape) {
@@ -107,7 +125,17 @@ public class Drawing implements Drawable {
 
     @JsonIgnore
     public Set<Shape<?>> getSelectedShapes() {
-        return shapes.stream().filter(Shape::isSelected).collect(Collectors.toUnmodifiableSet());
+        return shapes.stream()
+                .filter(Shape::isSelected)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public <T extends Shape<?>> Set<T> getSelectedShapes(Class<T> shapeClass) {
+        return shapes.stream()
+                .filter(Shape::isSelected)
+                .filter(shapeClass::isInstance)
+                .map(shapeClass::cast)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     public int unselectAllShapes() {
@@ -136,6 +164,19 @@ public class Drawing implements Drawable {
     public boolean setSelectedShapes(Shape<?>... selectedShapes) {
         return setSelectedShapes(Arrays.asList(selectedShapes).stream()
                 .filter(Objects::nonNull).collect(Collectors.toSet()));
+    }
+
+    public Snapshot<List<Shape<?>>> saveShapes() {
+        return new Snapshot<>() {
+            private final List<Shape<?>> shapes = new ArrayList<>(getShapes());
+
+            @Override
+            public List<Shape<?>> restore() {
+                Drawing.this.shapes.clear();
+                Drawing.this.shapes.addAll(shapes);
+                return shapes;
+            }
+        };
     }
 
     @Override

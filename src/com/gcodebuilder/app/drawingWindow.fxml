@@ -9,7 +9,7 @@
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.DrawingWindowController">
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.DrawingWindowController">
    <bottom>
       <HBox spacing="5.0" BorderPane.alignment="CENTER">
          <children>
@@ -159,6 +159,17 @@
                         <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="groupPathsItem" onAction="#groupPaths" text="_Group Paths">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="ungroupPathsItem" onAction="#ungroupPaths" text="_Ungroup Paths">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="U" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
               </items>
             </Menu>
             <Menu text="_GCode">
@@ -181,8 +192,8 @@
    <right>
       <Accordion BorderPane.alignment="CENTER">
         <panes>
-           <TitledPane text="Shapes" fx:id="shapesPane"/>
-           <TitledPane text="Recipes" fx:id="recipeEditorPane"/>
+           <TitledPane fx:id="shapesPane" text="Shapes" />
+           <TitledPane fx:id="recipeEditorPane" text="Recipes" />
            <TitledPane prefWidth="200" text="GCode">
                <content>
                   <TextArea fx:id="gcodeEditor" editable="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
