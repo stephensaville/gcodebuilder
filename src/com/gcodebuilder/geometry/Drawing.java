@@ -1,15 +1,18 @@
 package com.gcodebuilder.geometry;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.canvas.Drawable;
 import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.Clipboard;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.java.Log;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Drawing implements Drawable {
-    private static final ObjectMapper OM = new ObjectMapper();
+    private static final Logger log = LogManager.getLogger(Drawing.class);
 
     @Getter
     @Setter
@@ -123,6 +126,10 @@ public class Drawing implements Drawable {
         recipes.forEach(this::putRecipe);
     }
 
+    public boolean hasSelectedShapes() {
+        return shapes.stream().anyMatch(Shape::isSelected);
+    }
+
     @JsonIgnore
     public Set<Shape<?>> getSelectedShapes() {
         return shapes.stream()
@@ -138,18 +145,7 @@ public class Drawing implements Drawable {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    public int unselectAllShapes() {
-        return shapes.stream().mapToInt(shape -> {
-            if (shape.isSelected()) {
-                shape.setSelected(false);
-                return 1;
-            } else {
-                return 0;
-            }
-        }).sum();
-    }
-
-    public boolean setSelectedShapes(Set<Shape<?>> selectedShapes) {
+    public boolean setSelectedShapes(Collection<Shape<?>> selectedShapes) {
         boolean selectionChanged = false;
         for (Shape<?> shape : shapes) {
             boolean selected = selectedShapes.contains(shape);
@@ -164,6 +160,42 @@ public class Drawing implements Drawable {
     public boolean setSelectedShapes(Shape<?>... selectedShapes) {
         return setSelectedShapes(Arrays.asList(selectedShapes).stream()
                 .filter(Objects::nonNull).collect(Collectors.toSet()));
+    }
+
+    public void saveSelectedShapesToClipboard(Clipboard clipboard, boolean removeShapes) {
+        Set<Shape<?>> selectedShapes = getSelectedShapes();
+        if (selectedShapes.size() == 1) {
+            Shape<?> singleShape = selectedShapes.iterator().next();
+            singleShape.saveToClipboard(clipboard);
+        } else if (selectedShapes.size() > 1) {
+            ShapeList shapeList = new ShapeList(selectedShapes);
+            shapeList.saveToClipboard(clipboard);
+        }
+        if (removeShapes) {
+            removeAll(selectedShapes);
+        }
+    }
+
+    public static boolean clipboardHasShapesContent(Clipboard clipboard) {
+        log.info("Checking clipboard for shapes content: {}", clipboard.getContentTypes());
+        return Shape.clipboardHasContent(clipboard, false)
+                || ShapeList.clipboardHasContent(clipboard);
+    }
+
+    public void addShapesFromClipboard(Clipboard clipboard) {
+        if (Shape.clipboardHasContent(clipboard, false)) {
+            Shape<?> shapeFromClipboard = Shape.loadFromClipboard(clipboard, this, false);
+            if (shapeFromClipboard != null) {
+                add(shapeFromClipboard);
+                setSelectedShapes(shapeFromClipboard);
+            }
+        } else if (ShapeList.clipboardHasContent(clipboard)) {
+            ShapeList shapeListFromClipboard = ShapeList.loadFromClipboard(clipboard);
+            if (shapeListFromClipboard != null) {
+                addAll(shapeListFromClipboard.getShapes());
+                setSelectedShapes(shapeListFromClipboard.getShapes());
+            }
+        }
     }
 
     public Snapshot<List<Shape<?>>> saveShapes() {
@@ -187,36 +219,20 @@ public class Drawing implements Drawable {
         dirty = false;
     }
 
-    public static void save(OutputStream out, Object object) throws IOException {
-        OM.writeValue(out, object);
-    }
-
     public void save(OutputStream out) throws IOException {
-        save(out, this);
-    }
-
-    public static String saveAsString(Object object) throws IOException {
-        return OM.writeValueAsString(object);
+        ShapeIO.save(out, this);
     }
 
     public String saveAsString() throws IOException {
-        return saveAsString(this);
-    }
-
-    public static <T> T load(InputStream in, Class<T> type) throws IOException {
-        return OM.readValue(in, type);
+        return ShapeIO.saveAsString(this);
     }
 
     public static Drawing load(InputStream in) throws IOException {
-        return load(in, Drawing.class);
-    }
-
-    public static <T> T loadFromString(String saved, Class<T> type) throws IOException {
-        return OM.readValue(saved, type);
+        return ShapeIO.load(in, Drawing.class);
     }
 
     public static Drawing loadFromString(String saved) throws IOException {
-        return loadFromString(saved, Drawing.class);
+        return ShapeIO.loadFromString(saved, Drawing.class);
     }
 
     @Override

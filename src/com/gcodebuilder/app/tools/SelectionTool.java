@@ -20,6 +20,15 @@ public class SelectionTool implements Tool {
             if (currentShape != null) {
                 event.getShape().setSelected(!event.getShape().isSelected());
                 event.getDrawing().setDirty(true);
+                log.info("{} selection: {}",
+                        event.getShape().isSelected() ? "Added to" : "Removed from",
+                        currentShape);
+            }
+        } else if (event.getInputEvent().isShiftDown()) {
+            // add to existing selection when shift is down
+            if (currentShape != null) {
+                event.getShape().setSelected(true);
+                event.getDrawing().setDirty(true);
                 log.info("Added to selection: " + currentShape);
             }
         } else {

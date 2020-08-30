@@ -31,37 +31,41 @@ public class PathTool implements Tool {
         return null;
     }
 
+    private Path beginEdit(Path currentPath, InteractionEvent event) {
+        pathBefore = currentPath.save();
+        if (event.getInputEvent().getClickCount() > 1 && !currentHandle.isProjectedPoint()) {
+            // double-click to remove point from path
+            if (currentPath.removePoint(currentHandle.getPointIndex())) {
+                event.getDrawing().setDirty(true);
+            }
+            log.info("Removed point: {} from path: {}", currentHandle.getOriginalPoint(), currentPath);
+            currentHandle = null;
+        } else if (currentHandle.getPointIndex() == 0 && !currentHandle.isProjectedPoint() && !currentPath.isClosed()) {
+            currentPath.closePath();
+            event.getDrawing().setDirty(true);
+            log.info("Closed path: {}", currentPath);
+        }
+        return currentPath;
+    }
+
     @Override
     public Path down(InteractionEvent event) {
         Point newPoint = new Point(event.getPoint());
         Path currentPath = getSelectedPath(event);
         if (currentPath != null) {
-            pathBefore = currentPath.save();
             currentHandle = currentPath.getHandle(event.getPoint(), event.getMousePoint(), event.getHandleRadius());
             if (currentHandle != null) {
-                if (event.getInputEvent().getClickCount() > 1 && !currentHandle.isProjectedPoint()) {
-                    // double-click to remove point from path
-                    if (currentPath.removePoint(currentHandle.getPointIndex())) {
-                        event.getDrawing().setDirty(true);
-                    }
-                    currentHandle = null;
-                    return currentPath;
-                }
                 log.info("Editing point or segment in currently selected path.");
-                if (currentHandle.getPointIndex() == 0 && !currentHandle.isProjectedPoint() && !currentPath.isClosed()) {
-                    currentPath.closePath();
-                    event.getDrawing().setDirty(true);
-                    log.info("Closed path: " + currentPath);
-                }
-                return currentPath;
+                return beginEdit(currentPath, event);
             }
+        } else {
+            currentHandle = null;
         }
         if (currentHandle == null && (event.getShape() instanceof Path)) {
             currentPath = (Path) event.getShape();
-            pathBefore = currentPath.save();
             currentHandle = (Path.Handle) event.getHandle();
             log.info("Switched to editing point or segment in a different path: {}", currentPath);
-            return currentPath;
+            return beginEdit(currentPath, event);
         }
         if (currentPath == null || currentPath.isClosed()) {
             currentPath = new Path();
@@ -70,12 +74,12 @@ public class PathTool implements Tool {
             log.info("Created new path.");
         } else {
             pathBefore = currentPath.save();
+            int newPointIndex = currentPath.getPointCount();
+            currentPath.addPoint(newPoint);
+            currentHandle = currentPath.getHandle(newPointIndex);
+            event.getDrawing().setDirty(true);
+            log.info("Added new point: {} to path: {}", newPoint, currentPath);
         }
-        int newPointIndex = currentPath.getPointCount();
-        currentPath.addPoint(newPoint);
-        currentHandle = currentPath.getHandle(newPointIndex);
-        event.getDrawing().setDirty(true);
-        log.info("Added new point: {} to path: {}", newPoint, currentPath);
         return currentPath;
     }
 

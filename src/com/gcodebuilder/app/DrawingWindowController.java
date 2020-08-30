@@ -43,6 +43,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
+import javafx.scene.input.Clipboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
@@ -112,6 +113,18 @@ public class DrawingWindowController {
 
     @FXML
     private MenuItem redoItem;
+
+    @FXML
+    private MenuItem cutItem;
+
+    @FXML
+    private MenuItem copyItem;
+
+    @FXML
+    private MenuItem pasteItem;
+
+    @FXML
+    private MenuItem deleteItem;
 
     @FXML
     private MenuItem groupPathsItem;
@@ -291,6 +304,8 @@ public class DrawingWindowController {
                 }
             }
         });
+
+        updateClipboardMenuItems();
     }
 
     private void updateScrollBars(Rectangle2D originArea) {
@@ -400,16 +415,14 @@ public class DrawingWindowController {
         changeLog.undoChange();
         drawing.setDirty(true);
         updateChangeLogMenuItems();
-        checkSelectedShapes();
-        refreshDrawingWhenDirty();
+        checkForChanges();
     }
 
     public void redoChange() {
         changeLog.redoChange();
         drawing.setDirty(true);
         updateChangeLogMenuItems();
-        checkSelectedShapes();
-        refreshDrawingWhenDirty();
+        checkForChanges();
     }
 
     private void updateGroupPathsMenuItems() {
@@ -434,8 +447,7 @@ public class DrawingWindowController {
             doChange(new ShapeListChange("Group Paths", shapesBefore, drawing.saveShapes()));
             drawing.setDirty(true);
         }
-        checkSelectedShapes();
-        refreshDrawingWhenDirty();
+        checkForChanges();
     }
 
     public void ungroupPaths() {
@@ -450,8 +462,7 @@ public class DrawingWindowController {
             doChange(new ShapeListChange("Ungroup Paths", shapesBefore, drawing.saveShapes()));
             drawing.setDirty(true);
         }
-        checkSelectedShapes();
-        refreshDrawingWhenDirty();
+        checkForChanges();
     }
 
     private InteractionEvent makeToolEvent(MouseEvent event, boolean restart) {
@@ -508,6 +519,7 @@ public class DrawingWindowController {
             }
         }
         currentSelectedShapes = selectedShapes;
+        updateClipboardMenuItems();
         updateGroupPathsMenuItems();
         drawing.setDirty(true);
     }
@@ -521,6 +533,11 @@ public class DrawingWindowController {
             canvas.refresh();
             shapesTableController.syncShapes(drawing);
         }
+    }
+
+    private void checkForChanges() {
+        checkSelectedShapes();
+        refreshDrawingWhenDirty();
     }
 
     public void mousePressOnCanvas(MouseEvent event) {
@@ -704,5 +721,41 @@ public class DrawingWindowController {
         if (gCodeProgram != null) {
             gCodeFileOperations.saveAs(gCodeProgram);
         }
+    }
+
+    private void updateClipboardMenuItems() {
+        boolean noShapesOnClipboard = !Drawing.clipboardHasShapesContent(Clipboard.getSystemClipboard());
+        pasteItem.setDisable(noShapesOnClipboard);
+
+        boolean noShapesSelected = currentSelectedShapes.isEmpty();
+        cutItem.setDisable(noShapesSelected);
+        copyItem.setDisable(noShapesSelected);
+        deleteItem.setDisable(noShapesSelected);
+    }
+
+    public void cut() {
+        Snapshot<List<Shape<?>>> shapesBefore = drawing.saveShapes();
+        drawing.saveSelectedShapesToClipboard(Clipboard.getSystemClipboard(), true);
+        doChange(new ShapeListChange("Cut", shapesBefore, drawing.saveShapes()));
+        checkForChanges();
+    }
+
+    public void copy() {
+        drawing.saveSelectedShapesToClipboard(Clipboard.getSystemClipboard(), false);
+        checkForChanges();
+    }
+
+    public void paste() {
+        Snapshot<List<Shape<?>>> shapesBefore = drawing.saveShapes();
+        drawing.addShapesFromClipboard(Clipboard.getSystemClipboard());
+        doChange(new ShapeListChange("Paste", shapesBefore, drawing.saveShapes()));
+        checkForChanges();
+    }
+
+    public void delete() {
+        Snapshot<List<Shape<?>>> shapesBefore = drawing.saveShapes();
+        drawing.removeAll(drawing.getSelectedShapes());
+        doChange(new ShapeListChange("Delete", shapesBefore, drawing.saveShapes()));
+        checkForChanges();
     }
 }

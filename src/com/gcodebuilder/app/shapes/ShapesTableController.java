@@ -2,7 +2,6 @@ package com.gcodebuilder.app.shapes;
 
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
-import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -28,7 +27,6 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.util.Callback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -99,12 +97,12 @@ public class ShapesTableController {
             tableCell.setOnDragDetected(event -> {
                 Dragboard dragboard = tableCell.startDragAndDrop(TransferMode.MOVE);
                 Shape<?> shape = tableCell.getTableRow().getItem().getShape();
-                dragboard.setContent(shape.getClipboardContent());
+                shape.saveToClipboard(dragboard);
                 event.consume();
             });
             tableCell.setOnDragOver(event -> {
                 Dragboard dragboard = event.getDragboard();
-                if (Shape.clipboardHasShapeContent(dragboard)) {
+                if (Shape.clipboardHasContent(dragboard, true)) {
                     event.acceptTransferModes(TransferMode.MOVE);
                     if (isDragBelowCenter(tableCell, event)) {
                         tableCell.getTableRow().setBorder(DRAG_BELOW_BORDER);
@@ -120,7 +118,7 @@ public class ShapesTableController {
             tableCell.setOnDragDropped(event -> {
                 Dragboard dragboard = event.getDragboard();
                 boolean success = false;
-                Shape<?> shape = Shape.getShapeFromClipboard(dragboard, drawing);
+                Shape<?> shape = Shape.loadFromClipboard(dragboard, drawing, true);
                 if (shape != null) {
                     drawing.add(getDropIndex(tableCell, event), shape);
                     syncShapes(drawing);

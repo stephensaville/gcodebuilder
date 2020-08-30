@@ -148,8 +148,8 @@
                </items>
             </Menu>
             <Menu text="_Edit">
-              <items>
-                <MenuItem fx:id="undoItem" disable="true" onAction="#undoChange" text="_Undo">
+               <items>
+                  <MenuItem fx:id="undoItem" disable="true" onAction="#undoChange" text="_Undo">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
@@ -159,7 +159,28 @@
                         <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <SeparatorMenuItem/>
+                  <MenuItem fx:id="cutItem" disable="true" onAction="#cut" text="Cu_t">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="copyItem" disable="true" onAction="#copy" text="_Copy">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="C" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="pasteItem" disable="true" onAction="#paste" text="_Paste">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="V" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="deleteItem" disable="true" onAction="#delete" text="_Delete">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="DELETE" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <SeparatorMenuItem/>
                   <MenuItem fx:id="groupPathsItem" onAction="#groupPaths" text="_Group Paths">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
