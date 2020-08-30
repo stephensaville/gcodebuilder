@@ -50,6 +50,7 @@ import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -104,6 +105,9 @@ public class DrawingWindowController {
     private MenuItem saveGCodeItem;
 
     @FXML
+    private MenuItem saveGCodeAsItem;
+
+    @FXML
     private MenuItem undoItem;
 
     @FXML
@@ -136,6 +140,12 @@ public class DrawingWindowController {
 
     private final ChangeLog changeLog = new ChangeLog();
     private Supplier<Change> changeSupplier = null;
+
+    private static final String DEFAULT_DRAWING_FILENAME = "drawing.json";
+    private static final String DEFAULT_GCODE_FILENAME = "toolpath.nc";
+
+    private static final String DRAWING_FILE_GLOB = "*.json";
+    private static final String GCODE_FILE_GLOB = "*.nc";
 
     private FileOperations<Drawing> drawingFileOperations;
     private FileOperations<GCodeProgram> gCodeFileOperations;
@@ -214,13 +224,13 @@ public class DrawingWindowController {
 
         drawingFileOperations = new FileOperations<>(
                 rootPane, Drawing::load, Drawing::save,
-                "Drawing", "drawing.json",
-                new FileChooser.ExtensionFilter("JSON", "*.json"));
+                "Drawing", DEFAULT_DRAWING_FILENAME,
+                new FileChooser.ExtensionFilter("JSON", DRAWING_FILE_GLOB));
 
         gCodeFileOperations = new FileOperations<>(
                 rootPane, GCodeProgram::load, GCodeProgram::save,
                 "GCode", "toolpath.nc",
-                new FileChooser.ExtensionFilter("GCode", "*.nc"));
+                new FileChooser.ExtensionFilter("GCode", GCODE_FILE_GLOB));
 
         shapesTableController = ShapesTableController.attach(shapesPane);
 
@@ -582,18 +592,36 @@ public class DrawingWindowController {
         recipeEditorController.getRecipes().clear();
         recipeEditorController.getRecipes().addAll(newDrawing.getRecipes());
 
+        gCodeFileOperations.setCurrentFile(null);
+        gCodeProgram = null;
+
         canvas.refresh();
+    }
+
+    private void updateInitialGCodeFileName(File drawingFile) {
+        if (drawingFile == null) {
+            gCodeFileOperations.getChooser().setInitialFileName(DEFAULT_GCODE_FILENAME);
+        } else {
+            String drawingFileName = drawingFile.getName();
+            int extensionIndex = drawingFileName.lastIndexOf('.');
+            if (extensionIndex > 0) {
+                String gCodeFileName = drawingFileName.substring(0, extensionIndex) + ".nc";
+                gCodeFileOperations.getChooser().setInitialFileName(gCodeFileName);
+            }
+        }
     }
 
     public void openDrawing() {
         Drawing newDrawing = drawingFileOperations.open();
         if (newDrawing != null) {
             setDrawing(newDrawing);
+            updateInitialGCodeFileName(drawingFileOperations.getCurrentFile());
         }
     }
 
     public void saveDrawing() {
         drawingFileOperations.save(drawing);
+        updateInitialGCodeFileName(drawingFileOperations.getCurrentFile());
     }
 
     public void saveDrawingAs() {
@@ -604,11 +632,36 @@ public class DrawingWindowController {
         Drawing newDrawing = new Drawing();
         newDrawing.setLengthUnit(unitCtl.getValue());
         setDrawing(newDrawing);
+        updateInitialGCodeFileName(null);
     }
 
     public void closeWindow() {
         Stage stage = (Stage)rootPane.getScene().getWindow();
         stage.close();
+    }
+
+    private void updateGCodeMenuItems() {
+        if (gCodeProgram != null) {
+            saveGCodeItem.setDisable(false);
+            saveGCodeAsItem.setDisable(false);
+        } else {
+            saveGCodeItem.setDisable(true);
+            saveGCodeAsItem.setDisable(true);
+        }
+    }
+
+    private void setGCodeProgram(GCodeProgram gCodeProgram) {
+        this.gCodeProgram = gCodeProgram;
+
+        if (gCodeProgram != null) {
+            StringWriter gcodeWriter = new StringWriter();
+            gCodeProgram.print(new PrintWriter(gcodeWriter));
+            gcodeEditor.setText(gcodeWriter.toString());
+        } else {
+            gcodeEditor.setText("");
+        }
+
+        updateGCodeMenuItems();
     }
 
     public void generateGCode() {
@@ -638,21 +691,18 @@ public class DrawingWindowController {
             }
         }
 
-        gCodeProgram = builder.build();
-
-        StringWriter gcodeWriter = new StringWriter();
-        gCodeProgram.print(new PrintWriter(gcodeWriter));
-        gcodeEditor.setText(gcodeWriter.toString());
-
-        saveGCodeItem.setDisable(false);
+        setGCodeProgram(builder.build());
     }
 
     public void saveGCode() {
-        if (gCodeProgram == null) {
-            saveGCodeItem.setDisable(true);
-            return;
+        if (gCodeProgram != null) {
+            gCodeFileOperations.save(gCodeProgram);
         }
+    }
 
-        gCodeFileOperations.save(gCodeProgram);
+    public void saveGCodeAs() {
+        if (gCodeProgram != null) {
+            gCodeFileOperations.saveAs(gCodeProgram);
+        }
     }
 }

@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.stage.FileChooser;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,8 +39,11 @@ public class FileOperations<T> {
     private final LoadFunction<T> loadFunction;
     private final SaveFunction<T> saveFunction;
 
+    @Getter
     private final FileChooser chooser;
 
+    @Getter
+    @Setter
     private File currentFile;
 
     public FileOperations(Node root,

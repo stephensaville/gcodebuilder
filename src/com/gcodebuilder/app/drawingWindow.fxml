@@ -184,6 +184,11 @@
                         <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
+                  <MenuItem fx:id="saveGCodeAsItem" disable="true" onAction="#saveGCodeAs" text="Save GCode As...">
+                     <accelerator>
+                        <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="DOWN" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
                </items>
             </Menu>
          </menus>

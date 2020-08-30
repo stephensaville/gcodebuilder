@@ -461,6 +461,7 @@ public class ToolpathGenerator {
             pocketToolpaths.addAll(partitionedPocketToolpaths);
             enclosingLayer = partitionedPocketToolpaths;
         }
+        Collections.reverse(pocketToolpaths);
         return pocketToolpaths;
     }
 
@@ -474,7 +475,6 @@ public class ToolpathGenerator {
         Toolpath currentPocket = remainingPockets.pollFirst();
         while (currentPocket != null) {
             allConnectedPockets.add(currentPocket);
-            List<Segment> pocketPath = computeEnclosingPath(currentPocket);
             Point2D currentPoint = currentPocket.getLastSegment().getTo();
 
             Toolpath nextPocket = null;
@@ -484,12 +484,10 @@ public class ToolpathGenerator {
             while (toolpathIterator.hasNext()) {
                 Toolpath otherPocket = toolpathIterator.next();
                 Point2D startPoint = otherPocket.getLastSegment().getTo();
-                if (Segment.isPointInsidePath(pocketPath, startPoint)) {
+                Segment connection = Segment.of(currentPoint, startPoint);
+                if (allPocketPathSegments.stream().allMatch(segment -> segment.intersect(connection) == null)) {
                     double pocketDistance = currentPoint.distance(startPoint);
-                    Segment connection = Segment.of(currentPoint, startPoint);
-                    if (pocketDistance < nextPocketDistance &&
-                            allPocketPathSegments.stream()
-                                    .allMatch(segment -> segment.intersect(connection) == null)) {
+                    if (pocketDistance < nextPocketDistance) {
                         if (nextPocket != null) {
                             toolpathIterator.set(nextPocket);
                         } else {
