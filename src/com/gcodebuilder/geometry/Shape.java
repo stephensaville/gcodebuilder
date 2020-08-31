@@ -18,7 +18,6 @@ import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -78,20 +77,17 @@ public abstract class Shape<H> implements Drawable {
 
     public abstract H getHandle(Point2D point, Point2D mousePoint, double handleRadius);
     public abstract boolean edit(H handle, InteractionEvent event);
-    public abstract boolean move(H handle, InteractionEvent event);
-    public abstract boolean resize(H handle, InteractionEvent event);
+
+    public abstract boolean move(Point2D delta);
+
+    @JsonIgnore
+    public abstract Point getCenter();
+    public abstract boolean resize(double scaleFactor, Point center);
+
     public abstract Snapshot<? extends Shape<?>> save();
 
     public boolean castAndEdit(Object handle, InteractionEvent event) {
         return edit(handleClass.cast(handle), event);
-    }
-
-    public boolean castAndMove(Object handle, InteractionEvent event) {
-        return move(handleClass.cast(handle), event);
-    }
-
-    public boolean castAndResize(Object handle, InteractionEvent event) {
-        return resize(handleClass.cast(handle), event);
     }
 
     protected void prepareToDraw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {

@@ -1,6 +1,9 @@
 package com.gcodebuilder.geometry;
 
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
+
+import java.util.List;
 
 public class Math2D {
     /**
@@ -97,5 +100,39 @@ public class Math2D {
 
     public static double lengthSquared(Point2D vector) {
         return lengthSquared(vector.getX(), vector.getY());
+    }
+
+    public static Rectangle2D computeBoundingBox(List<Point> points) {
+        Point first = points.get(0);
+        double minX = first.getX();
+        double maxX = minX;
+        double minY = first.getY();
+        double maxY = minY;
+        for (int pointIndex = 1; pointIndex < points.size(); ++pointIndex) {
+            Point point = points.get(pointIndex);
+            minX = Math.min(minX, point.getX());
+            maxX = Math.max(maxX, point.getX());
+            minY = Math.min(minY, point.getY());
+            maxY = Math.max(maxY, point.getY());
+        }
+        return new Rectangle2D(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    public static double computeScaleFactor(double center, double original, double updated) {
+        if (original > center) {
+            updated = Math.max(updated, center);
+            return 1.0 + (updated - original) / (original - center);
+        } else if (original < center) {
+            updated = Math.min(updated, center);
+            return 1.0 + (original - updated) / (center - original);
+        } else {
+            return 0.0;
+        }
+    }
+
+    public static double computeScaleFactor(Point2D center, Point2D original, Point2D updated) {
+        return Math.max(
+                computeScaleFactor(center.getX(), original.getX(), updated.getX()),
+                computeScaleFactor(center.getY(), original.getY(), updated.getY()));
     }
 }

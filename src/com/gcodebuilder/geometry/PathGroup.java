@@ -7,6 +7,7 @@ import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
 import lombok.Getter;
@@ -84,13 +85,31 @@ public class PathGroup extends Shape<PathGroup.Handle> {
     }
 
     @Override
-    public boolean move(Handle handle, InteractionEvent event) {
-        return handle.getPath().move(handle.getHandle(), event);
+    public boolean move(Point2D delta) {
+        boolean updated = false;
+        for (Path path : paths) {
+            updated = path.move(delta) || updated;
+        }
+        return updated;
     }
 
     @Override
-    public boolean resize(Handle handle, InteractionEvent event) {
-        return handle.getPath().resize(handle.getHandle(), event);
+    public Point getCenter() {
+        Rectangle2D boundingBox = Math2D.computeBoundingBox(paths.stream()
+                .flatMap(path -> path.getPoints().stream())
+                .collect(Collectors.toList()));
+        double centerX = boundingBox.getMinX() + boundingBox.getWidth() / 2;
+        double centerY = boundingBox.getMinY() + boundingBox.getHeight() / 2;
+        return new Point(centerX, centerY);
+    }
+
+    @Override
+    public boolean resize(double scaleFactor, Point center) {
+        boolean updated = false;
+        for (Path path : paths) {
+            updated = path.resize(scaleFactor, center) || updated;
+        }
+        return updated;
     }
 
     @Override

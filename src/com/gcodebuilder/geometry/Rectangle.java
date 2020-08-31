@@ -277,16 +277,22 @@ public class Rectangle extends Shape<Rectangle.Handle> {
     }
 
     @Override
-    public boolean move(Handle handle, InteractionEvent event) {
-        Point2D delta = event.getPoint().subtract(event.getStartPoint());
-        return updatePosition(
-                handle.getOriginalMinX() + delta.getX(),
-                handle.getOriginalMinY() + delta.getY());
+    public boolean move(Point2D delta) {
+        return updatePosition(getMinX() + delta.getX(), getMinY() + delta.getY());
     }
 
     @Override
-    public boolean resize(Handle handle, InteractionEvent event) {
-        return scale(handle.getType().scale(this, event));
+    public Point getCenter() {
+        return new Point(getMinX() + getWidth() / 2, getMinY() + getHeight() / 2);
+    }
+
+    @Override
+    public boolean resize(double scaleFactor, Point center) {
+        double newWidth = getWidth() * scaleFactor;
+        double newHeight = getHeight() * scaleFactor;
+        return update(center.getX() - newWidth / 2,
+                center.getY() - newHeight / 2,
+                newWidth, newHeight);
     }
 
     @Override

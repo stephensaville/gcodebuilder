@@ -145,6 +145,22 @@ public class Drawing implements Drawable {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    public Shape<?> getSelectedShape() {
+        Set<Shape<?>> selectedShapes = getSelectedShapes();
+        if (selectedShapes.size() == 1) {
+            return selectedShapes.iterator().next();
+        }
+        return null;
+    }
+
+    public <T extends Shape<?>> T getSelectedShape(Class<T> shapeClass) {
+        Shape<?> selectedShape = getSelectedShape();
+        if (shapeClass.isInstance(selectedShape)) {
+            return shapeClass.cast(selectedShape);
+        }
+        return null;
+    }
+
     public boolean setSelectedShapes(Collection<Shape<?>> selectedShapes) {
         boolean selectionChanged = false;
         for (Shape<?> shape : shapes) {

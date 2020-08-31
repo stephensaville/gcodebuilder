@@ -112,14 +112,12 @@ public class Circle extends Shape<Circle.Handle> {
     }
 
     @Override
-    public boolean move(Handle handle, InteractionEvent event) {
-        Point2D delta = event.getPoint().subtract(event.getStartPoint());
-        return updateCenter(handle.getOriginalCenter().add(delta));
+    public boolean move(Point2D delta) {
+        return updateCenter(center.add(delta));
     }
 
-    @Override
-    public boolean resize(Handle handle, InteractionEvent event) {
-        return edit(handle, event);
+    public boolean resize(double scaleFactor, Point center) {
+        return updateRadius(radius * scaleFactor);
     }
 
     @Override

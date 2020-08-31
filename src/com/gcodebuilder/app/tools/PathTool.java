@@ -4,6 +4,7 @@ import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.changelog.UpdateShapeChange;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Path;
+import com.gcodebuilder.geometry.PathGroup;
 import com.gcodebuilder.geometry.Point;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.changelog.AddShapeChange;
@@ -19,17 +20,6 @@ public class PathTool implements Tool {
 
     private Path.Handle currentHandle;
     private Snapshot<Path> pathBefore;
-
-    private Path getSelectedPath(InteractionEvent event) {
-        Set<Shape<?>> selectedShapes = event.getDrawing().getSelectedShapes();
-        if (selectedShapes.size() == 1) {
-            Shape<?> selectedShape = selectedShapes.iterator().next();
-            if (selectedShape instanceof Path) {
-                return (Path) selectedShape;
-            }
-        }
-        return null;
-    }
 
     private Path beginEdit(Path currentPath, InteractionEvent event) {
         pathBefore = currentPath.save();
@@ -51,20 +41,33 @@ public class PathTool implements Tool {
     @Override
     public Path down(InteractionEvent event) {
         Point newPoint = new Point(event.getPoint());
-        Path currentPath = getSelectedPath(event);
+        currentHandle = null;
+        Path currentPath = event.getDrawing().getSelectedShape(Path.class);
         if (currentPath != null) {
             currentHandle = currentPath.getHandle(event.getPoint(), event.getMousePoint(), event.getHandleRadius());
-            if (currentHandle != null) {
-                log.info("Editing point or segment in currently selected path.");
-                return beginEdit(currentPath, event);
-            }
-        } else {
-            currentHandle = null;
         }
-        if (currentHandle == null && (event.getShape() instanceof Path)) {
-            currentPath = (Path) event.getShape();
-            currentHandle = (Path.Handle) event.getHandle();
-            log.info("Switched to editing point or segment in a different path: {}", currentPath);
+        PathGroup currentPathGroup = event.getDrawing().getSelectedShape(PathGroup.class);
+        if (currentPathGroup != null) {
+            PathGroup.Handle pathGroupHandle = currentPathGroup.getHandle(
+                    event.getPoint(), event.getMousePoint(), event.getHandleRadius());
+            if (pathGroupHandle != null) {
+                currentPath = pathGroupHandle.getPath();
+                currentHandle = pathGroupHandle.getHandle();
+            }
+        }
+        if (currentHandle == null) {
+            if (event.getShape() instanceof Path) {
+                currentPath = (Path) event.getShape();
+                currentHandle = (Path.Handle) event.getHandle();
+            } else if (event.getShape() instanceof PathGroup) {
+                PathGroup.Handle pathGroupHandle = (PathGroup.Handle)event.getHandle();
+                if (pathGroupHandle != null) {
+                    currentPath = pathGroupHandle.getPath();
+                    currentHandle = pathGroupHandle.getHandle();
+                }
+            }
+        }
+        if (currentHandle != null) {
             return beginEdit(currentPath, event);
         }
         if (currentPath == null || currentPath.isClosed()) {

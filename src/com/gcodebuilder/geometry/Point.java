@@ -1,6 +1,7 @@
 package com.gcodebuilder.geometry;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.geometry.Point2D;
 
@@ -69,6 +70,20 @@ public class Point {
 
     public boolean isSame(Point2D point2D) {
         return isSame(point2D, DEFAULT_MAX_DISTANCE);
+    }
+
+    public static boolean isSamePoints(Point2D p1, Point2D p2, double maxDistance) {
+        if (p1 == null || p2 == null) {
+            return false;
+        } else if (p1.equals(p2)) {
+            return true;
+        } else {
+            return p1.distance(p2) < maxDistance;
+        }
+    }
+
+    public static boolean isSamePoints(Point2D p1, Point2D p2) {
+        return isSamePoints(p1, p2, DEFAULT_MAX_DISTANCE);
     }
 
     @Override
