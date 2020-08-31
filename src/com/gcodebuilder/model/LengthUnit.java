@@ -20,18 +20,6 @@ public enum LengthUnit {
         return mode.getUnitsPerInch();
     }
 
-    private static final Map<UnitMode, LengthUnit> modeToUnit;
-    static {
-        modeToUnit = new EnumMap(UnitMode.class);
-        for (LengthUnit unit : values()) {
-            modeToUnit.put(unit.mode, unit);
-        }
-    }
-
-    public static LengthUnit fromUnitMode(UnitMode mode) {
-        return Preconditions.checkNotNull(modeToUnit.get(mode));
-    }
-
     public LengthUnitConverter getConverterTo(UnitMode other) {
         return mode.getConverterTo(other);
     }
