@@ -73,6 +73,9 @@
             <padding>
                <Insets top="-8" bottom="-8" />
             </padding>
+            <tooltip>
+               <Tooltip text="Selection Tool"/>
+            </tooltip>
          </ToggleButton>
          <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectRectangleTool" prefHeight="48.0"
                        prefWidth="48.0" toggleGroup="$tools">
@@ -80,12 +83,18 @@
                <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#46648c" height="24.0" stroke="BLACK" strokeType="INSIDE"
                           width="24.0" accessibleText="Rectangle Tool"/>
             </graphic>
+            <tooltip>
+               <Tooltip text="Rectangle Tool"/>
+            </tooltip>
          </ToggleButton>
          <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectCircleTool" prefHeight="48.0"
                        prefWidth="48.0" toggleGroup="$tools">
             <graphic>
                <Circle fill="#46648c" radius="12.0" stroke="BLACK" strokeType="INSIDE" accessibleText="Circle Tool"/>
             </graphic>
+            <tooltip>
+               <Tooltip text="Circle Tool"/>
+            </tooltip>
          </ToggleButton>
          <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectPathTool" prefHeight="48.0"
                        prefWidth="48.0" toggleGroup="$tools">
@@ -107,6 +116,9 @@
                   </points>
                </Polygon>
             </graphic>
+            <tooltip>
+               <Tooltip text="Path Tool"/>
+            </tooltip>
          </ToggleButton>
          <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectEditTool" prefHeight="48.0"
                        prefWidth="48.0" toggleGroup="$tools">
@@ -118,6 +130,9 @@
             <padding>
                <Insets top="-8" bottom="-8" />
             </padding>
+            <tooltip>
+               <Tooltip text="Edit Tool"/>
+            </tooltip>
          </ToggleButton>
          <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectMoveTool" prefHeight="48.0"
                        prefWidth="48.0" toggleGroup="$tools">
@@ -129,6 +144,9 @@
             <padding>
                <Insets top="-8" bottom="-8" />
             </padding>
+            <tooltip>
+               <Tooltip text="Move Tool"/>
+            </tooltip>
          </ToggleButton>
          <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectResizeTool" prefHeight="48.0"
                        prefWidth="48.0" toggleGroup="$tools">
@@ -140,6 +158,9 @@
             <padding>
                <Insets top="-8" bottom="-8" />
             </padding>
+            <tooltip>
+               <Tooltip text="Resize Tool"/>
+            </tooltip>
          </ToggleButton>
          <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectEraseTool" prefHeight="48.0"
                        prefWidth="48.0" toggleGroup="$tools">
@@ -151,6 +172,9 @@
             <padding>
                <Insets top="-8" bottom="-8" />
             </padding>
+            <tooltip>
+               <Tooltip text="Erase Tool"/>
+            </tooltip>
          </ToggleButton>
       </TilePane>
    </left>
@@ -215,12 +239,12 @@
                </accelerator>
             </MenuItem>
             <SeparatorMenuItem/>
-            <MenuItem fx:id="groupPathsItem" onAction="#groupPaths" text="_Group Paths">
+            <MenuItem fx:id="groupPathsItem" disable="true" onAction="#groupPaths" text="_Group Paths">
                <accelerator>
                   <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
                </accelerator>
             </MenuItem>
-            <MenuItem fx:id="ungroupPathsItem" onAction="#ungroupPaths" text="_Ungroup Paths">
+            <MenuItem fx:id="ungroupPathsItem" disable="true" onAction="#ungroupPaths" text="_Ungroup Paths">
                <accelerator>
                   <KeyCodeCombination alt="UP" code="U" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
                </accelerator>

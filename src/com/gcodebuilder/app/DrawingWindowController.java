@@ -792,7 +792,7 @@ public class DrawingWindowController {
 
     public void copy() {
         drawing.saveSelectedShapesToClipboard(Clipboard.getSystemClipboard(), false);
-        checkForChanges();
+        pasteItem.setDisable(false);
     }
 
     public void paste() {
