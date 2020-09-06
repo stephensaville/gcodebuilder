@@ -77,12 +77,12 @@ public class PathTool implements Tool {
             log.info("Created new path.");
         } else {
             pathBefore = currentPath.save();
-            int newPointIndex = currentPath.getPointCount();
-            currentPath.addPoint(newPoint);
-            currentHandle = currentPath.getHandle(newPointIndex);
-            event.getDrawing().setDirty(true);
-            log.info("Added new point: {} to path: {}", newPoint, currentPath);
         }
+        int newPointIndex = currentPath.getPointCount();
+        currentPath.addPoint(newPoint);
+        currentHandle = currentPath.getHandle(newPointIndex);
+        event.getDrawing().setDirty(true);
+        log.info("Added new point: {} to path: {}", newPoint, currentPath);
         return currentPath;
     }
 

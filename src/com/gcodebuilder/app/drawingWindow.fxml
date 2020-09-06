@@ -4,218 +4,245 @@
 <?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
 <?import javafx.scene.input.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
-<?import javafx.scene.text.*?>
 
 <BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gcodebuilder.app.DrawingWindowController">
    <bottom>
       <HBox spacing="5.0" BorderPane.alignment="CENTER">
-         <children>
-            <Label text="Unit:">
-               <HBox.margin>
-                  <Insets left="10.0" />
-               </HBox.margin>
-               <padding>
-                  <Insets top="4.0" />
-               </padding></Label>
-            <ChoiceBox fx:id="unitCtl" prefWidth="60.0" />
-            <Label text="Zoom:">
-               <padding>
-                  <Insets left="10.0" top="4.0" />
-               </padding></Label>
-            <Spinner fx:id="zoomCtl" editable="true" prefWidth="100.0" />
-            <Label text="Major Grid:">
-               <padding>
-                  <Insets left="10.0" top="4.0" />
-               </padding>
-            </Label>
-            <Spinner fx:id="majorGridCtl" editable="true" prefWidth="100.0" />
-            <Label layoutX="288.0" layoutY="15.0" text="Minor Grid:">
-               <padding>
-                  <Insets left="10.0" top="4.0" />
-               </padding>
-            </Label>
-            <Spinner fx:id="minorGridCtl" editable="true" layoutX="431.0" layoutY="15.0" prefWidth="100.0" />
-         </children>
          <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
          </padding>
+         <Label text="Unit:">
+            <HBox.margin>
+               <Insets left="10.0"/>
+            </HBox.margin>
+            <padding>
+               <Insets top="4.0"/>
+            </padding>
+         </Label>
+         <ChoiceBox fx:id="unitCtl" prefWidth="60.0"/>
+         <Label text="Zoom:">
+            <padding>
+               <Insets left="10.0" top="4.0"/>
+            </padding>
+         </Label>
+         <Spinner fx:id="zoomCtl" editable="true" prefWidth="100.0"/>
+         <Label text="Major Grid:">
+            <padding>
+               <Insets left="10.0" top="4.0"/>
+            </padding>
+         </Label>
+         <Spinner fx:id="majorGridCtl" editable="true" prefWidth="100.0"/>
+         <Label layoutX="288.0" layoutY="15.0" text="Minor Grid:">
+            <padding>
+               <Insets left="10.0" top="4.0"/>
+            </padding>
+         </Label>
+         <Spinner fx:id="minorGridCtl" editable="true" layoutX="431.0" layoutY="15.0" prefWidth="100.0"/>
       </HBox>
    </bottom>
    <center>
       <AnchorPane BorderPane.alignment="CENTER">
-         <children>
-           <GCodeCanvas fx:id="canvas" height="600.0" onMouseDragged="#mouseDragOnCanvas" onMousePressed="#mousePressOnCanvas" onMouseReleased="#mouseReleaseOnCanvas" width="800.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
-            <ScrollBar fx:id="hScrollBar" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="17.0" />
-            <ScrollBar fx:id="vScrollBar" orientation="VERTICAL" AnchorPane.bottomAnchor="17.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-         </children>
+         <GCodeCanvas fx:id="canvas" height="600.0" onMouseDragged="#mouseDragOnCanvas"
+                      onMousePressed="#mousePressOnCanvas" onMouseReleased="#mouseReleaseOnCanvas" width="800.0"
+                      AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+         <ScrollBar fx:id="hScrollBar" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                    AnchorPane.rightAnchor="17.0"/>
+         <ScrollBar fx:id="vScrollBar" orientation="VERTICAL" AnchorPane.bottomAnchor="17.0"
+                    AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
       </AnchorPane>
    </center>
    <left>
       <TilePane hgap="4.0" prefColumns="1" vgap="4.0" BorderPane.alignment="CENTER">
-         <children>
-            <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectRectangleTool" prefHeight="48.0" prefWidth="48.0" selected="true">
-               <graphic>
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#46648c" height="24.0" stroke="BLACK" strokeType="INSIDE" width="24.0" />
-               </graphic>
-               <font>
-                  <Font size="10.0" />
-               </font>
-               <toggleGroup>
-                  <ToggleGroup fx:id="tools" />
-               </toggleGroup>
-            </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onAction="#selectCircleTool" prefHeight="48.0" prefWidth="48.0" toggleGroup="$tools">
-               <font>
-                  <Font size="10.0" />
-               </font>
-               <graphic>
-                  <Circle fill="#46648c" radius="12.0" stroke="BLACK" strokeType="INSIDE" />
-               </graphic>
-            </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="62.0" mnemonicParsing="false" onAction="#selectPathTool" prefHeight="48.0" prefWidth="48.0" toggleGroup="$tools">
-               <font>
-                  <Font size="10.0" />
-               </font>
-               <graphic>
-                  <Polygon fill="#46648c" stroke="BLACK" strokeType="INSIDE">
-                     <points>
-                        <Double fx:value="0.0" />
-                        <Double fx:value="0.0" />
-                        <Double fx:value="24.0" />
-                        <Double fx:value="0.0" />
-                        <Double fx:value="18.0" />
-                        <Double fx:value="12.0" />
-                        <Double fx:value="24.0" />
-                        <Double fx:value="24.0" />
-                        <Double fx:value="0.0" />
-                        <Double fx:value="24.0" />
-                        <Double fx:value="6.0" />
-                        <Double fx:value="12.0" />
-                    </points>
-                  </Polygon>
-               </graphic>
-            </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="62.0" mnemonicParsing="false" onAction="#selectEditTool" prefHeight="48.0" prefWidth="48.0" text="EDIT" toggleGroup="$tools">
-               <font><Font size="10.0" /></font>
-            </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="114.0" mnemonicParsing="false" onAction="#selectMoveTool" prefHeight="48.0" prefWidth="48.0" text="MOVE" toggleGroup="$tools">
-               <font><Font size="10.0" /></font>
-            </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="166.0" mnemonicParsing="false" onAction="#selectEraseTool" prefHeight="48.0" prefWidth="48.0" text="ERASE" toggleGroup="$tools">
-               <font><Font size="10.0" /></font>
-            </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="218.0" mnemonicParsing="false" onAction="#selectSelectionTool" prefHeight="48.0" prefWidth="48.0" text="SELECT" toggleGroup="$tools">
-               <font><Font size="9.0" /></font>
-            </ToggleButton>
-            <ToggleButton contentDisplay="TOP" layoutX="10.0" layoutY="218.0" mnemonicParsing="false" onAction="#selectResizeTool" prefHeight="48.0" prefWidth="48.0" text="RESIZE" toggleGroup="$tools">
-               <font><Font size="9.0" /></font>
-            </ToggleButton>
-         </children>
          <BorderPane.margin>
-            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
          </BorderPane.margin>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectSelectionTool" prefHeight="48.0"
+                       prefWidth="48.0" selected="true">
+            <graphic>
+               <ImageView accessibleText="Selection Tool" pickOnBounds="true" preserveRatio="true">
+                  <Image url="/com/gcodebuilder/app/images/arrow_icon_32x32.png"/>
+               </ImageView>
+            </graphic>
+            <toggleGroup>
+               <ToggleGroup fx:id="tools"/>
+            </toggleGroup>
+            <padding>
+               <Insets top="-8" bottom="-8" />
+            </padding>
+         </ToggleButton>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectRectangleTool" prefHeight="48.0"
+                       prefWidth="48.0" toggleGroup="$tools">
+            <graphic>
+               <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#46648c" height="24.0" stroke="BLACK" strokeType="INSIDE"
+                          width="24.0" accessibleText="Rectangle Tool"/>
+            </graphic>
+         </ToggleButton>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectCircleTool" prefHeight="48.0"
+                       prefWidth="48.0" toggleGroup="$tools">
+            <graphic>
+               <Circle fill="#46648c" radius="12.0" stroke="BLACK" strokeType="INSIDE" accessibleText="Circle Tool"/>
+            </graphic>
+         </ToggleButton>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectPathTool" prefHeight="48.0"
+                       prefWidth="48.0" toggleGroup="$tools">
+            <graphic>
+               <Polygon fill="#46648c" stroke="BLACK" strokeType="INSIDE" accessibleText="Path Tool">
+                  <points>
+                     <Double fx:value="0.0"/>
+                     <Double fx:value="0.0"/>
+                     <Double fx:value="24.0"/>
+                     <Double fx:value="0.0"/>
+                     <Double fx:value="18.0"/>
+                     <Double fx:value="12.0"/>
+                     <Double fx:value="24.0"/>
+                     <Double fx:value="24.0"/>
+                     <Double fx:value="0.0"/>
+                     <Double fx:value="24.0"/>
+                     <Double fx:value="6.0"/>
+                     <Double fx:value="12.0"/>
+                  </points>
+               </Polygon>
+            </graphic>
+         </ToggleButton>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectEditTool" prefHeight="48.0"
+                       prefWidth="48.0" toggleGroup="$tools">
+            <graphic>
+               <ImageView accessibleText="Edit Tool" pickOnBounds="true" preserveRatio="true">
+                  <Image url="/com/gcodebuilder/app/images/edit_icon_32x32.png"/>
+               </ImageView>
+            </graphic>
+            <padding>
+               <Insets top="-8" bottom="-8" />
+            </padding>
+         </ToggleButton>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectMoveTool" prefHeight="48.0"
+                       prefWidth="48.0" toggleGroup="$tools">
+            <graphic>
+               <ImageView accessibleText="Move Tool" pickOnBounds="true" preserveRatio="true">
+                  <Image url="/com/gcodebuilder/app/images/move_icon_32x32.png"/>
+               </ImageView>
+            </graphic>
+            <padding>
+               <Insets top="-8" bottom="-8" />
+            </padding>
+         </ToggleButton>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectResizeTool" prefHeight="48.0"
+                       prefWidth="48.0" toggleGroup="$tools">
+            <graphic>
+               <ImageView accessibleText="Resize Tool" pickOnBounds="true" preserveRatio="true">
+                  <Image url="/com/gcodebuilder/app/images/resize_icon_32x32.png"/>
+               </ImageView>
+            </graphic>
+            <padding>
+               <Insets top="-8" bottom="-8" />
+            </padding>
+         </ToggleButton>
+         <ToggleButton contentDisplay="TOP" mnemonicParsing="false" onAction="#selectEraseTool" prefHeight="48.0"
+                       prefWidth="48.0" toggleGroup="$tools">
+            <graphic>
+               <ImageView accessibleText="Erase Tool" pickOnBounds="true" preserveRatio="true">
+                  <Image url="/com/gcodebuilder/app/images/trash_icon_32x32.png"/>
+               </ImageView>
+            </graphic>
+            <padding>
+               <Insets top="-8" bottom="-8" />
+            </padding>
+         </ToggleButton>
       </TilePane>
    </left>
    <top>
       <MenuBar BorderPane.alignment="CENTER">
-         <menus>
-            <Menu text="_File">
-               <items>
-                  <MenuItem onAction="#newDrawing" text="_New Drawing">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <SeparatorMenuItem/>
-                  <MenuItem onAction="#openDrawing" text="_Open Drawing">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem onAction="#saveDrawing" text="_Save Drawing">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem onAction="#saveDrawingAs" text="Save Drawing _As..." />
-                  <MenuItem onAction="#saveImage" text="Save Image" />
-                  <SeparatorMenuItem/>
-                  <MenuItem onAction="#closeWindow" text="_Close">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-               </items>
-            </Menu>
-            <Menu text="_Edit">
-               <items>
-                  <MenuItem fx:id="undoItem" disable="true" onAction="#undoChange" text="_Undo">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="redoItem" disable="true" onAction="#redoChange" text="_Redo">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <SeparatorMenuItem/>
-                  <MenuItem fx:id="cutItem" disable="true" onAction="#cut" text="Cu_t">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="copyItem" disable="true" onAction="#copy" text="_Copy">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="C" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="pasteItem" disable="true" onAction="#paste" text="_Paste">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="V" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="deleteItem" disable="true" onAction="#delete" text="_Delete">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="DELETE" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <SeparatorMenuItem/>
-                  <MenuItem fx:id="groupPathsItem" onAction="#groupPaths" text="_Group Paths">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="ungroupPathsItem" onAction="#ungroupPaths" text="_Ungroup Paths">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="U" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-              </items>
-            </Menu>
-            <Menu text="_GCode">
-               <items>
-                  <MenuItem onAction="#generateGCode" text="Generate GCode">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="saveGCodeItem" disable="true" onAction="#saveGCode" text="Save GCode">
-                     <accelerator>
-                        <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="saveGCodeAsItem" disable="true" onAction="#saveGCodeAs" text="Save GCode As...">
-                     <accelerator>
-                        <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="DOWN" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-               </items>
-            </Menu>
-         </menus>
+         <Menu text="_File">
+            <MenuItem onAction="#newDrawing" text="_New Drawing">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <SeparatorMenuItem/>
+            <MenuItem onAction="#openDrawing" text="_Open Drawing">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem onAction="#saveDrawing" text="_Save Drawing">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem onAction="#saveDrawingAs" text="Save Drawing _As..."/>
+            <MenuItem onAction="#saveImage" text="Save Image"/>
+            <SeparatorMenuItem/>
+            <MenuItem onAction="#closeWindow" text="_Close">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+         </Menu>
+         <Menu text="_Edit">
+            <MenuItem fx:id="undoItem" disable="true" onAction="#undoChange" text="_Undo">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="redoItem" disable="true" onAction="#redoChange" text="_Redo">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="Z" control="DOWN" meta="UP" shift="DOWN" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <SeparatorMenuItem/>
+            <MenuItem fx:id="cutItem" disable="true" onAction="#cut" text="Cu_t">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="copyItem" disable="true" onAction="#copy" text="_Copy">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="C" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="pasteItem" disable="true" onAction="#paste" text="_Paste">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="V" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="deleteItem" disable="true" onAction="#delete" text="_Delete">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="DELETE" control="UP" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <SeparatorMenuItem/>
+            <MenuItem fx:id="groupPathsItem" onAction="#groupPaths" text="_Group Paths">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="ungroupPathsItem" onAction="#ungroupPaths" text="_Ungroup Paths">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="U" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+         </Menu>
+         <Menu text="_GCode">
+            <MenuItem onAction="#generateGCode" text="Generate GCode">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="saveGCodeItem" disable="true" onAction="#saveGCode" text="Save GCode">
+               <accelerator>
+                  <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="saveGCodeAsItem" disable="true" onAction="#saveGCodeAs" text="Save GCode As...">
+               <accelerator>
+                  <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="DOWN" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+         </Menu>
       </MenuBar>
    </top>
    <right>
@@ -224,10 +251,9 @@
            <TitledPane fx:id="shapesPane" text="Shapes" />
            <TitledPane fx:id="recipeEditorPane" text="Recipes" />
            <TitledPane prefWidth="200" text="GCode">
-               <content>
-                  <TextArea fx:id="gcodeEditor" editable="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
-               </content>
-            </TitledPane>
+              <TextArea fx:id="gcodeEditor" editable="false" maxHeight="1.7976931348623157E308"
+                        maxWidth="1.7976931348623157E308"/>
+           </TitledPane>
         </panes>
       </Accordion>
    </right>

@@ -45,12 +45,12 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
@@ -75,6 +75,9 @@ public class DrawingWindowController {
     private static final double MAX_ZOOM = 6400;
     private static final double MIN_GRID_SPACING = 0.0625;
     private static final double MAX_GRID_SPACING = 32;
+
+    @FXML
+    private ToggleGroup tools;
 
     @FXML
     private BorderPane rootPane;
@@ -139,15 +142,15 @@ public class DrawingWindowController {
     @FXML
     private MenuItem ungroupPathsItem;
 
-    private RectangleTool rectangleTool = new RectangleTool();
-    private CircleTool circleTool = new CircleTool();
-    private PathTool pathTool = new PathTool();
-    private EditTool editTool = new EditTool();
-    private MoveTool moveTool = new MoveTool();
-    private EraseTool eraseTool = new EraseTool();
-    private SelectionTool selectionTool = new SelectionTool();
-    private ResizeTool resizeTool = new ResizeTool();
-    private Tool currentTool = rectangleTool;
+    private final RectangleTool rectangleTool = new RectangleTool();
+    private final CircleTool circleTool = new CircleTool();
+    private final PathTool pathTool = new PathTool();
+    private final EditTool editTool = new EditTool();
+    private final MoveTool moveTool = new MoveTool();
+    private final EraseTool eraseTool = new EraseTool();
+    private final SelectionTool selectionTool = new SelectionTool();
+    private final ResizeTool resizeTool = new ResizeTool();
+    private Tool currentTool = selectionTool;
 
     private Drawing drawing = new Drawing();
 
@@ -682,6 +685,7 @@ public class DrawingWindowController {
         snapshotSettings.setXAxisPaint(Color.TRANSPARENT);
         snapshotSettings.setShapePaint(Color.BLACK);
         snapshotSettings.setSelectedShapePaint(Color.BLACK);
+        snapshotSettings.setShapeLineWidth(10);
         snapshotSettings.setShapePointRadius(0);
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.WHITE);

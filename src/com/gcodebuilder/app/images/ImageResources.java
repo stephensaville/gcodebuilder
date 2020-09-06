@@ -12,8 +12,9 @@ public class ImageResources {
     private static final Logger log = LogManager.getLogger(ImageResources.class);
 
     public static Image load(String resourceName, boolean backgroundLoading) {
-        log.info("Loading image resource: {}", resourceName);
-        return new Image(ImageResources.class.getResource(resourceName).toExternalForm(), backgroundLoading);
+        String url = ImageResources.class.getResource(resourceName).toExternalForm();
+        log.info("Loading image resource: {}", url);
+        return new Image(url, backgroundLoading);
     }
 
     public static Image load(String resourceName) {

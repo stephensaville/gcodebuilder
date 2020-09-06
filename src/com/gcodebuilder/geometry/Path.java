@@ -288,13 +288,16 @@ public class Path extends Shape<Path.Handle> {
     @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
         prepareToDraw(ctx, pixelsPerUnit, settings);
+        double pointRadius = settings.getShapePointRadius() / pixelsPerUnit;
         Point prevPoint = closed ? points.get(points.size() - 1) : null;
         for (Point point : points) {
             if (prevPoint != null) {
                 ctx.strokeLine(prevPoint.getX(), prevPoint.getY(), point.getX(), point.getY());
             }
-            double radius = settings.getShapePointRadius() / pixelsPerUnit;
-            ctx.fillOval(point.getX() - radius, point.getY() - radius, radius * 2, radius * 2);
+            if (isSelected()) {
+                ctx.fillOval(point.getX() - pointRadius, point.getY() - pointRadius,
+                        pointRadius * 2, pointRadius * 2);
+            }
             prevPoint = point;
         }
     }
