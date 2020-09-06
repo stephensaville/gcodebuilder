@@ -1,5 +1,6 @@
 package com.gcodebuilder.app;
 
+import com.gcodebuilder.app.images.ImageResources;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -42,6 +43,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        primaryStage.getIcons().addAll(ImageResources.loadIcons());
+
         log.info("named parameters: " + getParameters().getNamed());
         log.info("unnamed parameters: " + getParameters().getUnnamed());
         String ui = getParameters().getNamed().getOrDefault("ui", "DrawingWindow");

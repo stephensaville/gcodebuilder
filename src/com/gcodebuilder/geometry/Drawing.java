@@ -10,7 +10,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.Clipboard;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.java.Log;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -145,6 +144,7 @@ public class Drawing implements Drawable {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    @JsonIgnore
     public Shape<?> getSelectedShape() {
         Set<Shape<?>> selectedShapes = getSelectedShapes();
         if (selectedShapes.size() == 1) {

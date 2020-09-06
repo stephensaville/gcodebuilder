@@ -33,9 +33,11 @@ import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.beans.binding.DoubleBinding;
 import javafx.collections.ListChangeListener;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollBar;
@@ -43,14 +45,19 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
+import javafx.scene.image.Image;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -156,12 +163,21 @@ public class DrawingWindowController {
 
     private static final String DEFAULT_DRAWING_FILENAME = "drawing.json";
     private static final String DEFAULT_GCODE_FILENAME = "toolpath.nc";
+    private static final String DEFAULT_IMAGE_FILENAME = "drawing.png";
 
-    private static final String DRAWING_FILE_GLOB = "*.json";
-    private static final String GCODE_FILE_GLOB = "*.nc";
+    private static final FileChooser.ExtensionFilter[] DRAWING_FILE_EXTENSIONS = {
+            new FileChooser.ExtensionFilter("JSON", "*.json")
+    };
+    private static final FileChooser.ExtensionFilter[] GCODE_FILE_EXTENSIONS = {
+            new FileChooser.ExtensionFilter("GCode", "*.nc")
+    };
+    private static final FileChooser.ExtensionFilter[] IMAGE_FILE_EXTENSIONS = {
+            new FileChooser.ExtensionFilter("PNG", "*.png")
+    };
 
     private FileOperations<Drawing> drawingFileOperations;
     private FileOperations<GCodeProgram> gCodeFileOperations;
+    private FileOperations<Image> imageFileOperations;
 
     private ShapesTableController shapesTableController;
     private RecipeEditorController recipeEditorController;
@@ -238,12 +254,17 @@ public class DrawingWindowController {
         drawingFileOperations = new FileOperations<>(
                 rootPane, Drawing::load, Drawing::save,
                 "Drawing", DEFAULT_DRAWING_FILENAME,
-                new FileChooser.ExtensionFilter("JSON", DRAWING_FILE_GLOB));
+                DRAWING_FILE_EXTENSIONS);
 
         gCodeFileOperations = new FileOperations<>(
                 rootPane, GCodeProgram::load, GCodeProgram::save,
-                "GCode", "toolpath.nc",
-                new FileChooser.ExtensionFilter("GCode", GCODE_FILE_GLOB));
+                "GCode", DEFAULT_GCODE_FILENAME,
+                GCODE_FILE_EXTENSIONS);
+
+        imageFileOperations = new FileOperations<>(
+                rootPane, Image::new, this::saveImageToFile,
+                "Image", DEFAULT_IMAGE_FILENAME,
+                IMAGE_FILE_EXTENSIONS);
 
         shapesTableController = ShapesTableController.attach(shapesPane);
 
@@ -650,6 +671,31 @@ public class DrawingWindowController {
         newDrawing.setLengthUnit(unitCtl.getValue());
         setDrawing(newDrawing);
         updateInitialGCodeFileName(null);
+    }
+
+    public void saveImage() {
+        GridSettings normalSettings = canvas.getSettings();
+        GridSettings snapshotSettings = normalSettings.clone();
+        snapshotSettings.setMajorGridPaint(Color.TRANSPARENT);
+        snapshotSettings.setMinorGridPaint(Color.TRANSPARENT);
+        snapshotSettings.setYAxisPaint(Color.TRANSPARENT);
+        snapshotSettings.setXAxisPaint(Color.TRANSPARENT);
+        snapshotSettings.setShapePaint(Color.BLACK);
+        snapshotSettings.setSelectedShapePaint(Color.BLACK);
+        snapshotSettings.setShapePointRadius(0);
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.WHITE);
+        canvas.setSettings(snapshotSettings);
+        canvas.refresh();
+        Image snapshot = canvas.snapshot(params, null);
+        canvas.setSettings(normalSettings);
+        canvas.refresh();
+        imageFileOperations.saveAs(snapshot);
+    }
+
+    public void saveImageToFile(Image image, File imageFile, FileChooser.ExtensionFilter ext) throws IOException {
+        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+        ImageIO.write(bufferedImage, ext.getDescription(), imageFile);
     }
 
     public void closeWindow() {

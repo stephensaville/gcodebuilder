@@ -124,22 +124,25 @@
          <menus>
             <Menu text="_File">
                <items>
-                  <MenuItem onAction="#newDrawing" text="_New">
+                  <MenuItem onAction="#newDrawing" text="_New Drawing">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-                  <MenuItem onAction="#openDrawing" text="_Open">
+                  <SeparatorMenuItem/>
+                  <MenuItem onAction="#openDrawing" text="_Open Drawing">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-                  <MenuItem onAction="#saveDrawing" text="_Save">
+                  <MenuItem onAction="#saveDrawing" text="_Save Drawing">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-                  <MenuItem onAction="#saveDrawingAs" text="Save _As..." />
+                  <MenuItem onAction="#saveDrawingAs" text="Save Drawing _As..." />
+                  <MenuItem onAction="#saveImage" text="Save Image" />
+                  <SeparatorMenuItem/>
                   <MenuItem onAction="#closeWindow" text="_Close">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="UP" shortcut="UP" />

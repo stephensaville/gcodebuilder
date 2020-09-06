@@ -19,8 +19,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 public class FileOperations<T> {
     private static final Logger log = LogManager.getLogger(FileOperations.class);
@@ -34,10 +32,15 @@ public class FileOperations<T> {
         void save(T document, OutputStream out) throws IOException;
     }
 
+    public interface FileSaveFunction<T> {
+        void save(T document, File file, FileChooser.ExtensionFilter ext) throws IOException;
+    }
+
     private final Node root;
     private final String documentType;
     private final LoadFunction<T> loadFunction;
     private final SaveFunction<T> saveFunction;
+    private final FileSaveFunction<T> fileSaveFunction;
 
     @Getter
     private final FileChooser chooser;
@@ -46,15 +49,16 @@ public class FileOperations<T> {
     @Setter
     private File currentFile;
 
-    public FileOperations(Node root,
+    private FileOperations(Node root,
                           LoadFunction<T> loadFunction,
                           SaveFunction<T> saveFunction,
+                          FileSaveFunction<T> fileSaveFunction,
                           String documentType,
                           String initialFileName,
                           FileChooser.ExtensionFilter... extensionFilters) {
         Preconditions.checkNotNull(root);
         Preconditions.checkNotNull(loadFunction);
-        Preconditions.checkNotNull(saveFunction);
+        Preconditions.checkArgument((saveFunction == null) != (fileSaveFunction == null));
         Preconditions.checkNotNull(documentType);
         Preconditions.checkNotNull(initialFileName);
         Preconditions.checkNotNull(extensionFilters);
@@ -64,6 +68,7 @@ public class FileOperations<T> {
         this.documentType = documentType;
         this.loadFunction = loadFunction;
         this.saveFunction = saveFunction;
+        this.fileSaveFunction = fileSaveFunction;
 
         chooser = new FileChooser();
         chooser.getExtensionFilters().addAll(extensionFilters);
@@ -85,6 +90,24 @@ public class FileOperations<T> {
         }
         chooser.setInitialDirectory(initialDirectory);
         chooser.setInitialFileName(initialFileName);
+    }
+
+    public FileOperations(Node root,
+                           LoadFunction<T> loadFunction,
+                           SaveFunction<T> saveFunction,
+                           String documentType,
+                           String initialFileName,
+                           FileChooser.ExtensionFilter... extensionFilters) {
+        this(root, loadFunction, saveFunction, null, documentType, initialFileName, extensionFilters);
+    }
+
+    public FileOperations(Node root,
+                           LoadFunction<T> loadFunction,
+                           FileSaveFunction<T> fileSaveFunction,
+                           String documentType,
+                           String initialFileName,
+                           FileChooser.ExtensionFilter... extensionFilters) {
+        this(root, loadFunction, null, fileSaveFunction, documentType, initialFileName, extensionFilters);
     }
 
     private void showError(String title, String message, Exception exception) {
@@ -125,10 +148,14 @@ public class FileOperations<T> {
         File saveFile = chooser.showSaveDialog(root.getScene().getWindow());
         if (saveFile != null) {
             try {
-                try (FileOutputStream out = new FileOutputStream(saveFile)) {
-                    saveFunction.save(document, out);
-                    currentFile = saveFile;
+                if (saveFunction != null) {
+                    try (FileOutputStream out = new FileOutputStream(saveFile)) {
+                        saveFunction.save(document, out);
+                    }
+                } else if (fileSaveFunction != null) {
+                    fileSaveFunction.save(document, saveFile, chooser.getSelectedExtensionFilter());
                 }
+                currentFile = saveFile;
             } catch (IOException ex) {
                 showError("Save Failed", String.format("Failed to save file: %s", saveFile), ex);
                 currentFile = null;

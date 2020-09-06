@@ -8,7 +8,7 @@ import javafx.scene.paint.Paint;
 import lombok.Data;
 
 @Data
-public class GridSettings {
+public class GridSettings implements Cloneable {
     private LengthUnit units = LengthUnit.INCH;
 
     private Rectangle2D drawingArea = new Rectangle2D(-16, -16, 32, 32);
@@ -31,4 +31,13 @@ public class GridSettings {
     private double shapePointRadius = 5;
     private Paint shapePaint = Color.BLACK;
     private Paint selectedShapePaint = Color.BLUE;
+
+    @Override
+    protected GridSettings clone() {
+        try {
+            return (GridSettings) super.clone();
+        } catch (CloneNotSupportedException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 }
