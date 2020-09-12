@@ -359,10 +359,12 @@ public class DrawingWindowController {
 
         GridSettings settings = canvas.getSettings();
         double minorGridWidth = canvas.getPixelsPerUnit() * settings.getMajorGridSpacing() / settings.getMinorGridDivision();
+        double xOriginOffset = (canvas.getWidth() % minorGridWidth) / 2;
+        double yOriginOffset = (canvas.getHeight() % minorGridWidth) / 2;
         log.info("minorGridWidth={}", minorGridWidth);
 
-        hScrollBar.setValue(canvas.getOriginArea().getMaxX() - minorGridWidth);
-        vScrollBar.setValue(canvas.getOriginArea().getMaxY() - canvas.getHeight() + minorGridWidth);
+        hScrollBar.setValue(canvas.getOriginArea().getMaxX() - xOriginOffset);
+        vScrollBar.setValue(canvas.getOriginArea().getMaxY() - canvas.getHeight() + yOriginOffset);
 
         canvas.heightProperty().addListener((obs, oldValue, newValue) -> {
             double heightChange = newValue.doubleValue() - oldValue.doubleValue();
@@ -685,7 +687,7 @@ public class DrawingWindowController {
         snapshotSettings.setXAxisPaint(Color.TRANSPARENT);
         snapshotSettings.setShapePaint(Color.BLACK);
         snapshotSettings.setSelectedShapePaint(Color.BLACK);
-        snapshotSettings.setShapeLineWidth(10);
+        snapshotSettings.setShapeLineWidth(2);
         snapshotSettings.setShapePointRadius(0);
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.WHITE);

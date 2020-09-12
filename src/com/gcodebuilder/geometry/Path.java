@@ -10,6 +10,7 @@ import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.shape.StrokeLineCap;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
@@ -288,6 +289,7 @@ public class Path extends Shape<Path.Handle> {
     @Override
     public void draw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
         prepareToDraw(ctx, pixelsPerUnit, settings);
+        ctx.setLineCap(StrokeLineCap.ROUND);
         double pointRadius = settings.getShapePointRadius() / pixelsPerUnit;
         Point prevPoint = closed ? points.get(points.size() - 1) : null;
         for (Point point : points) {
