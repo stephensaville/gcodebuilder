@@ -1,6 +1,8 @@
 package com.gcodebuilder.generator.toolpath;
 
+import com.gcodebuilder.geometry.LineSegment;
 import com.gcodebuilder.geometry.Math2D;
+import com.gcodebuilder.geometry.PathSegment;
 import com.gcodebuilder.geometry.UnitVector;
 import com.gcodebuilder.model.Direction;
 import javafx.geometry.Point2D;
@@ -53,7 +55,7 @@ public class Toolpath {
 
     @Getter
     public static class Segment {
-        private final com.gcodebuilder.geometry.Segment segment;
+        private final PathSegment segment;
         private final double toolRadius;
         private final UnitVector towards;
         private final UnitVector away;
@@ -67,7 +69,7 @@ public class Toolpath {
         private final List<SplitPoint> splitPoints = new ArrayList<>();
         private boolean splitPointsSorted = true;
 
-        public Segment(com.gcodebuilder.geometry.Segment segment, double toolRadius, UnitVector towards, UnitVector away,
+        public Segment(PathSegment segment, double toolRadius, UnitVector towards, UnitVector away,
                        Connection fromConnection, Connection toConnection) {
             this.segment = segment;
             this.toolRadius = toolRadius;
@@ -77,7 +79,7 @@ public class Toolpath {
             this.toConnection = toConnection;
         }
 
-        public static Segment fromEdge(com.gcodebuilder.geometry.Segment edge, double toolRadius, UnitVector towards, UnitVector away) {
+        public static Segment fromEdge(PathSegment edge, double toolRadius, UnitVector towards, UnitVector away) {
             return new Segment(edge.move(away.multiply(toolRadius)), toolRadius, towards, away,
                     new Connection(edge.getFrom()), new Connection(edge.getTo()));
         }
@@ -118,7 +120,7 @@ public class Toolpath {
             for (SplitPoint splitPoint : splitPoints) {
                 if (prevSplitPoint.isToSideValid() && splitPoint.isFromSideValid()) {
                     Segment validSegment = new Segment(
-                            com.gcodebuilder.geometry.Segment.of(prevSplitPoint.getPoint(), splitPoint.getPoint()),
+                            LineSegment.of(prevSplitPoint.getPoint(), splitPoint.getPoint()),
                             toolRadius, towards, away, prevSplitPoint.getConnection(),
                             splitPoint.getConnection());
                     validSegments.add(validSegment);
@@ -127,7 +129,7 @@ public class Toolpath {
             }
             if (prevSplitPoint.isToSideValid()) {
                 Segment validSegment = new Segment(
-                        com.gcodebuilder.geometry.Segment.of(prevSplitPoint.getPoint(), segment.getTo()),
+                        LineSegment.of(prevSplitPoint.getPoint(), segment.getTo()),
                         toolRadius, towards, away, prevSplitPoint.getConnection(),
                         toConnection);
                 validSegments.add(validSegment);

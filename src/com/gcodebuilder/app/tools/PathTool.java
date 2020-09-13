@@ -40,7 +40,6 @@ public class PathTool implements Tool {
 
     @Override
     public Path down(InteractionEvent event) {
-        Point newPoint = new Point(event.getPoint());
         currentHandle = null;
         Path currentPath = event.getDrawing().getSelectedShape(Path.class);
         if (currentPath != null) {
@@ -79,6 +78,15 @@ public class PathTool implements Tool {
             pathBefore = currentPath.save();
         }
         int newPointIndex = currentPath.getPointCount();
+        Point.Type pointType = null;
+        if (event.getInputEvent().isControlDown()) {
+            if (event.getInputEvent().isShiftDown()) {
+                pointType = Point.Type.CCW_CENTER;
+            } else {
+                pointType = Point.Type.CW_CENTER;
+            }
+        }
+        Point newPoint = new Point(event.getPoint(), pointType);
         currentPath.addPoint(newPoint);
         currentHandle = currentPath.getHandle(newPointIndex);
         event.getDrawing().setDirty(true);

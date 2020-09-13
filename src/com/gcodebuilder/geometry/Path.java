@@ -25,7 +25,7 @@ public class Path extends Shape<Path.Handle> {
     private static final Logger log = LogManager.getLogger(Path.class);
 
     private List<Point> points;
-    private List<Segment> segments;
+    private List<PathSegment> segments;
 
     @Getter @Setter
     private boolean closed;
@@ -49,18 +49,27 @@ public class Path extends Shape<Path.Handle> {
     }
 
     @JsonIgnore
-    public List<Segment> getSegments() {
+    public List<PathSegment> getSegments() {
         if (points.size() < 2) {
             return Collections.emptyList();
         }
         if (segments == null) {
             segments = new ArrayList<>();
-            Point prevPoint = closed ? points.get(points.size() - 1) : null;
-            for (Point currentPoint : points) {
-                if (prevPoint != null) {
-                    segments.add(Segment.of(prevPoint.asPoint2D(), currentPoint.asPoint2D()));
+            for (int i = 0; i < points.size(); i++) {
+                Point from = getPoint(i);
+                Point to = getNextPoint(i);
+                log.info("addSegments(): i={} from={} to={}", i, from, to);
+                if (to != null && to.isCenterPoint()) {
+                    Point center = to;
+                    to = getNextPoint(++i);
+                    if (to != null) {
+                        segments.add(ArcSegment.of(from, center, to));
+                        log.info("Added to segments: {}", segments.get(segments.size() -1));
+                    }
+                } else if (to != null) {
+                    segments.add(LineSegment.of(from, to));
+                    log.info("Added to segments: {}", segments.get(segments.size() -1));
                 }
-                prevPoint = currentPoint;
             }
         }
         return segments;
@@ -75,8 +84,89 @@ public class Path extends Shape<Path.Handle> {
         return points.get(pointIndex);
     }
 
+    public int getNextPointIndex(int pointIndex) {
+        int nextPointIndex = pointIndex + 1;
+        if (0 <= nextPointIndex && nextPointIndex < points.size()) {
+            return nextPointIndex;
+        } else if (nextPointIndex == points.size() && closed) {
+            return 0;
+        } else {
+            return -1;
+        }
+    }
+
+    public Point getNextPoint(int pointIndex) {
+        int nextPointIndex = getNextPointIndex(pointIndex);
+        if (nextPointIndex >= 0) {
+            return points.get(nextPointIndex);
+        } else {
+            return null;
+        }
+    }
+
+    public int getPrevPointIndex(int pointIndex) {
+        int prevPointIndex = pointIndex - 1;
+        if (0 <= prevPointIndex && prevPointIndex < points.size()) {
+            return prevPointIndex;
+        } else if (prevPointIndex == -1 && closed) {
+            return points.size() - 1;
+        } else {
+            return -1;
+        }
+    }
+
+    public Point getPrevPoint(int pointIndex) {
+        int prevPointIndex = getPrevPointIndex(pointIndex);
+        if (prevPointIndex >= 0) {
+            return points.get(prevPointIndex);
+        } else {
+            return null;
+        }
+    }
+
+    private void repairArcSegment(int pointIndex) {
+        int centerPointIndex;
+        if (points.get(pointIndex).isCenterPoint()) {
+            // updated point is arc center
+            centerPointIndex = pointIndex;
+            log.info("Updated arc center at index: {}", pointIndex);
+        } else if (pointIndex > 0 && points.get(pointIndex-1).isCenterPoint()) {
+            // updated point is arc to point
+            centerPointIndex = pointIndex - 1;
+            log.info("Updated arc to point at index: {}", pointIndex);
+        } else if (pointIndex + 1 < points.size() && points.get(pointIndex+1).isCenterPoint()) {
+            // updated point is arc from point
+            centerPointIndex = pointIndex + 1;
+            log.info("Updated arc from point at index: {}", pointIndex);
+        } else {
+            // updated point is not part of an arc segment
+            return;
+        }
+        int fromPointIndex = getPrevPointIndex(centerPointIndex);
+        int toPointIndex = getNextPointIndex(centerPointIndex);
+        log.info("Repairing arc: fromPointIndex={} centerPointIndex={} toPointIndex={}",
+                fromPointIndex, centerPointIndex, toPointIndex);
+        if (fromPointIndex >= 0 && toPointIndex >= 0) {
+            Point from = points.get(fromPointIndex);
+            Point center = points.get(centerPointIndex);
+            Point to = points.get(toPointIndex);
+            if (pointIndex == toPointIndex) {
+                ArcSegment arc = ArcSegment.of(to, center, from, !center.isClockwiseCenterPoint());
+                if (!from.isSame(arc.getTo())) {
+                    points.set(fromPointIndex, new Point(arc.getTo()));
+                }
+            } else {
+                ArcSegment arc = ArcSegment.of(from, center, to);
+                if (!to.isSame(arc.getTo())) {
+                    points.set(toPointIndex, new Point(arc.getTo()));
+                }
+            }
+        }
+    }
+
     public void addPoint(Point point) {
         this.points.add(point);
+        repairArcSegment(points.size() - 1);
         segments = null;
     }
 
@@ -93,6 +183,7 @@ public class Path extends Shape<Path.Handle> {
             return false;
         } else if (!newPoint.isSame(points.get(pointIndex))) {
             points.set(pointIndex, newPoint);
+            repairArcSegment(pointIndex);
             segments = null;
             return true;
         } else {
@@ -103,6 +194,7 @@ public class Path extends Shape<Path.Handle> {
     public boolean insertPoint(int pointIndex, Point newPoint) {
         if (pointIndex <= points.size()) {
             points.add(pointIndex, newPoint);
+            repairArcSegment(pointIndex);
             segments = null;
             return true;
         } else {
@@ -113,6 +205,7 @@ public class Path extends Shape<Path.Handle> {
     public boolean removePoint(int pointIndex) {
         if (pointIndex < points.size()) {
             points.remove(pointIndex);
+            repairArcSegment(pointIndex);
             segments = null;
             if (points.size() < 3) {
                 setClosed(false);
@@ -124,8 +217,9 @@ public class Path extends Shape<Path.Handle> {
     }
 
     public boolean closePath() {
-        if (points.size() > 2) {
+        if (points.size() > 1) {
             setClosed(true);
+            segments = null;
         }
         return isClosed();
     }
@@ -184,17 +278,19 @@ public class Path extends Shape<Path.Handle> {
                 return new Handle(pointIndex);
             }
         }
-        List<Segment> segments = getSegments();
-        for (int segmentIndex = 0; segmentIndex < segments.size(); ++segmentIndex) {
-            Segment segment = segments.get(segmentIndex);
+        List<PathSegment> segments = getSegments();
+        for (int segmentIndex = 0, pointIndex = 0; segmentIndex < segments.size(); ++segmentIndex, ++pointIndex) {
+            PathSegment segment = segments.get(segmentIndex);
             Point2D projectedPoint = segment.project(mousePoint);
             if (projectedPoint != null) {
                 double distanceToMousePoint = projectedPoint.distance(mousePoint);
                 if (distanceToMousePoint < handleRadius) {
-                    int pointIndex = closed ? ((segmentIndex - 1) % points.size()) : segmentIndex;
                     log.info("Created handle for point: {} on segment: {}", projectedPoint, segment);
                     return new Handle(pointIndex, projectedPoint);
                 }
+            }
+            if (segment instanceof ArcSegment) {
+                ++pointIndex;
             }
         }
         return null;
@@ -216,7 +312,7 @@ public class Path extends Shape<Path.Handle> {
         if (hasHandleMoved(handle, event)) {
             if (handle.isProjectedPoint()) {
                 Point newPoint = new Point(event.getPoint());
-                boolean updated = false;
+                boolean updated;
                 if (handle.getNewPoint() == null) {
                     updated = insertPoint(handle.getPointIndex() + 1, newPoint);
                 } else {
@@ -227,7 +323,8 @@ public class Path extends Shape<Path.Handle> {
                 }
                 return updated;
             } else {
-                return updatePoint(handle.getPointIndex(), new Point(event.getPoint()));
+                return updatePoint(handle.getPointIndex(),
+                        new Point(event.getPoint(), handle.getOriginalPoint().getType()));
             }
         } else {
             return false;
@@ -290,22 +387,32 @@ public class Path extends Shape<Path.Handle> {
     public void draw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
         prepareToDraw(ctx, pixelsPerUnit, settings);
         ctx.setLineCap(StrokeLineCap.ROUND);
-        double pointRadius = settings.getShapePointRadius() / pixelsPerUnit;
-        Point prevPoint = closed ? points.get(points.size() - 1) : null;
-        for (Point point : points) {
-            if (prevPoint != null) {
-                ctx.strokeLine(prevPoint.getX(), prevPoint.getY(), point.getX(), point.getY());
-            }
-            if (isSelected()) {
+        for (PathSegment segment : getSegments()) {
+            segment.draw(ctx);
+        }
+        if (isSelected()) {
+            double pointRadius = settings.getShapePointRadius() / pixelsPerUnit;
+            for (Point point : getPoints()) {
                 ctx.fillOval(point.getX() - pointRadius, point.getY() - pointRadius,
                         pointRadius * 2, pointRadius * 2);
             }
-            prevPoint = point;
         }
     }
 
     @Override
     public String toString() {
-        return String.format("Path(%s)", points);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Path[");
+        boolean first = true;
+        for (Point p : points) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(p.toCoordinateString());
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }

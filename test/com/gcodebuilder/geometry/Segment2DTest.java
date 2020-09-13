@@ -18,14 +18,14 @@ public class Segment2DTest {
 
     @ParameterizedTest
     @MethodSource("projectPointTestArgs")
-    public void testProjectPoint(Segment segment, Point2D point, Point2D expected) {
+    public void testProjectPoint(PathSegment segment, Point2D point, Point2D expected) {
         Point2D actual = segment.project(point);
         assertEquals(expected, actual, DELTA);
     }
 
     private static Arguments projectPointTestArgs(double fromX, double fromY, double toX, double toY, double x,
                                                   double y, double expectedX, double expectedY) {
-        return Arguments.of(Segment.of(fromX, fromY, toX, toY), new Point2D(x, y),
+        return Arguments.of(LineSegment.of(fromX, fromY, toX, toY), new Point2D(x, y),
                 new Point2D(expectedX, expectedY));
     }
 

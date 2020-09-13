@@ -8,16 +8,33 @@ import javafx.geometry.Point2D;
 public class Point {
     private static final double DEFAULT_MAX_DISTANCE = 0.0001;
 
+    public enum Type {
+        CW_CENTER,
+        CCW_CENTER
+    }
+
     private final Point2D point2D;
+    private final Type type;
 
     @JsonCreator
     public Point(@JsonProperty("x") double x,
-                 @JsonProperty("y") double y) {
+                 @JsonProperty("y") double y,
+                 @JsonProperty("t") Type type) {
         this.point2D = new Point2D(x, y);
+        this.type = type;
+    }
+
+    public Point(double x, double y) {
+        this(x, y, null);
+    }
+
+    public Point(Point2D point2D, Type type) {
+        this.point2D = point2D;
+        this.type = type;
     }
 
     public Point(Point2D point2D) {
-        this.point2D = point2D;
+        this(point2D, null);
     }
 
     public Point2D asPoint2D() {
@@ -32,6 +49,21 @@ public class Point {
     @JsonProperty
     public double getY() {
         return point2D.getY();
+    }
+
+    @JsonProperty("t")
+    public Type getType() {
+        return type;
+    }
+
+    @JsonIgnore
+    public boolean isCenterPoint() {
+        return type == Type.CW_CENTER || type == Type.CCW_CENTER;
+    }
+
+    @JsonIgnore
+    public boolean isClockwiseCenterPoint() {
+        return type == Type.CW_CENTER;
     }
 
     public double distance(Point2D point2D) {
@@ -86,9 +118,23 @@ public class Point {
         return isSamePoints(p1, p2, DEFAULT_MAX_DISTANCE);
     }
 
+    public String toCoordinateString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        sb.append(getX());
+        sb.append(", ");
+        sb.append(getY());
+        if (getType() != null) {
+            sb.append(", ");
+            sb.append(getType());
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
-        return String.format("Point(%f, %f)", point2D.getX(), point2D.getY());
+        return "Point" + toCoordinateString();
     }
 }
 

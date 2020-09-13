@@ -3,7 +3,8 @@ package com.gcodebuilder.generator.toolpath;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Point;
-import com.gcodebuilder.geometry.Segment;
+import com.gcodebuilder.geometry.LineSegment;
+import com.gcodebuilder.geometry.PathSegment;
 import com.gcodebuilder.geometry.UnitVector;
 import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.Side;
@@ -62,7 +63,7 @@ public class ToolpathGenerator {
         paths.clear();
     }
 
-    private Toolpath.Segment[] computeToolpathSegments(Segment edge, double toolRadius) {
+    private Toolpath.Segment[] computeToolpathSegments(PathSegment edge, double toolRadius) {
         UnitVector left = edge.getDirection().leftNormal();
         UnitVector right = edge.getDirection().rightNormal();
 
@@ -121,10 +122,10 @@ public class ToolpathGenerator {
         double toolRadius = current.getToolRadius();
         double toolRadiusSquared = toolRadius * toolRadius;
 
-        Segment arcCurrent = Segment.of(cornerPoint, current.getTo());
-        Segment arcNext = Segment.of(cornerPoint, next.getFrom());
+        LineSegment arcCurrent = LineSegment.of(cornerPoint, current.getTo());
+        LineSegment arcNext = LineSegment.of(cornerPoint, next.getFrom());
         double arcAngle = Math2D.subtractAngle(arcNext.getAngle(), arcCurrent.getAngle());
-        Segment arcBegin, arcEnd;
+        LineSegment arcBegin, arcEnd;
         if (arcAngle > 0) {
             arcBegin = arcCurrent;
             arcEnd = arcNext;
@@ -146,14 +147,14 @@ public class ToolpathGenerator {
                 continue;
             }
 
-            Segment cornerToProjection = Segment.of(cornerPoint, projectionPoint);
+            LineSegment cornerToProjection = LineSegment.of(cornerPoint, projectionPoint);
             double cornerToProjectionLengthSquared = Math2D.lengthSquared(cornerToProjection.getVector());
             if (cornerToProjectionLengthSquared >= toolRadiusSquared) {
                 // corner too far from segment
                 continue;
             }
 
-            Segment cornerToFrom = Segment.of(cornerPoint, otherSegment.getFrom());
+            LineSegment cornerToFrom = LineSegment.of(cornerPoint, otherSegment.getFrom());
             double angleToFrom = Math2D.subtractAngle(cornerToFrom.getAngle(), cornerToProjection.getAngle());
             boolean fromToLeft = (angleToFrom > 0);
 
@@ -161,7 +162,7 @@ public class ToolpathGenerator {
 
             Point2D leftIntersectionPoint = projectionPoint.add(
                     cornerToProjection.getDirection().leftNormal().multiply(offsetToIntersection));
-            Segment cornerToLeftIntersection = Segment.of(cornerPoint, leftIntersectionPoint);
+            LineSegment cornerToLeftIntersection = LineSegment.of(cornerPoint, leftIntersectionPoint);
             double angleToLeftIntersection = Math2D.subtractAngle(cornerToLeftIntersection.getAngle(), arcBegin.getAngle());
             if (angleToLeftIntersection > 0 && angleToLeftIntersection < arcAngle) {
                 // left intersection inside corner arc
@@ -176,7 +177,7 @@ public class ToolpathGenerator {
 
             Point2D rightToIntersectionPoint = projectionPoint.add(
                     cornerToProjection.getDirection().rightNormal().multiply(offsetToIntersection));
-            Segment cornerToRightIntersection = Segment.of(cornerPoint, rightToIntersectionPoint);
+            LineSegment cornerToRightIntersection = LineSegment.of(cornerPoint, rightToIntersectionPoint);
             double angleToRightIntersection = Math2D.subtractAngle(cornerToRightIntersection.getAngle(), arcBegin.getAngle());
             if (angleToRightIntersection > 0 && angleToRightIntersection < arcAngle) {
                 // right intersection inside corner arc
@@ -319,23 +320,23 @@ public class ToolpathGenerator {
         return result;
     }
 
-    private boolean isInsideSegment(List<Segment> path, Toolpath.Segment segment) {
-        return Segment.isPointInsidePath(path, segment.getFrom()) && Segment.isPointInsidePath(path, segment.getTo());
+    private boolean isInsideSegment(List<PathSegment> path, Toolpath.Segment segment) {
+        return PathSegment.isPointInsidePath(path, segment.getFrom()) && PathSegment.isPointInsidePath(path, segment.getTo());
     }
 
-    private boolean isOutsideSegment(List<Segment> path, Toolpath.Segment segment) {
-        return !Segment.isPointInsidePath(path, segment.getFrom()) && !Segment.isPointInsidePath(path, segment.getTo());
+    private boolean isOutsideSegment(List<PathSegment> path, Toolpath.Segment segment) {
+        return !PathSegment.isPointInsidePath(path, segment.getFrom()) && !PathSegment.isPointInsidePath(path, segment.getTo());
     }
 
     public List<Toolpath> computeProfileToolpaths(Side side, Direction direction) {
-        List<Segment> connectedEdges = new ArrayList<>();
+        List<PathSegment> connectedEdges = new ArrayList<>();
         List<List<Toolpath.Segment>> connectedToolpathSides = new ArrayList<>();
 
         for (Path path : paths) {
             if (path.isClosed()) {
                 List<Toolpath.Segment> leftSegments = new ArrayList<>();
                 List<Toolpath.Segment> rightSegments = new ArrayList<>();
-                for (Segment edge : path.getSegments()) {
+                for (PathSegment edge : path.getSegments()) {
                     connectedEdges.add(edge);
 
                     Toolpath.Segment[] segments = computeToolpathSegments(edge, toolRadius);
@@ -380,9 +381,9 @@ public class ToolpathGenerator {
         return Collections.emptyList();
     }
 
-    private static List<Segment> computeEnclosingPath(Toolpath enclosingToolpath) {
+    private static List<PathSegment> computeEnclosingPath(Toolpath enclosingToolpath) {
         List<Toolpath.Segment> enclosingToolpathSegments = enclosingToolpath.getSegments();
-        List<Segment> enclosingPath = new ArrayList<>(enclosingToolpathSegments.size());
+        List<PathSegment> enclosingPath = new ArrayList<>(enclosingToolpathSegments.size());
         for (int i = 0; i < enclosingToolpathSegments.size(); ++i) {
             Toolpath.Segment current = enclosingToolpathSegments.get(i);
 
@@ -400,15 +401,15 @@ public class ToolpathGenerator {
                 to = current.getSegment().intersect(next.getSegment(), true);
             }
 
-            enclosingPath.add(Segment.of(from, to));
+            enclosingPath.add(LineSegment.of(from, to));
         }
         return enclosingPath;
     }
 
-    private List<Toolpath.Segment> computePocketSegments(Toolpath enclosingToolpath, List<Segment> enclosingPath) {
+    private List<Toolpath.Segment> computePocketSegments(Toolpath enclosingToolpath, List<PathSegment> enclosingPath) {
         List<Toolpath.Segment> enclosingToolpathSegments = enclosingToolpath.getSegments();
         List<Toolpath.Segment> pocketSegments = new ArrayList<>(enclosingToolpathSegments.size());
-        Iterator<Segment> pathIterator = enclosingPath.iterator();
+        Iterator<PathSegment> pathIterator = enclosingPath.iterator();
         for (Toolpath.Segment toolpathSegment : enclosingToolpathSegments) {
             pocketSegments.add(Toolpath.Segment.fromEdge(
                     pathIterator.next(),
@@ -428,12 +429,12 @@ public class ToolpathGenerator {
         List<Toolpath> enclosingLayer = insideToolpaths;
 
         while (!enclosingLayer.isEmpty()) {
-            List<Segment> connectedPath = new ArrayList<>();
+            List<PathSegment> connectedPath = new ArrayList<>();
             List<Toolpath.Segment> layerSegments = new ArrayList<>();
             List<List<Toolpath.Segment>> connectedLayerSegments = new ArrayList<>();
 
             for (Toolpath toolpath : enclosingLayer) {
-                List<Segment> enclosingPath = computeEnclosingPath(toolpath);
+                List<PathSegment> enclosingPath = computeEnclosingPath(toolpath);
                 connectedPath.addAll(enclosingPath);
 
                 List<Toolpath.Segment> pocketSegments = computePocketSegments(toolpath, enclosingPath);
@@ -467,7 +468,7 @@ public class ToolpathGenerator {
 
     private List<Toolpath> connectPockets(List<Toolpath> pocketToolpaths) {
         List<Toolpath> allConnectedPockets = new ArrayList<>();
-        List<Segment> allPocketPathSegments = pocketToolpaths.stream()
+        List<PathSegment> allPocketPathSegments = pocketToolpaths.stream()
                 .map(ToolpathGenerator::computeEnclosingPath)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -484,7 +485,7 @@ public class ToolpathGenerator {
             while (toolpathIterator.hasNext()) {
                 Toolpath otherPocket = toolpathIterator.next();
                 Point2D startPoint = otherPocket.getLastSegment().getTo();
-                Segment connection = Segment.of(currentPoint, startPoint);
+                LineSegment connection = LineSegment.of(currentPoint, startPoint);
                 if (allPocketPathSegments.stream().allMatch(segment -> segment.intersect(connection) == null)) {
                     double pocketDistance = currentPoint.distance(startPoint);
                     if (pocketDistance < nextPocketDistance) {
@@ -528,15 +529,15 @@ public class ToolpathGenerator {
                 toPoint.getX(), toPoint.getY());
     }
 
-    private static void drawLine(GraphicsContext ctx, Segment segment) {
-        drawLine(ctx, segment.getFrom(), segment.getTo());
+    private static void drawSegment(GraphicsContext ctx, PathSegment segment) {
+        segment.draw(ctx);
     }
 
     private void drawArc(GraphicsContext ctx, Point2D center, Point2D start, Point2D end) {
-        Segment centerToStart = Segment.of(center, start);
-        drawLine(ctx, centerToStart);
-        Segment centerToEnd = Segment.of(center, end);
-        drawLine(ctx, centerToEnd);
+        LineSegment centerToStart = LineSegment.of(center, start);
+        drawSegment(ctx, centerToStart);
+        LineSegment centerToEnd = LineSegment.of(center, end);
+        drawSegment(ctx, centerToEnd);
         double radius = centerToStart.getLength();
         double angleToStart = centerToStart.getAngle();
         double angleToEnd = centerToEnd.getAngle();
@@ -580,7 +581,7 @@ public class ToolpathGenerator {
     }
 
     private void drawToolpathSegment(GraphicsContext ctx, Toolpath.Segment segment) {
-        drawLine(ctx, segment.getSegment());
+        segment.getSegment().draw(ctx);
     }
 
     private void drawValidSegment(GraphicsContext ctx, Toolpath.Segment segment) {
@@ -666,16 +667,16 @@ public class ToolpathGenerator {
     }
 
     public void drawToolpath(GraphicsContext ctx, DisplayMode displayMode) {
-        List<Segment> connectedEdges = new ArrayList<>();
+        List<PathSegment> connectedEdges = new ArrayList<>();
         List<List<Toolpath.Segment>> connectedToolpathSides = new ArrayList<>();
 
         for (Path path : paths) {
             if (path.isClosed()) {
                 List<Toolpath.Segment> leftSegments = new ArrayList<>();
                 List<Toolpath.Segment> rightSegments = new ArrayList<>();
-                for (Segment edge : path.getSegments()) {
+                for (PathSegment edge : path.getSegments()) {
                     drawPoint(ctx, edge.getFrom());
-                    drawLine(ctx, edge);
+                    edge.draw(ctx);
 
                     connectedEdges.add(edge);
 
