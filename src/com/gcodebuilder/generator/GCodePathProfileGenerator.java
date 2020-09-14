@@ -42,7 +42,7 @@ public class GCodePathProfileGenerator implements GCodeGenerator {
 
         ToolpathGenerator generator = new ToolpathGenerator();
         generator.setToolRadius(recipe.getToolWidth()/2);
-        paths.forEach(generator::addPath);
+        generator.addAllPaths(paths);
         List<Toolpath> toolpaths = generator.computeProfileToolpaths(
                 recipe.getSide(), recipe.getDirection());
 

@@ -20,6 +20,8 @@ import com.gcodebuilder.changelog.SelectionChange;
 import com.gcodebuilder.changelog.ShapeListChange;
 import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.generator.GCodeGenerator;
+import com.gcodebuilder.generator.toolpath.ToolpathDrawable;
+import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.PathGroup;
@@ -153,6 +155,7 @@ public class DrawingWindowController {
     private Tool currentTool = selectionTool;
 
     private Drawing drawing = new Drawing();
+    private ToolpathDrawable toolpathDrawable = new ToolpathDrawable();
 
     private Point2D startPoint = Point2D.ZERO;
     private Point2D mouseStartPoint = Point2D.ZERO;
@@ -253,6 +256,8 @@ public class DrawingWindowController {
         });
 
         canvas.getDrawables().add(drawing);
+        canvas.getDrawables().add(toolpathDrawable);
+        toolpathDrawable.setDrawing(drawing);
 
         drawingFileOperations = new FileOperations<>(
                 rootPane, Drawing::load, Drawing::save,
@@ -317,6 +322,11 @@ public class DrawingWindowController {
             for (Shape<?> shape : currentSelectedShapes) {
                 shape.setRecipeId(newRecipeId);
             }
+            canvas.refresh();
+        });
+
+        recipeEditorController.currentRecipeProperty().addListener(obs -> {
+            canvas.refresh();
         });
 
         recipeEditorController.getRecipes().addListener((ListChangeListener<GCodeRecipe>) change -> {
@@ -628,6 +638,7 @@ public class DrawingWindowController {
         drawing = newDrawing;
         unitCtl.setValue(newDrawing.getLengthUnit());
         canvas.getDrawables().add(newDrawing);
+        toolpathDrawable.setDrawing(newDrawing);
 
         shapesTableController.syncShapes(newDrawing);
 
@@ -809,5 +820,45 @@ public class DrawingWindowController {
         drawing.removeAll(drawing.getSelectedShapes());
         doChange(new ShapeListChange("Delete", shapesBefore, drawing.saveShapes()));
         checkForChanges();
+    }
+
+    public void displayToolpathNone() {
+        toolpathDrawable.setDisplayMode(null);
+        canvas.refresh();
+    }
+
+    public void displaySplitPoints() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.SPLIT_POINTS);
+        canvas.refresh();
+    }
+
+    public void displayValidSegments() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.VALID_SEGMENTS);
+        canvas.refresh();
+    }
+
+    public void displayInsideOutside() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.INSIDE_OUTSIDE);
+        canvas.refresh();
+    }
+
+    public void displayPartitionedToolpaths() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.PARTITIONED_TOOLPATHS);
+        canvas.refresh();
+    }
+
+    public void displayOrientedToolpaths() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.ORIENTED_TOOLPATHS);
+        canvas.refresh();
+    }
+
+    public void displayPockets() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.POCKETS);
+        canvas.refresh();
+    }
+
+    public void displayConnectedPockets() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.CONNECTED_POCKETS);
+        canvas.refresh();
     }
 }

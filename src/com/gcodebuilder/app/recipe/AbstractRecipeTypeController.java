@@ -1,6 +1,5 @@
 package com.gcodebuilder.app.recipe;
 
-import com.gcodebuilder.app.recipe.RecipeTypeController;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import com.gcodebuilder.recipe.GCodeRecipeType;
 import javafx.scene.control.ChoiceBox;
@@ -9,6 +8,7 @@ import javafx.scene.control.TextFormatter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +41,9 @@ public abstract class AbstractRecipeTypeController<T extends GCodeRecipe> implem
 
     private T recipe;
 
+    @Getter @Setter
+    private Consumer<GCodeRecipe> onRecipeUpdate;
+
     private final List<Consumer<T>> settingAppliers = new ArrayList<>();
 
     protected <V> void configuredChoiceBox(ChoiceBox<V> choiceBox,
@@ -50,6 +53,7 @@ public abstract class AbstractRecipeTypeController<T extends GCodeRecipe> implem
         choiceBox.getItems().addAll(values);
         choiceBox.valueProperty().addListener((obs, oldValue, newValue) -> {
             setter.accept(getRecipe(), newValue);
+            recipeUpdated();
         });
         settingAppliers.add((recipe) -> {
             choiceBox.setValue(getter.apply(recipe));
@@ -63,6 +67,7 @@ public abstract class AbstractRecipeTypeController<T extends GCodeRecipe> implem
         field.setTextFormatter(formatter);
         formatter.valueProperty().addListener((obs, oldValue, newValue) -> {
             setter.accept(getRecipe(), newValue);
+            recipeUpdated();
         });
         settingAppliers.add((recipe) -> {
             formatter.setValue(getter.apply(recipe));
@@ -92,5 +97,11 @@ public abstract class AbstractRecipeTypeController<T extends GCodeRecipe> implem
         }
         this.recipe = recipe;
         settingAppliers.forEach(applier -> applier.accept(recipe));
+    }
+
+    private void recipeUpdated() {
+        if (onRecipeUpdate != null) {
+            onRecipeUpdate.accept(recipe);
+        }
     }
 }

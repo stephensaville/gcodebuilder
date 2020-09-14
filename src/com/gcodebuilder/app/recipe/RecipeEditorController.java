@@ -126,6 +126,7 @@ public class RecipeEditorController {
         AnchorPane.setLeftAnchor(node, 0.0);
         AnchorPane.setRightAnchor(node, 0.0);
         RecipeTypeController controller = typeLoader.getController();
+        controller.setOnRecipeUpdate(recipe -> currentRecipeProperty.fireValueChangedEvent());
         recipeTypeEditors.put(type, new RecipeTypeEditor(type, node, controller));
 
         String menuItemText = String.format("Add %s Recipe", type.getLabel());

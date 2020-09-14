@@ -12,24 +12,6 @@ import org.apache.logging.log4j.Logger;
 public class Main extends Application {
     private static final Logger log = LogManager.getLogger(Main.class);
 
-    private void showFaceBuilder(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("faceBuilder.fxml"));
-        primaryStage.setTitle("GCode Facing Program Builder");
-        primaryStage.setResizable(false);
-        primaryStage.show();
-    }
-
-    private void showPathBuilder(Stage primaryStage) throws Exception {
-        FXMLLoader loader = new FXMLLoader();
-        Parent root = loader.load(getClass().getResourceAsStream("pathBuilder.fxml"));
-        primaryStage.setTitle("GCode Path Builder");
-        primaryStage.setScene(new Scene(root));
-        primaryStage.setResizable(true);
-        primaryStage.show();
-        PathBuilderController controller = loader.getController();
-        controller.bindProperties();
-    }
-
     private void showDrawingWindow(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader();
         Parent root = loader.load(getClass().getResourceAsStream("drawingWindow.fxml"));
@@ -49,12 +31,6 @@ public class Main extends Application {
         log.info("unnamed parameters: " + getParameters().getUnnamed());
         String ui = getParameters().getNamed().getOrDefault("ui", "DrawingWindow");
         switch (ui) {
-            case "FaceBuilder":
-                showFaceBuilder(primaryStage);
-                break;
-            case "PathBuilder":
-                showPathBuilder(primaryStage);
-                break;
             case "DrawingWindow":
             default:
                 showDrawingWindow(primaryStage);

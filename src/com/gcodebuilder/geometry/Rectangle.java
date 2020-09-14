@@ -15,7 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @JsonTypeName("RECTANGLE")
-public class Rectangle extends Shape<Rectangle.Handle> {
+public class Rectangle extends Shape<Rectangle.Handle> implements PathConvertible {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
     private static double scaleFactorMin(double originalMin, double eventValue, double span) {
@@ -311,6 +311,7 @@ public class Rectangle extends Shape<Rectangle.Handle> {
         };
     }
 
+    @Override
     public Path convertToPath() {
         Path path = new Path();
         path.addPoint(getMinX(), getMinY());

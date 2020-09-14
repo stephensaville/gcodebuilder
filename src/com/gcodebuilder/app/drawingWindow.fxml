@@ -266,6 +266,21 @@
                   <KeyCodeCombination alt="DOWN" code="S" control="UP" meta="UP" shift="DOWN" shortcut="UP"/>
                </accelerator>
             </MenuItem>
+            <SeparatorMenuItem/>
+            <Menu text="Toolpath Preview" onAction="#displayToolpathNone">
+               <RadioMenuItem text="None">
+                  <toggleGroup>
+                     <ToggleGroup fx:id="toolpathPreviewMode"/>
+                  </toggleGroup>
+               </RadioMenuItem>
+               <RadioMenuItem text="Split Points" onAction="#displaySplitPoints" toggleGroup="$toolpathPreviewMode"/>
+               <RadioMenuItem text="Valid Segments" onAction="#displayValidSegments" toggleGroup="$toolpathPreviewMode"/>
+               <RadioMenuItem text="Inside/Outside" onAction="#displayInsideOutside" toggleGroup="$toolpathPreviewMode"/>
+               <RadioMenuItem text="Partitioned Toolpaths" onAction="#displayPartitionedToolpaths" toggleGroup="$toolpathPreviewMode"/>
+               <RadioMenuItem text="Oriented Toolpaths" onAction="#displayOrientedToolpaths" toggleGroup="$toolpathPreviewMode"/>
+               <RadioMenuItem text="Pockets" onAction="#displayPockets" toggleGroup="$toolpathPreviewMode"/>
+               <RadioMenuItem text="Connected Pockets" onAction="#displayConnectedPockets" toggleGroup="$toolpathPreviewMode"/>
+            </Menu>
          </Menu>
       </MenuBar>
    </top>

@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonTypeName("PATH")
-public class Path extends Shape<Path.Handle> {
+public class Path extends Shape<Path.Handle> implements PathConvertible {
     private static final Logger log = LogManager.getLogger(Path.class);
 
     private List<Point> points;
@@ -97,11 +97,7 @@ public class Path extends Shape<Path.Handle> {
 
     public Point getNextPoint(int pointIndex) {
         int nextPointIndex = getNextPointIndex(pointIndex);
-        if (nextPointIndex >= 0) {
-            return points.get(nextPointIndex);
-        } else {
-            return null;
-        }
+        return (nextPointIndex != -1) ? points.get(nextPointIndex) : null;
     }
 
     public int getPrevPointIndex(int pointIndex) {
@@ -117,31 +113,10 @@ public class Path extends Shape<Path.Handle> {
 
     public Point getPrevPoint(int pointIndex) {
         int prevPointIndex = getPrevPointIndex(pointIndex);
-        if (prevPointIndex >= 0) {
-            return points.get(prevPointIndex);
-        } else {
-            return null;
-        }
+        return (prevPointIndex != -1) ? points.get(prevPointIndex) : null;
     }
 
-    private void repairArcSegment(int pointIndex) {
-        int centerPointIndex;
-        if (points.get(pointIndex).isCenterPoint()) {
-            // updated point is arc center
-            centerPointIndex = pointIndex;
-            log.info("Updated arc center at index: {}", pointIndex);
-        } else if (pointIndex > 0 && points.get(pointIndex-1).isCenterPoint()) {
-            // updated point is arc to point
-            centerPointIndex = pointIndex - 1;
-            log.info("Updated arc to point at index: {}", pointIndex);
-        } else if (pointIndex + 1 < points.size() && points.get(pointIndex+1).isCenterPoint()) {
-            // updated point is arc from point
-            centerPointIndex = pointIndex + 1;
-            log.info("Updated arc from point at index: {}", pointIndex);
-        } else {
-            // updated point is not part of an arc segment
-            return;
-        }
+    private boolean repairArcSegment(int pointIndex, int centerPointIndex) {
         int fromPointIndex = getPrevPointIndex(centerPointIndex);
         int toPointIndex = getNextPointIndex(centerPointIndex);
         log.info("Repairing arc: fromPointIndex={} centerPointIndex={} toPointIndex={}",
@@ -154,11 +129,72 @@ public class Path extends Shape<Path.Handle> {
                 ArcSegment arc = ArcSegment.of(to, center, from, !center.isClockwiseCenterPoint());
                 if (!from.isSame(arc.getTo())) {
                     points.set(fromPointIndex, new Point(arc.getTo()));
+                    return true;
                 }
             } else {
                 ArcSegment arc = ArcSegment.of(from, center, to);
                 if (!to.isSame(arc.getTo())) {
                     points.set(toPointIndex, new Point(arc.getTo()));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void repairArcSegment(int pointIndex) {
+        int updatedFromPointIndex = -1;
+        int updatedToPointIndex = -1;
+        if (points.get(pointIndex).isCenterPoint()) {
+            // updated point is arc center
+            log.info("Updated arc center at index: {}", pointIndex);
+            if (repairArcSegment(pointIndex, pointIndex)) {
+                updatedToPointIndex = getNextPointIndex(pointIndex);
+            }
+        }
+        if (pointIndex > 0 && points.get(pointIndex-1).isCenterPoint()) {
+            // updated point is arc to point
+            log.info("Updated arc to point at index: {}", pointIndex);
+            if (repairArcSegment(pointIndex, pointIndex - 1)) {
+                updatedFromPointIndex = getPrevPointIndex(pointIndex - 1);
+            }
+        }
+        if (pointIndex + 1 < points.size() && points.get(pointIndex+1).isCenterPoint()) {
+            // updated point is arc from point
+            log.info("Updated arc from point at index: {}", pointIndex);
+            if (repairArcSegment(pointIndex, pointIndex + 1)) {
+                updatedToPointIndex = getNextPointIndex(pointIndex + 1);
+            }
+        }
+        while (updatedFromPointIndex != -1 || updatedToPointIndex != -1) {
+            if (updatedFromPointIndex != -1) {
+                int updatedFromPointPrevIndex = getPrevPointIndex(updatedFromPointIndex);
+                if (updatedFromPointPrevIndex != pointIndex && updatedFromPointPrevIndex != -1
+                        && points.get(updatedFromPointPrevIndex).isCenterPoint()) {
+                    int updatedFromPointPrevPrevIndex = getPrevPointIndex(updatedFromPointIndex);
+                    if (updatedFromPointPrevPrevIndex != pointIndex
+                            && repairArcSegment(updatedFromPointIndex, updatedFromPointPrevIndex)) {
+                        updatedFromPointIndex = updatedFromPointPrevPrevIndex;
+                    } else {
+                        updatedFromPointIndex = -1;
+                    }
+                } else {
+                    updatedFromPointIndex = -1;
+                }
+            }
+            if (updatedToPointIndex != -1) {
+                int updatedToPointNextIndex = getNextPointIndex(updatedToPointIndex);
+                if (updatedToPointNextIndex != pointIndex && updatedToPointNextIndex != -1
+                        && points.get(updatedToPointNextIndex).isCenterPoint()) {
+                    int updatedToPointNextNextIndex = getNextPointIndex(updatedToPointNextIndex);
+                    if (updatedToPointNextNextIndex != pointIndex
+                            && repairArcSegment(updatedToPointIndex, updatedToPointNextIndex)) {
+                        updatedToPointIndex = updatedToPointNextNextIndex;
+                    } else {
+                        updatedToPointIndex = -1;
+                    }
+                } else {
+                    updatedToPointIndex = -1;
                 }
             }
         }
@@ -381,6 +417,11 @@ public class Path extends Shape<Path.Handle> {
                 return Path.this;
             }
         };
+    }
+
+    @Override
+    public Path convertToPath() {
+        return this;
     }
 
     @Override

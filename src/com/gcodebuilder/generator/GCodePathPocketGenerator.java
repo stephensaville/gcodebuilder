@@ -42,7 +42,8 @@ public class GCodePathPocketGenerator implements GCodeGenerator {
 
         ToolpathGenerator generator = new ToolpathGenerator();
         generator.setToolRadius(recipe.getToolWidth()/2);
-        paths.forEach(generator::addPath);
+        generator.setStepOver(recipe.getStepOver()/100.0);
+        generator.addAllPaths(paths);
         List<Toolpath> toolpaths = generator.computePocketToolpaths(recipe.getDirection());
 
         builder .distanceMode(DistanceMode.ABSOLUTE)

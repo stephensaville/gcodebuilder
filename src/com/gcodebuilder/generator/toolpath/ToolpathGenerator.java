@@ -13,6 +13,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.ArcType;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -53,6 +55,10 @@ public class ToolpathGenerator {
 
     public void addPath(Path path) {
         paths.add(path);
+    }
+
+    public void addAllPaths(Collection<Path> paths) {
+        this.paths.addAll(paths);
     }
 
     public boolean removePath(Path path) {
@@ -562,7 +568,6 @@ public class ToolpathGenerator {
 
     private void drawSplitPoints(GraphicsContext ctx, Toolpath.Segment segment) {
         segment.sortSplitPoints();
-        ctx.save();
         Point2D lastSplitPoint = segment.getFrom();
         boolean toSideValid = true;
         for (Toolpath.SplitPoint splitPoint : segment.getSplitPoints()) {
@@ -577,7 +582,6 @@ public class ToolpathGenerator {
         for (Toolpath.SplitPoint splitPoint : segment.getSplitPoints()) {
             drawPoint(ctx, splitPoint.getPoint());
         }
-        ctx.restore();
     }
 
     private void drawToolpathSegment(GraphicsContext ctx, Toolpath.Segment segment) {
@@ -599,12 +603,17 @@ public class ToolpathGenerator {
         }
     }
 
-    private void drawText(GraphicsContext ctx, Point2D textPoint, String text) {
+    private void drawText(GraphicsContext ctx, Point2D textPoint, String text, double angle) {
         ctx.save();
         try {
             textPoint = ctx.getTransform().transform(textPoint);
-            ctx.setTransform(new Affine());
-            ctx.strokeText(text, textPoint.getX(), textPoint.getY());
+            Affine transform = new Affine();
+            transform.appendTranslation(textPoint.getX(), textPoint.getY());
+            transform.appendRotation(360 - Math2D.convertToDegrees(angle));
+            ctx.setTransform(transform);
+            ctx.setLineWidth(1);
+            ctx.setTextAlign(TextAlignment.CENTER);
+            ctx.strokeText(text, 0, -5);
         } finally {
             ctx.restore();
         }
@@ -633,7 +642,7 @@ public class ToolpathGenerator {
                 } else {
                     text = String.format("%d.%d", toolpathIndex, segmentIndex);
                 }
-                drawText(ctx, textPoint, text);
+                drawText(ctx, textPoint, text, segment.getSegment().getAngle());
 
                 if (!closed) {
                     ctx.setLineDashes(pointRadius, pointRadius);
@@ -666,7 +675,7 @@ public class ToolpathGenerator {
         CONNECTED_POCKETS
     }
 
-    public void drawToolpath(GraphicsContext ctx, DisplayMode displayMode) {
+    public void drawToolpath(GraphicsContext ctx, DisplayMode displayMode, Side side, Direction direction) {
         List<PathSegment> connectedEdges = new ArrayList<>();
         List<List<Toolpath.Segment>> connectedToolpathSides = new ArrayList<>();
 
@@ -675,9 +684,6 @@ public class ToolpathGenerator {
                 List<Toolpath.Segment> leftSegments = new ArrayList<>();
                 List<Toolpath.Segment> rightSegments = new ArrayList<>();
                 for (PathSegment edge : path.getSegments()) {
-                    drawPoint(ctx, edge.getFrom());
-                    edge.draw(ctx);
-
                     connectedEdges.add(edge);
 
                     Toolpath.Segment[] segments = computeToolpathSegments(edge, toolRadius);
@@ -688,15 +694,6 @@ public class ToolpathGenerator {
                 connectedToolpathSides.add(leftSegments);
                 connectToolpathSegments(rightSegments);
                 connectedToolpathSides.add(rightSegments);
-            } else {
-                Point prevPoint = null;
-                for (Point point : path.getPoints()) {
-                    drawPoint(ctx, point.asPoint2D());
-                    if (prevPoint != null) {
-                        drawLine(ctx, prevPoint.asPoint2D(), point.asPoint2D());
-                    }
-                    prevPoint = point;
-                }
             }
         }
 
@@ -710,79 +707,45 @@ public class ToolpathGenerator {
             } else {
                 List<Toolpath.Segment> allValidSegments = getAllValidSegments(allSegments);
                 if (displayMode == DisplayMode.VALID_SEGMENTS) {
-                    ctx.save();
-                    try {
-                        ctx.setStroke(VALID_PAINT);
-                        allValidSegments.forEach(segment -> drawValidSegment(ctx, segment));
-                    } finally {
-                        ctx.restore();
-                    }
+                    ctx.setStroke(VALID_PAINT);
+                    allValidSegments.forEach(segment -> drawValidSegment(ctx, segment));
                 } else {
-                    List<Toolpath.Segment> insideSegments = allValidSegments.stream()
-                            .filter(segment -> isInsideSegment(connectedEdges, segment))
-                            .collect(Collectors.toList());
-                    List<Toolpath.Segment> outsideSegments = allValidSegments.stream()
-                            .filter(segment -> isOutsideSegment(connectedEdges, segment))
-                            .collect(Collectors.toList());
-                    if (displayMode == DisplayMode.INSIDE_OUTSIDE) {
-                        ctx.save();
-                        try {
-                            ctx.setStroke(INSIDE_PAINT);
-                            insideSegments.forEach(segment -> drawToolpathSegment(ctx, segment));
-                            ctx.setStroke(OUTSIDE_PAINT);
-                            outsideSegments.forEach(segment -> drawToolpathSegment(ctx, segment));
-                        } finally {
-                            ctx.restore();
-                        }
-                    } else {
-                        List<Toolpath> insideToolpaths = partitionToolpaths(insideSegments);
-                        List<Toolpath> outsideToolpaths = partitionToolpaths(outsideSegments);
-                        if (displayMode == DisplayMode.PARTITIONED_TOOLPATHS) {
-                            ctx.save();
-                            try {
-                                ctx.setStroke(INSIDE_PAINT);
-                                drawToolpaths(ctx, insideToolpaths);
-                                ctx.setStroke(OUTSIDE_PAINT);
-                                drawToolpaths(ctx, outsideToolpaths);
-                            } finally {
-                                ctx.restore();
-                            }
-                        } else {
-                            insideToolpaths = insideToolpaths.stream()
-                                    .map(toolpath -> toolpath.orient(Direction.CLOCKWISE))
+                    List<Toolpath.Segment> sideSegments;
+                    switch (side) {
+                        case INSIDE:
+                            sideSegments = allValidSegments.stream()
+                                    .filter(segment -> isInsideSegment(connectedEdges, segment))
                                     .collect(Collectors.toList());
-                            outsideToolpaths = outsideToolpaths.stream()
-                                    .map(toolpath -> toolpath.orient(Direction.CLOCKWISE))
+                            ctx.setStroke(INSIDE_PAINT);
+                            break;
+                        case OUTSIDE:
+                            sideSegments = allValidSegments.stream()
+                                    .filter(segment -> isOutsideSegment(connectedEdges, segment))
+                                    .collect(Collectors.toList());
+                            ctx.setStroke(OUTSIDE_PAINT);
+                            break;
+                        default:
+                            sideSegments = Collections.emptyList();
+                    }
+                    if (displayMode == DisplayMode.INSIDE_OUTSIDE) {
+                        sideSegments.forEach(segment -> drawToolpathSegment(ctx, segment));
+                    } else {
+                        List<Toolpath> partitionToolpaths = partitionToolpaths(sideSegments);
+                        if (displayMode == DisplayMode.PARTITIONED_TOOLPATHS) {
+                            drawToolpaths(ctx, partitionToolpaths);
+                        } else {
+                            partitionToolpaths = partitionToolpaths.stream()
+                                    .map(toolpath -> toolpath.orient(direction))
                                     .collect(Collectors.toList());
                             if (displayMode == DisplayMode.ORIENTED_TOOLPATHS) {
-                                ctx.save();
-                                try {
-                                    ctx.setStroke(INSIDE_PAINT);
-                                    drawToolpaths(ctx, insideToolpaths);
-                                    ctx.setStroke(OUTSIDE_PAINT);
-                                    drawToolpaths(ctx, outsideToolpaths);
-                                } finally {
-                                    ctx.restore();
-                                }
-                            } else {
-                                List<Toolpath> pocketToolpaths = computePockets(insideToolpaths);
+                                drawToolpaths(ctx, partitionToolpaths);
+                            } else if (side == Side.INSIDE) {
+                                List<Toolpath> pocketToolpaths = computePockets(partitionToolpaths);
                                 if (displayMode == DisplayMode.POCKETS) {
-                                    ctx.save();
-                                    try {
-                                        ctx.setStroke(INSIDE_PAINT);
-                                        drawToolpaths(ctx, pocketToolpaths);
-                                    } finally {
-                                        ctx.restore();
-                                    }
+                                    drawToolpaths(ctx, pocketToolpaths);
                                 } else if (displayMode == DisplayMode.CONNECTED_POCKETS) {
                                     List<Toolpath> connectedPocketToolpaths = connectPockets(pocketToolpaths);
-                                    ctx.save();
-                                    try {
-                                        ctx.setStroke(INSIDE_PAINT);
-                                        drawToolpaths(ctx, connectedPocketToolpaths);
-                                    } finally {
-                                        ctx.restore();
-                                    }
+                                    drawToolpaths(ctx, connectedPocketToolpaths);
                                 }
                             }
                         }
