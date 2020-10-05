@@ -1,15 +1,25 @@
 package com.gcodebuilder.geometry;
 
+import com.gcodebuilder.generator.toolpath.Toolpath;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.ArcType;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 @Getter
+@RequiredArgsConstructor(access=AccessLevel.PROTECTED)
 public class ArcSegment implements PathSegment {
     private static final Logger log = LogManager.getLogger(ArcSegment.class);
+
+    private static Range leftAngleRange = Range.exclusiveMinInclusiveMax(Math.PI/2, 2*Math.PI/2);
 
     private final Point2D from;
     private final Point2D center;
@@ -19,6 +29,8 @@ public class ArcSegment implements PathSegment {
     private final UnitVector direction;
     private final double startAngle;
     private final double extentAngle;
+    private final List<Range> leftWindingRanges;
+    private final List<Range> rightWindingRanges;
 
     public static ArcSegment of(Point2D from, Point2D center, Point2D to, boolean clockwise) {
         return new ArcSegment(from, center, to, clockwise);
@@ -37,28 +49,128 @@ public class ArcSegment implements PathSegment {
         this.center = center;
         this.clockwise = clockwise;
         LineSegment centerToFrom = LineSegment.of(center, from);
-        double fromAngle = centerToFrom.getAngle();
         this.radius = centerToFrom.getLength();
-        this.startAngle = fromAngle;
-        double angleDiff;
+        this.startAngle = centerToFrom.getAngle();
+        double minY = center.getY() - radius;
+        double maxY = center.getY() + radius;
         if (Point.isSamePoints(from, to)) {
-            angleDiff = clockwise ? -2*Math.PI : 2*Math.PI;
+            this.extentAngle = clockwise ? -2*Math.PI : 2*Math.PI;
             this.to = from;
+            this.leftWindingRanges = this.rightWindingRanges = Collections.singletonList(
+                    Range.inclusiveMinExclusiveMax(minY, maxY));
         } else {
             LineSegment centerToTo = LineSegment.of(center, to);
-            this.to = center.add(centerToTo.getDirection().multiply(radius));
-            double toAngle = centerToTo.getAngle();
-            angleDiff = Math2D.subtractAngle(toAngle, fromAngle);
+            double stopAngle = centerToTo.getAngle();
+            this.to = to = center.add(centerToTo.getDirection().multiply(radius));
+            if (clockwise) {
+                this.extentAngle = Math2D.subtractAngle(stopAngle, this.startAngle,
+                        -2*Math.PI, 0, false);
+                if (leftAngleRange.includes(startAngle)) {
+                    if (leftAngleRange.includes(stopAngle)) {
+                        // arc starts and stops in left half of circle
+                        if (-extentAngle <= Math.PI) {
+                            // arc contained within left half of circle
+                            this.leftWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(from.getY(), to.getY()));
+                            this.rightWindingRanges = Collections.emptyList();
+                        } else {
+                            // arc wraps around right half of circle
+                            this.leftWindingRanges = Arrays.asList(
+                                    Range.inclusiveMinExclusiveMax(minY, to.getY()),
+                                    Range.inclusiveMinExclusiveMax(from.getY(), maxY));
+                            this.rightWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(minY, maxY));
+                        }
+                    } else {
+                        // arc starts in left and stops in right half of circle
+                        this.leftWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(from.getY(), maxY));
+                        this.rightWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(to.getY(), maxY));
+                    }
+                } else {
+                    if (leftAngleRange.includes(stopAngle)) {
+                        // arc starts in right and stops in left half of circle
+                        this.leftWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(minY, to.getY()));
+                        this.rightWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(minY, from.getY()));
+                    } else {
+                        // arc starts and stops in right half of circle
+                        if (-extentAngle <= Math.PI) {
+                            // arc contained within right half of circle
+                            this.leftWindingRanges = Collections.emptyList();
+                            this.rightWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(to.getY(), from.getY()));
+                        } else {
+                            // arc wraps around left half of circle
+                            this.leftWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(minY, maxY));
+                            this.rightWindingRanges = Arrays.asList(
+                                    Range.inclusiveMinExclusiveMax(minY, from.getY()),
+                                    Range.inclusiveMinExclusiveMax(to.getY(), maxY));
+                        }
+                    }
+                }
+            } else {
+                this.extentAngle = Math2D.subtractAngle(stopAngle, this.startAngle,
+                        0, 2*Math.PI, true);
+                if (leftAngleRange.includes(startAngle)) {
+                    if (leftAngleRange.includes(stopAngle)) {
+                        // arc starts and stops in left half of circle
+                        if (extentAngle <= Math.PI) {
+                            // arc contained within left half of circle
+                            this.leftWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(to.getY(), from.getY()));
+                            this.rightWindingRanges = Collections.emptyList();
+                        } else {
+                            // arc wraps around right half of circle
+                            this.leftWindingRanges = Arrays.asList(
+                                    Range.inclusiveMinExclusiveMax(minY, from.getY()),
+                                    Range.inclusiveMinExclusiveMax(to.getY(), maxY));
+                            this.rightWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(minY, maxY));
+                        }
+                    } else {
+                        // arc starts in left and stops in right half of circle
+                        this.leftWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(minY, from.getY()));
+                        this.rightWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(minY, to.getY()));
+                    }
+                } else {
+                    if (leftAngleRange.includes(stopAngle)) {
+                        // arc starts in right and stops in left half of circle
+                        this.leftWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(to.getY(), maxY));
+                        this.rightWindingRanges = Collections.singletonList(
+                                Range.inclusiveMinExclusiveMax(from.getY(), maxY));
+                    } else {
+                        // arc starts and stops in right half of circle
+                        if (extentAngle <= Math.PI) {
+                            // arc contained within right half of circle
+                            this.leftWindingRanges = Collections.emptyList();
+                            this.rightWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(from.getY(), to.getY()));
+                        } else {
+                            // arc wraps around left half of circle
+                            this.leftWindingRanges = Collections.singletonList(
+                                    Range.inclusiveMinExclusiveMax(minY, maxY));
+                            this.rightWindingRanges = Arrays.asList(
+                                    Range.inclusiveMinExclusiveMax(minY, to.getY()),
+                                    Range.inclusiveMinExclusiveMax(from.getY(), maxY));
+                        }
+                    }
+                }
+            }
         }
-        if (clockwise) {
-            this.direction = centerToFrom.getDirection().rightNormal();
-            this.extentAngle = (angleDiff < 0) ? angleDiff : angleDiff - 2*Math.PI;
-        } else {
-            this.direction = centerToFrom.getDirection().leftNormal();
-            this.extentAngle = (angleDiff > 0) ? angleDiff : angleDiff + 2*Math.PI;
-        }
-        log.info("Calculated {}: radius={} startAngle={} extentAngle={} using: clockwise={} fromAngle={} toAngle={}",
-                this, radius, startAngle, extentAngle, clockwise, fromAngle, angleDiff);
+        this.direction = clockwise
+                ? centerToFrom.getDirection().rightNormal()
+                : centerToFrom.getDirection().leftNormal();
+    }
+
+    public double getRadiusSquared() {
+        return radius * radius;
     }
 
     public void draw(GraphicsContext ctx) {
@@ -79,23 +191,160 @@ public class ArcSegment implements PathSegment {
     }
 
     @Override
-    public Point2D intersect(PathSegment other, boolean allowOutside) {
-        return null;
+    public Toolpath.Segment computeToolpathSegment(double toolRadius, UnitVector towards, UnitVector away) {
+        Point2D toolpathFrom = from.add(away.multiply(toolRadius));
+        UnitVector awayFromTo;
+        if (Math.abs(startAngle - away.getAngle()) < Math.abs(startAngle - towards.getAngle())) {
+            // computing outside arc segment
+            awayFromTo = UnitVector.from(center, to);
+        } else {
+            // computing inside arc segment
+            awayFromTo = UnitVector.from(to, center);
+        }
+        Point2D toolpathTo = to.add(awayFromTo.multiply(toolRadius));
+        ArcSegment toolpathSegment = new ArcSegment(toolpathFrom, center, toolpathTo, clockwise);
+        return new Toolpath.Segment(toolpathSegment, toolRadius, towards, away,
+                new Toolpath.Connection(getFrom()), new Toolpath.Connection(getTo()));
     }
 
     @Override
-    public Point2D intersect(PathSegment other) {
-        return null;
+    public SplitSegments split(Point2D splitPoint) {
+        return new SplitSegments(
+                ArcSegment.of(from, center, splitPoint, clockwise),
+                ArcSegment.of(splitPoint, center, to, clockwise));
+    }
+
+    private boolean isAngleInArcSegment(double angle) {
+        if (clockwise) {
+            double angleToPoint = Math2D.subtractAngle(angle, startAngle,
+                    -2*Math.PI, 0, false);
+            return angleToPoint > extentAngle && angleToPoint < 0;
+        } else {
+            double angleToPoint = Math2D.subtractAngle(angle, startAngle,
+                    0, 2*Math.PI, true);
+            return angleToPoint > 0 && angleToPoint < extentAngle;
+        }
+    }
+
+    private boolean isPointOnArcSegment(Point2D point) {
+        return isAngleInArcSegment(LineSegment.of(center, point).getAngle());
+    }
+
+    @Override
+    public List<IntersectionPoint> intersect(LineSegment other) {
+        Point2D fromToCenter = center.subtract(other.getFrom());
+        double fromToProjectionDistance = fromToCenter.dotProduct(other.getDirection());
+        Point2D projectionPoint = other.getFrom().add(other.getDirection().multiply(fromToProjectionDistance));
+
+        LineSegment centerToProjection = LineSegment.of(getCenter(), projectionPoint);
+        if (centerToProjection.getLength() > radius - Point.DEFAULT_MAX_DISTANCE) {
+            // segment too far away to intersection arc
+            return Collections.emptyList();
+        }
+
+        // distance along segment between projection point and intersection points
+        double projectionToIntersectionDistance = Math.sqrt(
+                getRadiusSquared() - centerToProjection.getLengthSquared());
+
+        // vector from projection point to intersection point in segment direction
+        Point2D projectionToIntersectionVector = other.getDirection().multiply(projectionToIntersectionDistance);
+
+        // check if from side intersection lies within segments
+        Point2D fromSideIntersectionPoint = projectionPoint.subtract(projectionToIntersectionVector);
+        double fromSideIntersectionDistance = fromToProjectionDistance - projectionToIntersectionDistance;
+        boolean fromSideOnSegments = fromSideIntersectionDistance > 0
+                && fromSideIntersectionDistance < other.getLength()
+                && isPointOnArcSegment(fromSideIntersectionPoint);
+
+        // check if to side intersection lies within segments
+        Point2D toSideIntersectionPoint = projectionPoint.add(projectionToIntersectionVector);
+        double toSideIntersectionDistance = fromToProjectionDistance + projectionToIntersectionDistance;
+        boolean toSideOnSegments = toSideIntersectionDistance > 0
+                && toSideIntersectionDistance < other.getLength()
+                && isPointOnArcSegment(toSideIntersectionPoint);
+
+        return Arrays.asList(
+                new IntersectionPoint(fromSideIntersectionPoint, fromSideOnSegments),
+                new IntersectionPoint(toSideIntersectionPoint, toSideOnSegments));
+    }
+
+    @Override
+    public List<IntersectionPoint> intersect(ArcSegment other) {
+        LineSegment centerToCenter = LineSegment.of(center, other.getCenter());
+        if (centerToCenter.getLength() >= radius + other.getRadius() - Point.DEFAULT_MAX_DISTANCE) {
+            // arc too far away to intersect
+            return Collections.emptyList();
+        }
+
+        // distance from center to line segment between intersection points
+        double centerToProjection =
+                (getRadiusSquared() - other.getRadiusSquared() + centerToCenter.getLengthSquared())
+                / (2 * centerToCenter.getLength());
+
+        // intersection of line between centers and line between intersection points
+        Point2D projectionPoint = center.add(centerToCenter.getDirection().multiply(centerToProjection));
+
+        // distance between projection point and intersection points
+        double projectionToIntersectionDistance = Math.sqrt(
+                getRadiusSquared() - centerToProjection * centerToProjection);
+
+        // vector from projection point to right intersection point
+        Point2D projectionToIntersectionVector = centerToCenter.getDirection()
+                .rightNormal().multiply(projectionToIntersectionDistance);
+
+        // check if left intersection point lies within segments
+        Point2D leftIntersectionPoint = projectionPoint.subtract(projectionToIntersectionVector);
+        boolean leftSideOnSegments = other.isPointOnArcSegment(leftIntersectionPoint)
+                && isPointOnArcSegment(leftIntersectionPoint);
+
+        // check if right intersection point lies within segments
+        Point2D rightIntersectionPoint = projectionPoint.add(projectionToIntersectionVector);
+        boolean rightSideOnSegments = other.isPointOnArcSegment(rightIntersectionPoint)
+                && isPointOnArcSegment(rightIntersectionPoint);
+
+        return Arrays.asList(
+                new IntersectionPoint(leftIntersectionPoint, leftSideOnSegments),
+                new IntersectionPoint(rightIntersectionPoint, rightSideOnSegments));
     }
 
     @Override
     public Point2D project(Point2D point) {
-        return null;
+        LineSegment centerToPoint = LineSegment.of(center, point);
+        if (isAngleInArcSegment(centerToPoint.getAngle())) {
+            return center.add(centerToPoint.getDirection().multiply(radius));
+        } else {
+            return null;
+        }
     }
 
     @Override
     public boolean isWindingMatch(Point2D point) {
-        return false;
+        double yOffset = point.getY() - center.getY();
+        if (yOffset < -radius || yOffset >= radius) {
+            return false;
+        }
+        double xOffset = Math.sqrt(getRadiusSquared() - yOffset * yOffset);
+        boolean windingMatch = false;
+
+        Point2D leftPoint = new Point2D(center.getX() - xOffset, point.getY());
+        if (point.getX() < leftPoint.getX()) {
+            for (Range range : leftWindingRanges) {
+                if (range.includes(point.getY())) {
+                    windingMatch = !windingMatch;
+                }
+            }
+        }
+
+        Point2D rightPoint = new Point2D(center.getX() + xOffset, point.getY());
+        if (point.getX() < rightPoint.getX()) {
+            for (Range range : rightWindingRanges) {
+                if (range.includes(point.getY())) {
+                    windingMatch = !windingMatch;
+                }
+            }
+        }
+
+        return windingMatch;
     }
 
     @Override

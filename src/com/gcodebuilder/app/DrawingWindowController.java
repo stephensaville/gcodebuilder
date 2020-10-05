@@ -827,6 +827,11 @@ public class DrawingWindowController {
         canvas.refresh();
     }
 
+    public void displayConnectedToolpaths() {
+        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.CONNECTED_TOOLPATHS);
+        canvas.refresh();
+    }
+
     public void displaySplitPoints() {
         toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.SPLIT_POINTS);
         canvas.refresh();

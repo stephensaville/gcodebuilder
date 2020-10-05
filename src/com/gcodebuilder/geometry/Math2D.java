@@ -1,5 +1,6 @@
 package com.gcodebuilder.geometry;
 
+import com.google.common.base.Preconditions;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 
@@ -70,7 +71,39 @@ public class Math2D {
     }
 
     /**
-     * Subtract two angles and constrain result to interval [-Math.PI, Math.PI].
+     * Subtract two angles and constrain result to interval [min, max) when minInclusive=true or (min, max] when
+     * minInclusive=false. The difference between min and max should be equal to 2*Math.PI.
+     *
+     * @param angleA angle to subtract from (lhs)
+     * @param angleB angle to subtract (rhs)
+     * @param min minimum result
+     * @param max maximum result
+     * @param minInclusive true if min is inclusive; false if max is inclusive
+     * @return
+     */
+    public static double subtractAngle(double angleA, double angleB, double min, double max, boolean minInclusive) {
+        Preconditions.checkArgument(2*Math.PI == (max - min));
+        double result = angleA - angleB;
+        if (minInclusive) {
+            while (result < min) {
+                result += 2 * Math.PI;
+            }
+            while (result >= max) {
+                result -= 2 * Math.PI;
+            }
+        } else {
+            while (result <= min) {
+                result += 2 * Math.PI;
+            }
+            while (result > max) {
+                result -= 2 * Math.PI;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Subtract two angles and constrain result to interval (-Math.PI, Math.PI].
      *
      * The result will be the angle with the smallest absolute value that can be added to angleB using
      * {@link #addAngle(double, double)} to return angleA as the result.
@@ -80,14 +113,7 @@ public class Math2D {
      * @return
      */
     public static double subtractAngle(double angleA, double angleB) {
-        double result = angleA - angleB;
-        while (result <= -Math.PI) {
-            result += 2*Math.PI;
-        }
-        while (result > Math.PI) {
-            result -= 2*Math.PI;
-        }
-        return result;
+        return subtractAngle(angleA, angleB, -Math.PI, Math.PI, false);
     }
 
     public static double convertToDegrees(double angleInRadians) {

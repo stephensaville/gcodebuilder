@@ -25,7 +25,7 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
     private static final Logger log = LogManager.getLogger(Path.class);
 
     private List<Point> points;
-    private List<PathSegment> segments;
+    private volatile List<PathSegment> segments;
 
     @Getter @Setter
     private boolean closed;
@@ -58,17 +58,14 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
             for (int i = 0; i < points.size(); i++) {
                 Point from = getPoint(i);
                 Point to = getNextPoint(i);
-                log.info("addSegments(): i={} from={} to={}", i, from, to);
                 if (to != null && to.isCenterPoint()) {
                     Point center = to;
                     to = getNextPoint(++i);
                     if (to != null) {
                         segments.add(ArcSegment.of(from, center, to));
-                        log.info("Added to segments: {}", segments.get(segments.size() -1));
                     }
                 } else if (to != null) {
                     segments.add(LineSegment.of(from, to));
-                    log.info("Added to segments: {}", segments.get(segments.size() -1));
                 }
             }
         }
@@ -129,12 +126,14 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
                 ArcSegment arc = ArcSegment.of(to, center, from, !center.isClockwiseCenterPoint());
                 if (!from.isSame(arc.getTo())) {
                     points.set(fromPointIndex, new Point(arc.getTo()));
+                    segments = null;
                     return true;
                 }
             } else {
                 ArcSegment arc = ArcSegment.of(from, center, to);
                 if (!to.isSame(arc.getTo())) {
                     points.set(toPointIndex, new Point(arc.getTo()));
+                    segments = null;
                     return true;
                 }
             }
@@ -369,13 +368,14 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
 
     @Override
     public boolean move(Point2D delta) {
-        boolean updated = false;
-        for (int pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
-            if (updatePoint(pointIndex, getPoint(pointIndex).add(delta))) {
-                updated = true;
-            }
+        if (delta.getX() == 0 && delta.getY() == 0) {
+            return false;
         }
-        return updated;
+        for (int pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
+            points.set(pointIndex, getPoint(pointIndex).add(delta));
+        }
+        segments = null;
+        return true;
     }
 
     private static double scale(double center, double original, double scaleFactor) {
@@ -392,15 +392,19 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
 
     @Override
     public boolean resize(double scaleFactor, Point center) {
-        boolean updated = false;
+        if (scaleFactor == 1.0) {
+            return false;
+        }
         for (int pointIndex = 0; pointIndex < getPointCount(); ++pointIndex) {
             Point point = getPoint(pointIndex);
             Point newPoint = new Point(
                     scale(center.getX(), point.getX(), scaleFactor),
-                    scale(center.getY(), point.getY(), scaleFactor));
-            updated = updatePoint(pointIndex, newPoint) || updated;
+                    scale(center.getY(), point.getY(), scaleFactor),
+                    point.getType());
+            points.set(pointIndex, newPoint);
         }
-        return updated;
+        segments = null;
+        return true;
     }
 
     @Override
@@ -414,6 +418,7 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
                 Path.this.points.clear();
                 Path.this.points.addAll(points);
                 Path.this.closed = closed;
+                Path.this.segments = null;
                 return Path.this;
             }
         };

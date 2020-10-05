@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.geometry.Point2D;
 
 public class Point {
-    private static final double DEFAULT_MAX_DISTANCE = 0.0001;
+    public static final double DEFAULT_MAX_DISTANCE = 0.0001;
 
     public enum Type {
         CW_CENTER,
@@ -75,7 +75,7 @@ public class Point {
     }
 
     public Point add(Point2D point2D) {
-        return new Point(this.point2D.add(point2D));
+        return new Point(this.point2D.add(point2D), type);
     }
 
     public boolean isSame(Point otherPoint, double maxDistance) {

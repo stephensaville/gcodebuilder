@@ -1,10 +1,14 @@
 package com.gcodebuilder.geometry;
 
+import com.gcodebuilder.generator.toolpath.Toolpath;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Collections;
+import java.util.List;
 
 @Getter
 public class LineSegment extends Line implements PathSegment {
@@ -40,6 +44,10 @@ public class LineSegment extends Line implements PathSegment {
         this.length = length;
     }
 
+    public double getLengthSquared() {
+        return length * length;
+    }
+
     @Override
     public LineSegment move(Point2D offset) {
         return new LineSegment(getFrom().add(offset), getTo().add(offset), getVector(), getDirection(), getLength());
@@ -50,38 +58,34 @@ public class LineSegment extends Line implements PathSegment {
         return new LineSegment(getTo(), getFrom(), getVector().multiply(-1), getDirection().invert(), getLength());
     }
 
-    public Point2D intersect(LineSegment other, boolean allowOutside) {
+    @Override
+    public Toolpath.Segment computeToolpathSegment(double toolRadius, UnitVector towards, UnitVector away) {
+        return new Toolpath.Segment(move(away.multiply(toolRadius)), toolRadius, towards, away,
+                new Toolpath.Connection(getFrom()), new Toolpath.Connection(getTo()));
+    }
+
+    @Override
+    public SplitSegments split(Point2D splitPoint) {
+        return new SplitSegments(
+                LineSegment.of(getFrom(), splitPoint),
+                LineSegment.of(splitPoint, getTo()));
+    }
+
+    public List<IntersectionPoint> intersect(LineSegment other) {
         Point2D between = getTo().subtract(other.getTo());
 
         double denominator = Math2D.det(getVector(), other.getVector());
         double thisParam = Math2D.det(between, other.getVector()) / denominator;
+        double otherParam = Math2D.det(getVector(), between) / denominator;
+        boolean onSegments = thisParam > 0 && thisParam < 1 && otherParam > -1 && otherParam < 0;
 
-        boolean allowed = allowOutside;
-        if (!allowed) {
-            double otherParam = Math2D.det(getVector(), between) / denominator;
-
-            allowed = thisParam > 0 && thisParam < 1 && otherParam > -1 && otherParam < 0;
-        }
-
-        if (allowed) {
-            return getTo().add(getVector().multiply(-thisParam));
-        } else {
-            return null;
-        }
+        return Collections.singletonList(
+                new IntersectionPoint(getTo().add(getVector().multiply(-thisParam)), onSegments));
     }
 
     @Override
-    public Point2D intersect(PathSegment other, boolean allowOutside) {
-        if (other instanceof LineSegment) {
-            return intersect((LineSegment)other, allowOutside);
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public Point2D intersect(PathSegment other) {
-        return intersect(other, false);
+    public List<IntersectionPoint> intersect(ArcSegment other) {
+        return other.intersect(this);
     }
 
     @Override
@@ -95,18 +99,10 @@ public class LineSegment extends Line implements PathSegment {
         }
     }
 
-    /**
-     * Returns true if the horizontal line passing through point intersects this segment, and the x coordinate of
-     * point is less than the x coordinate of the intersection point. In other words, if point is to the left of
-     * the intersection point in the typical right-handed cartesian coordinate system. This function can be used
-     * to build an algorithm to check if a point is inside a path composed of segments using an even-odd winding
-     * rule that flips between even and odd when this function returns true.
-     *
-     * @param point a point
-     * @return true if rule should flip between even and odd, false if not
-     */
     @Override
     public boolean isWindingMatch(Point2D point) {
+        // y range is [min(fromY, toY), max(fromY, toY)), which includes minY and excludes maxY
+        // x range is (-infinity, segmentX), which excludes segmentX
         return (point.getY() < getFrom().getY() != point.getY() < getTo().getY()) &&
                 point.getX() < calculateX(point.getY());
     }
@@ -118,7 +114,7 @@ public class LineSegment extends Line implements PathSegment {
 
     @Override
     public String toString() {
-        return String.format("Segment((%s,%s), (%s,%s))",
+        return String.format("LineSegment((%s,%s), (%s,%s))",
                 getFrom().getX(), getFrom().getY(), getTo().getX(), getTo().getY());
     }
 }

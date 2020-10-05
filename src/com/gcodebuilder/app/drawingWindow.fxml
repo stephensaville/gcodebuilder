@@ -273,6 +273,7 @@
                      <ToggleGroup fx:id="toolpathPreviewMode"/>
                   </toggleGroup>
                </RadioMenuItem>
+               <RadioMenuItem text="Connected Toolpaths" onAction="#displayConnectedToolpaths" toggleGroup="$toolpathPreviewMode"/>
                <RadioMenuItem text="Split Points" onAction="#displaySplitPoints" toggleGroup="$toolpathPreviewMode"/>
                <RadioMenuItem text="Valid Segments" onAction="#displayValidSegments" toggleGroup="$toolpathPreviewMode"/>
                <RadioMenuItem text="Inside/Outside" onAction="#displayInsideOutside" toggleGroup="$toolpathPreviewMode"/>

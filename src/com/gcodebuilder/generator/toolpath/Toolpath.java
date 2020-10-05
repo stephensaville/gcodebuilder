@@ -1,6 +1,5 @@
 package com.gcodebuilder.generator.toolpath;
 
-import com.gcodebuilder.geometry.LineSegment;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.PathSegment;
 import com.gcodebuilder.geometry.UnitVector;
@@ -12,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -79,12 +79,7 @@ public class Toolpath {
             this.toConnection = toConnection;
         }
 
-        public static Segment fromEdge(PathSegment edge, double toolRadius, UnitVector towards, UnitVector away) {
-            return new Segment(edge.move(away.multiply(toolRadius)), toolRadius, towards, away,
-                    new Connection(edge.getFrom()), new Connection(edge.getTo()));
-        }
-
-        public Point2D intersect(Segment other) {
+        public List<PathSegment.IntersectionPoint> intersect(Segment other) {
             return segment.intersect(other.segment);
         }
 
@@ -113,29 +108,42 @@ public class Toolpath {
         }
 
         public List<Segment> getValidSegments() {
+            if (splitPoints.isEmpty()) {
+                return Collections.singletonList(this);
+            }
             List<Segment> validSegments = new ArrayList<>();
             sortSplitPoints();
-            SplitPoint prevSplitPoint = new SplitPoint(segment.getFrom(),
-                true, true, fromConnection);
+            PathSegment remaining = segment;
+            boolean prevToSideValid = true;
+            Toolpath.Connection prevConnection = fromConnection;
             for (SplitPoint splitPoint : splitPoints) {
-                if (prevSplitPoint.isToSideValid() && splitPoint.isFromSideValid()) {
+                PathSegment.SplitSegments splitSegments = remaining.split(splitPoint.getPoint());
+                if (prevToSideValid && splitPoint.isFromSideValid()) {
                     Segment validSegment = new Segment(
-                            LineSegment.of(prevSplitPoint.getPoint(), splitPoint.getPoint()),
-                            toolRadius, towards, away, prevSplitPoint.getConnection(),
-                            splitPoint.getConnection());
+                            splitSegments.getFromSegment(),
+                            toolRadius, towards, away,
+                            prevConnection, splitPoint.getConnection());
                     validSegments.add(validSegment);
                 }
-                prevSplitPoint = splitPoint;
+                remaining = splitSegments.getToSegment();
+                prevToSideValid = splitPoint.isToSideValid();
+                prevConnection = splitPoint.getConnection();
             }
-            if (prevSplitPoint.isToSideValid()) {
+            if (prevToSideValid) {
                 Segment validSegment = new Segment(
-                        LineSegment.of(prevSplitPoint.getPoint(), segment.getTo()),
-                        toolRadius, towards, away, prevSplitPoint.getConnection(),
-                        toConnection);
+                        remaining,
+                        toolRadius, towards, away,
+                        prevConnection, toConnection);
                 validSegments.add(validSegment);
             }
             return validSegments;
         }
+    }
+
+    @Data
+    public static class SegmentPair {
+        private final Segment left;
+        private final Segment right;
     }
 
     private final List<Segment> segments;
