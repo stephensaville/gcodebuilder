@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Getter
@@ -72,6 +73,15 @@ public class LineSegment extends Line implements PathSegment {
     @Override
     public SplitSegments split(Point2D splitPoint) {
         return new SplitSegments(LineSegment.of(getFrom(), splitPoint), LineSegment.of(splitPoint, getTo()));
+    }
+
+    @Override
+    public Comparator<Point2D> splitPointComparator() {
+        return (left, right) -> {
+            double distanceToLeft = getFrom().distance(left);
+            double distanceToRight = getFrom().distance(right);
+            return Double.compare(distanceToLeft, distanceToRight);
+        };
     }
 
     public List<IntersectionPoint> intersect(LineSegment other) {

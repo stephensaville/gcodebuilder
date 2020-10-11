@@ -30,18 +30,6 @@ public class Toolpath {
         private final Connection connection;
     }
 
-    @RequiredArgsConstructor
-    public static class SplitPointComparator implements Comparator<SplitPoint> {
-        private final Point2D from;
-
-        @Override
-        public int compare(SplitPoint left, SplitPoint right) {
-            double leftDistance = from.distance(left.getPoint());
-            double rightDistance = from.distance(right.getPoint());
-            return Double.compare(leftDistance, rightDistance);
-        }
-    }
-
     @Getter
     @RequiredArgsConstructor
     @ToString
@@ -101,6 +89,8 @@ public class Toolpath {
         }
 
         public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid, Connection connection) {
+            log.debug("Adding splitPoint={} fromSideValid={} toSideValid={} connection={} segment={}",
+                    splitPoint, fromSideValid, toSideValid, connection, segment);
             splitPoints.add(new SplitPoint(splitPoint, fromSideValid, toSideValid, connection));
             splitPointsSorted = false;
         }
@@ -111,7 +101,7 @@ public class Toolpath {
 
         public void sortSplitPoints() {
             if (!splitPointsSorted) {
-                splitPoints.sort(new SplitPointComparator(segment.getFrom()));
+                splitPoints.sort(Comparator.comparing(SplitPoint::getPoint, segment.splitPointComparator()));
                 splitPointsSorted = true;
             }
         }

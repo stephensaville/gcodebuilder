@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Getter
@@ -194,7 +195,6 @@ public class ArcSegment implements PathSegment {
         this.toDirection = clockwise
                 ? centerToTo.getToDirection().rightNormal()
                 : centerToTo.getToDirection().leftNormal();
-        log.info("Created new: {} with windings: left={} right={}", this, leftWindingRanges, rightWindingRanges);
     }
 
     public double getRadiusSquared() {
@@ -246,6 +246,27 @@ public class ArcSegment implements PathSegment {
         ArcSegment fromSegment = new ArcSegment(from, center, splitPoint, clockwise);
         ArcSegment toSegment = new ArcSegment(splitPoint, center, to, clockwise);
         return new SplitSegments(fromSegment, toSegment);
+    }
+
+    @Override
+    public Comparator<Point2D> splitPointComparator() {
+        return (left, right) -> {
+            double angleToLeft = UnitVector.from(center, left).getAngle();
+            double angleToRight = UnitVector.from(center, right).getAngle();
+            if (clockwise) {
+                double angleToLeftDiff = Math2D.subtractAngle(angleToLeft, startAngle,
+                        -2*Math.PI, 0, false);
+                double angleToRightDiff = Math2D.subtractAngle(angleToRight, startAngle,
+                        -2*Math.PI, 0, false);
+                return Double.compare(-angleToLeftDiff, -angleToRightDiff);
+            } else {
+                double angleToLeftDiff = Math2D.subtractAngle(angleToLeft, startAngle,
+                        0, 2*Math.PI, true);
+                double angleToRightDiff = Math2D.subtractAngle(angleToRight, startAngle,
+                        0, 2*Math.PI, true);
+                return Double.compare(angleToLeftDiff, angleToRightDiff);
+            }
+        };
     }
 
     private boolean isAngleInArcSegment(double angle) {

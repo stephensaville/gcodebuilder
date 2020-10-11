@@ -165,17 +165,9 @@ public class Circle extends SimpleShape<Circle.Handle> {
 
     @Override
     public Path convertToPath() {
-        // Toolpath generation currently has trouble with paths that only have one start/end
-        // point and one center point, so until that problem is fixed convert circles into
-        // 4-point paths with left, right and two center points. Circle paths can be simplified
-        // when the toolpath generation problem is resolved, which has something to do with
-        // incorrectly determining split segment validity within full circle paths.
         Path path = new Path();
         path.addPoint(getMinX(), getCenterY());
-        Point centerPoint = new Point(center.asPoint2D(), Point.Type.CW_CENTER);
-        path.addPoint(centerPoint);
-        path.addPoint(getMaxX(), getCenterY());
-        path.addPoint(centerPoint);
+        path.addPoint(center.asPoint2D(), Point.Type.CW_CENTER);
         path.setClosed(true);
         return path;
     }

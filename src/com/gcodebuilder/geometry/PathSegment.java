@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public interface PathSegment {
@@ -73,6 +74,9 @@ public interface PathSegment {
     }
 
     SplitSegments split(Point2D splitPoint);
+
+    // orders split points in ascending order by distance to from point
+    Comparator<Point2D> splitPointComparator();
 
     @Data
     class IntersectionPoint {
