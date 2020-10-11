@@ -77,20 +77,28 @@ public class PathTool implements Tool {
         } else {
             pathBefore = currentPath.save();
         }
-        int newPointIndex = currentPath.getPointCount();
-        Point.Type pointType = null;
-        if (event.getInputEvent().isControlDown()) {
-            if (event.getInputEvent().isShiftDown()) {
-                pointType = Point.Type.CCW_CENTER;
-            } else {
-                pointType = Point.Type.CW_CENTER;
+
+        if (!currentPath.isClosed() && currentPath.getPointCount() > 0 &&
+                currentPath.getPoint(0).isSame(event.getPoint())) {
+            currentPath.closePath();
+            event.getDrawing().setDirty(true);
+            log.info("Closed path: {}", currentPath);
+        } else {
+            int newPointIndex = currentPath.getPointCount();
+            Point.Type pointType = null;
+            if (event.getInputEvent().isControlDown()) {
+                if (event.getInputEvent().isShiftDown()) {
+                    pointType = Point.Type.CCW_CENTER;
+                } else {
+                    pointType = Point.Type.CW_CENTER;
+                }
             }
+            Point newPoint = new Point(event.getPoint(), pointType);
+            currentPath.addPoint(newPoint);
+            currentHandle = currentPath.getHandle(newPointIndex);
+            event.getDrawing().setDirty(true);
+            log.info("Added new point: {} to path: {}", newPoint, currentPath);
         }
-        Point newPoint = new Point(event.getPoint(), pointType);
-        currentPath.addPoint(newPoint);
-        currentHandle = currentPath.getHandle(newPointIndex);
-        event.getDrawing().setDirty(true);
-        log.info("Added new point: {} to path: {}", newPoint, currentPath);
         return currentPath;
     }
 

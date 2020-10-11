@@ -240,9 +240,11 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
     public boolean removePoint(int pointIndex) {
         if (pointIndex < points.size()) {
             points.remove(pointIndex);
-            repairArcSegment(pointIndex);
+            if (pointIndex < points.size()) {
+                repairArcSegment(pointIndex);
+            }
             segments = null;
-            if (points.size() < 3) {
+            if (points.size() < 2) {
                 setClosed(false);
             }
             return true;
