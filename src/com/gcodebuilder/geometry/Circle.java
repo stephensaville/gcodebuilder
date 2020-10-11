@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.changelog.Snapshot;
+import com.google.common.base.Preconditions;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
@@ -37,6 +38,7 @@ public class Circle extends SimpleShape<Circle.Handle> {
     public Circle(@JsonProperty("center") Point center,
                   @JsonProperty("radius") double radius) {
         super(Handle.class);
+        Preconditions.checkNotNull(center);
         this.center = center;
         this.radius = radius;
         log.debug("new {}", this);
@@ -48,8 +50,28 @@ public class Circle extends SimpleShape<Circle.Handle> {
     }
 
     @JsonIgnore
+    public double getCenterX() {
+        return center.getX();
+    }
+
+    @JsonIgnore
+    public double getMaxX() {
+        return center.getX() + radius;
+    }
+
+    @JsonIgnore
+    public double getCenterY() {
+        return center.getY();
+    }
+
+    @JsonIgnore
     public double getMinY() {
         return center.getY() - radius;
+    }
+
+    @JsonIgnore
+    public double getMaxY() {
+        return center.getY() + radius;
     }
 
     @JsonIgnore
@@ -68,6 +90,7 @@ public class Circle extends SimpleShape<Circle.Handle> {
     }
 
     public boolean updateCenter(Point newCenter) {
+        Preconditions.checkNotNull(newCenter);
         if (!center.equals(newCenter)) {
             center = newCenter;
             return true;
@@ -142,9 +165,17 @@ public class Circle extends SimpleShape<Circle.Handle> {
 
     @Override
     public Path convertToPath() {
+        // Toolpath generation currently has trouble with paths that only have one start/end
+        // point and one center point, so until that problem is fixed convert circles into
+        // 4-point paths with left, right and two center points. Circle paths can be simplified
+        // when the toolpath generation problem is resolved, which has something to do with
+        // incorrectly determining split segment validity within full circle paths.
         Path path = new Path();
-        path.addPoint(center.getX() - radius, center.getY());
-        path.addPoint(center.asPoint2D(), Point.Type.CW_CENTER);
+        path.addPoint(getMinX(), getCenterY());
+        Point centerPoint = new Point(center.asPoint2D(), Point.Type.CW_CENTER);
+        path.addPoint(centerPoint);
+        path.addPoint(getMaxX(), getCenterY());
+        path.addPoint(centerPoint);
         path.setClosed(true);
         return path;
     }

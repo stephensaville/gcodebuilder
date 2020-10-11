@@ -85,7 +85,6 @@ public abstract class Shape<H> implements Drawable {
     @JsonIgnore
     public abstract Rectangle2D getBoundingBox();
 
-    @JsonIgnore
     public abstract Point getCenter();
 
     public abstract boolean resize(double scaleFactor, Point center);

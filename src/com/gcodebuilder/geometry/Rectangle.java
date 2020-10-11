@@ -283,11 +283,13 @@ public class Rectangle extends SimpleShape<Rectangle.Handle> {
     }
 
     @Override
+    @JsonIgnore
     public Rectangle2D getBoundingBox() {
         return new Rectangle2D(minX, minY, width, height);
     }
 
     @Override
+    @JsonIgnore
     public Point getCenter() {
         return new Point(getMinX() + getWidth() / 2, getMinY() + getHeight() / 2);
     }

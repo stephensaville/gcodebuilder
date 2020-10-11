@@ -1,6 +1,7 @@
 package com.gcodebuilder.geometry;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.gcodebuilder.app.GridSettings;
@@ -29,7 +30,7 @@ public class Group extends Shape<Group.Handle> {
     private final List<Shape<?>> shapes;
 
     @JsonCreator
-    public Group(@JsonProperty("shapes") List<Path> shapes) {
+    public Group(@JsonProperty("shapes") List<Shape<?>> shapes) {
         super(Handle.class);
         this.shapes = new ArrayList<>(shapes);
     }
@@ -100,11 +101,13 @@ public class Group extends Shape<Group.Handle> {
     }
 
     @Override
+    @JsonIgnore
     public Rectangle2D getBoundingBox() {
         return Math2D.computeBoundingBoxForShapes(shapes);
     }
 
     @Override
+    @JsonIgnore
     public Point getCenter() {
         return new Point(Math2D.getBoundingBoxCenter(getBoundingBox()));
     }

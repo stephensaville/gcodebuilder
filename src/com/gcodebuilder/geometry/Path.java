@@ -393,16 +393,15 @@ public class Path extends SimpleShape<Path.Handle> {
     }
 
     @Override
+    @JsonIgnore
     public Rectangle2D getBoundingBox() {
         return Math2D.computeBoundingBoxForPoints(getPoints());
     }
 
     @Override
+    @JsonIgnore
     public Point getCenter() {
-        Rectangle2D boundingBox = getBoundingBox();
-        double centerX = boundingBox.getMinX() + boundingBox.getWidth() / 2;
-        double centerY = boundingBox.getMinY() + boundingBox.getHeight() / 2;
-        return new Point(centerX, centerY);
+        return new Point(Math2D.getBoundingBoxCenter(getBoundingBox()));
     }
 
     @Override
