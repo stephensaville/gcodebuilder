@@ -239,12 +239,12 @@
                </accelerator>
             </MenuItem>
             <SeparatorMenuItem/>
-            <MenuItem fx:id="groupPathsItem" disable="true" onAction="#groupPaths" text="_Group Paths">
+            <MenuItem fx:id="groupItem" disable="true" onAction="#group" text="_Group">
                <accelerator>
                   <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
                </accelerator>
             </MenuItem>
-            <MenuItem fx:id="ungroupPathsItem" disable="true" onAction="#ungroupPaths" text="_Ungroup Paths">
+            <MenuItem fx:id="ungroupItem" disable="true" onAction="#ungroup" text="_Ungroup">
                <accelerator>
                   <KeyCodeCombination alt="UP" code="U" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
                </accelerator>

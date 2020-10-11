@@ -4,7 +4,7 @@ import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.changelog.UpdateShapeChange;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Path;
-import com.gcodebuilder.geometry.PathGroup;
+import com.gcodebuilder.geometry.Group;
 import com.gcodebuilder.geometry.Point;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.changelog.AddShapeChange;
@@ -12,7 +12,6 @@ import com.gcodebuilder.changelog.Change;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Set;
 import java.util.function.Supplier;
 
 public class PathTool implements Tool {
@@ -45,24 +44,24 @@ public class PathTool implements Tool {
         if (currentPath != null) {
             currentHandle = currentPath.getHandle(event.getPoint(), event.getMousePoint(), event.getHandleRadius());
         }
-        PathGroup currentPathGroup = event.getDrawing().getSelectedShape(PathGroup.class);
-        if (currentPathGroup != null) {
-            PathGroup.Handle pathGroupHandle = currentPathGroup.getHandle(
+        Group currentGroup = event.getDrawing().getSelectedShape(Group.class);
+        if (currentGroup != null) {
+            Group.Handle<?> groupHandle = currentGroup.getHandle(
                     event.getPoint(), event.getMousePoint(), event.getHandleRadius());
-            if (pathGroupHandle != null) {
-                currentPath = pathGroupHandle.getPath();
-                currentHandle = pathGroupHandle.getHandle();
+            if (groupHandle != null && groupHandle.getShape() instanceof Path) {
+                currentPath = (Path)groupHandle.getShape();
+                currentHandle = (Path.Handle)groupHandle.getHandle();
             }
         }
         if (currentHandle == null) {
             if (event.getShape() instanceof Path) {
                 currentPath = (Path) event.getShape();
                 currentHandle = (Path.Handle) event.getHandle();
-            } else if (event.getShape() instanceof PathGroup) {
-                PathGroup.Handle pathGroupHandle = (PathGroup.Handle)event.getHandle();
-                if (pathGroupHandle != null) {
-                    currentPath = pathGroupHandle.getPath();
-                    currentHandle = pathGroupHandle.getHandle();
+            } else if (event.getShape() instanceof Group) {
+                Group.Handle<?> groupHandle = (Group.Handle)event.getHandle();
+                if (groupHandle != null && groupHandle.getShape() instanceof Path) {
+                    currentPath = (Path) groupHandle.getShape();
+                    currentHandle = (Path.Handle) groupHandle.getHandle();
                 }
             }
         }

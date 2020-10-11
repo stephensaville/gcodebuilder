@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonTypeName("PATH")
-public class Path extends Shape<Path.Handle> implements PathConvertible {
+public class Path extends SimpleShape<Path.Handle> {
     private static final Logger log = LogManager.getLogger(Path.class);
 
     private List<Point> points;
@@ -393,8 +393,13 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
     }
 
     @Override
+    public Rectangle2D getBoundingBox() {
+        return Math2D.computeBoundingBoxForPoints(getPoints());
+    }
+
+    @Override
     public Point getCenter() {
-        Rectangle2D boundingBox = Math2D.computeBoundingBox(getPoints());
+        Rectangle2D boundingBox = getBoundingBox();
         double centerX = boundingBox.getMinX() + boundingBox.getWidth() / 2;
         double centerY = boundingBox.getMinY() + boundingBox.getHeight() / 2;
         return new Point(centerX, centerY);

@@ -3,20 +3,13 @@ package com.gcodebuilder.generator.toolpath;
 import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.canvas.Drawable;
 import com.gcodebuilder.geometry.Drawing;
-import com.gcodebuilder.geometry.Path;
-import com.gcodebuilder.geometry.PathConvertible;
-import com.gcodebuilder.geometry.PathGroup;
 import com.gcodebuilder.geometry.Shape;
-import com.gcodebuilder.model.Side;
 import com.gcodebuilder.recipe.GCodePocketRecipe;
 import com.gcodebuilder.recipe.GCodeProfileRecipe;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.text.Font;
 import lombok.Data;
-
-import java.util.Collections;
-import java.util.List;
 
 @Data
 public class ToolpathDrawable implements Drawable {
@@ -46,21 +39,13 @@ public class ToolpathDrawable implements Drawable {
                 continue;
             }
 
-            // convert shape to paths
-            List<Path> paths;
-            if (shape instanceof PathConvertible) {
-                paths = Collections.singletonList(((PathConvertible)shape).convertToPath());
-            } else if (shape instanceof PathGroup) {
-                paths = ((PathGroup)shape).getPaths();
-            } else {
-                continue;
-            }
-
-            // convert toolpath generator
+            // create toolpath generator
             ToolpathGenerator generator = new ToolpathGenerator();
             ctx.setLineWidth(settings.getShapeLineWidth() / pixelsPerUnit / 2);
             generator.setPointRadius(settings.getShapePointRadius() / pixelsPerUnit);
-            generator.addAllPaths(paths);
+            generator.addAllPaths(shape.convertToPaths());
+
+            // draw toolpaths
             if (recipe instanceof GCodeProfileRecipe) {
                 GCodeProfileRecipe profileRecipe = (GCodeProfileRecipe)recipe;
                 generator.setToolRadius(profileRecipe.getToolWidth()/2);

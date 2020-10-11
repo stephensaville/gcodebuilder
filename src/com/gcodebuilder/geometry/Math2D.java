@@ -132,20 +132,41 @@ public class Math2D {
         return lengthSquared(vector.getX(), vector.getY());
     }
 
-    public static Rectangle2D computeBoundingBox(List<Point> points) {
+    public static Rectangle2D computeBoundingBoxForPoints(List<Point> points) {
         Point first = points.get(0);
         double minX = first.getX();
         double maxX = minX;
         double minY = first.getY();
         double maxY = minY;
-        for (int pointIndex = 1; pointIndex < points.size(); ++pointIndex) {
-            Point point = points.get(pointIndex);
+        for (Point point : points.subList(1, points.size())) {
             minX = Math.min(minX, point.getX());
             maxX = Math.max(maxX, point.getX());
             minY = Math.min(minY, point.getY());
             maxY = Math.max(maxY, point.getY());
         }
         return new Rectangle2D(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    public static Rectangle2D computeBoundingBoxForShapes(List<Shape<?>> shapes) {
+        Rectangle2D firstBox = shapes.get(0).getBoundingBox();
+        double minX = firstBox.getMinX();
+        double maxX = firstBox.getMaxX();
+        double minY = firstBox.getMinY();
+        double maxY = firstBox.getMaxY();
+        for (Shape<?> shape : shapes.subList(1, shapes.size())) {
+            Rectangle2D box = shape.getBoundingBox();
+            minX = Math.min(minX, box.getMinX());
+            maxX = Math.max(maxX, box.getMaxX());
+            minY = Math.min(minY, box.getMinY());
+            maxY = Math.max(maxY, box.getMaxY());
+        }
+        return new Rectangle2D(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    public static Point2D getBoundingBoxCenter(Rectangle2D boundingBox) {
+        double centerX = boundingBox.getMinX() + boundingBox.getWidth() / 2;
+        double centerY = boundingBox.getMinY() + boundingBox.getHeight() / 2;
+        return new Point2D(centerX, centerY);
     }
 
     public static double computeScaleFactor(double center, double original, double updated) {

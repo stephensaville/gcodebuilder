@@ -8,6 +8,7 @@ import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
 import lombok.Getter;
@@ -16,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 @JsonTypeName("CIRCLE")
 @Getter
-public class Circle extends Shape<Circle.Handle> implements PathConvertible {
+public class Circle extends SimpleShape<Circle.Handle> {
     private static final Logger log = LogManager.getLogger(Circle.class);
 
     @Getter
@@ -59,6 +60,11 @@ public class Circle extends Shape<Circle.Handle> implements PathConvertible {
     @JsonIgnore
     public double getHeight() {
         return radius * 2;
+    }
+
+    @Override
+    public Rectangle2D getBoundingBox() {
+        return new Rectangle2D(getMinX(), getMinY(), getWidth(), getHeight());
     }
 
     public boolean updateCenter(Point newCenter) {

@@ -8,6 +8,7 @@ import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.canvas.Drawable;
 import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -19,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="type")
@@ -26,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
         @JsonSubTypes.Type(Rectangle.class),
         @JsonSubTypes.Type(Circle.class),
         @JsonSubTypes.Type(Path.class),
-        @JsonSubTypes.Type(PathGroup.class)
+        @JsonSubTypes.Type(Group.class)
 })
 @RequiredArgsConstructor
 public abstract class Shape<H> implements Drawable {
@@ -81,8 +83,14 @@ public abstract class Shape<H> implements Drawable {
     public abstract boolean move(Point2D delta);
 
     @JsonIgnore
+    public abstract Rectangle2D getBoundingBox();
+
+    @JsonIgnore
     public abstract Point getCenter();
+
     public abstract boolean resize(double scaleFactor, Point center);
+
+    public abstract List<Path> convertToPaths();
 
     public abstract Snapshot<? extends Shape<?>> save();
 

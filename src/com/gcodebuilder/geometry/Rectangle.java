@@ -8,6 +8,7 @@ import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.changelog.Snapshot;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
 import lombok.Getter;
@@ -15,7 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @JsonTypeName("RECTANGLE")
-public class Rectangle extends Shape<Rectangle.Handle> implements PathConvertible {
+public class Rectangle extends SimpleShape<Rectangle.Handle> {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
     private static double scaleFactorMin(double originalMin, double eventValue, double span) {
@@ -279,6 +280,11 @@ public class Rectangle extends Shape<Rectangle.Handle> implements PathConvertibl
     @Override
     public boolean move(Point2D delta) {
         return updatePosition(getMinX() + delta.getX(), getMinY() + delta.getY());
+    }
+
+    @Override
+    public Rectangle2D getBoundingBox() {
+        return new Rectangle2D(minX, minY, width, height);
     }
 
     @Override

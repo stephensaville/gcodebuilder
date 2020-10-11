@@ -20,17 +20,12 @@ import com.gcodebuilder.changelog.SelectionChange;
 import com.gcodebuilder.changelog.ShapeListChange;
 import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.generator.DrawingGCodeGenerator;
-import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.generator.toolpath.ToolpathDrawable;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Path;
-import com.gcodebuilder.geometry.PathGroup;
+import com.gcodebuilder.geometry.Group;
 import com.gcodebuilder.geometry.Shape;
-import com.gcodebuilder.model.ArcDistanceMode;
-import com.gcodebuilder.model.DistanceMode;
-import com.gcodebuilder.model.FeedRateMode;
-import com.gcodebuilder.model.GCodeBuilder;
 import com.gcodebuilder.model.GCodeProgram;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
@@ -142,10 +137,10 @@ public class DrawingWindowController {
     private MenuItem deleteItem;
 
     @FXML
-    private MenuItem groupPathsItem;
+    private MenuItem groupItem;
 
     @FXML
-    private MenuItem ungroupPathsItem;
+    private MenuItem ungroupItem;
 
     @FXML
     private Menu toolpathPreviewMenu;
@@ -480,23 +475,23 @@ public class DrawingWindowController {
         checkForChanges();
     }
 
-    private void updateGroupPathsMenuItems() {
-        int pathsSelected = 0;
-        int pathGroupsSelected = 0;
+    private void updateGroupMenuItems() {
+        int shapesSelected = 0;
+        int groupsSelected = 0;
         for (Shape<?> shape : currentSelectedShapes) {
-            if (shape instanceof Path) {
-                ++pathsSelected;
-            } else if (shape instanceof PathGroup) {
-                ++pathGroupsSelected;
+            if (shape instanceof Group) {
+                ++groupsSelected;
+            } else {
+                ++shapesSelected;
             }
         }
-        groupPathsItem.setDisable(pathsSelected + pathGroupsSelected < 2);
-        ungroupPathsItem.setDisable(pathGroupsSelected < 1);
+        groupItem.setDisable(shapesSelected + groupsSelected < 2);
+        ungroupItem.setDisable(groupsSelected < 1);
     }
 
-    public void groupPaths() {
+    public void group() {
         Snapshot<List<Shape<?>>> shapesBefore = drawing.saveShapes();
-        PathGroup group = PathGroup.groupSelected(drawing);
+        Group group = Group.groupSelected(drawing);
         if (group.isVisible()) {
             group.setSelected(true);
             doChange(new ShapeListChange("Group Paths", shapesBefore, drawing.saveShapes()));
@@ -505,12 +500,12 @@ public class DrawingWindowController {
         checkForChanges();
     }
 
-    public void ungroupPaths() {
+    public void ungroup() {
         Snapshot<List<Shape<?>>> shapesBefore = drawing.saveShapes();
         boolean shapesChanged = false;
-        for (PathGroup pathGroup : drawing.getSelectedShapes(PathGroup.class)) {
-            List<Path> paths = pathGroup.ungroup(drawing);
-            paths.forEach(path -> path.setSelected(true));
+        for (Group group : drawing.getSelectedShapes(Group.class)) {
+            List<Shape<?>> shapes = group.ungroup(drawing);
+            shapes.forEach(shape -> shape.setSelected(true));
             shapesChanged = true;
         }
         if (shapesChanged) {
@@ -575,7 +570,7 @@ public class DrawingWindowController {
         }
         currentSelectedShapes = selectedShapes;
         updateClipboardMenuItems();
-        updateGroupPathsMenuItems();
+        updateGroupMenuItems();
         drawing.setDirty(true);
     }
 
