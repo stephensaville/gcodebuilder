@@ -49,8 +49,13 @@ public class ToolpathDrawable implements Drawable {
             if (recipe instanceof GCodeProfileRecipe) {
                 GCodeProfileRecipe profileRecipe = (GCodeProfileRecipe)recipe;
                 generator.setToolRadius(profileRecipe.getToolWidth()/2);
-                generator.computeProfileToolpaths(profileRecipe.getSide(), profileRecipe.getDirection(),
-                        ctx, displayMode);
+                if (displayMode != null && displayMode.compareTo(ToolpathGenerator.DisplayMode.ORIENTED_TOOLPATHS) > 0) {
+                    generator.computeProfileToolpaths(profileRecipe.getSide(), profileRecipe.getDirection(),
+                            ctx, ToolpathGenerator.DisplayMode.ORIENTED_TOOLPATHS);
+                } else {
+                    generator.computeProfileToolpaths(profileRecipe.getSide(), profileRecipe.getDirection(),
+                            ctx, displayMode);
+                }
             } else if (recipe instanceof GCodePocketRecipe) {
                 GCodePocketRecipe pocketRecipe = (GCodePocketRecipe)recipe;
                 generator.setToolRadius(pocketRecipe.getToolWidth()/2);

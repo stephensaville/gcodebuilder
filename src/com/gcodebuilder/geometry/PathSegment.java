@@ -58,6 +58,10 @@ public interface PathSegment {
         return getDirectionAtPoint(point).getAngle();
     }
 
+    default Point2D getMidpoint() {
+        return getFrom().midpoint(getTo());
+    }
+
     PathSegment move(Point2D offset);
 
     PathSegment flip();

@@ -229,6 +229,13 @@ public class ArcSegment implements PathSegment {
     }
 
     @Override
+    public Point2D getMidpoint() {
+        double angleToMidpoint = Math2D.addAngle(startAngle, extentAngle / 2);
+        UnitVector directionToMidpoint = UnitVector.from(angleToMidpoint);
+        return center.add(directionToMidpoint.multiply(radius));
+    }
+
+    @Override
     public Toolpath.Segment computeToolpathSegment(double toolRadius, boolean leftSide) {
         UnitVector awayFromFrom, awayFromTo;
         if (isToolpathSegmentOutside(leftSide)) {

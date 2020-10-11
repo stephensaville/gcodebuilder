@@ -398,8 +398,13 @@ public class ToolpathGenerator {
                 .map(toolpath -> toolpath.orient(direction))
                 .collect(Collectors.toList());
 
-            if (ctx != null && displayMode.compareTo(DisplayMode.ORIENTED_TOOLPATHS) >= 0) {
+            if (ctx != null && displayMode == DisplayMode.ORIENTED_TOOLPATHS) {
                 drawToolpaths(ctx, orientedToolpaths);
+            } else if (ctx != null && displayMode.compareTo(DisplayMode.ORIENTED_TOOLPATHS) >= 0) {
+                ctx.setStroke(VALID_PAINT);
+                orientedToolpaths.stream()
+                        .flatMap(toolpath -> toolpath.getSegments().stream())
+                        .forEach(segment -> drawToolpathSegment(ctx, segment));
             }
 
             return orientedToolpaths;
@@ -699,12 +704,12 @@ public class ToolpathGenerator {
             Direction toolpathDirection = toolpath.getDirection();
             String directionText = (toolpathDirection == Direction.CLOCKWISE) ? "CW" : "CCW";
 
-            Toolpath.Segment prevSegment = toolpath.getLastSegment();
             int segmentIndex = 0;
             for (Toolpath.Segment segment : toolpath.getSegments()) {
                 ++segmentIndex;
 
-                Point2D textPoint = segment.getFrom().midpoint(segment.getTo());
+                Point2D textPoint = segment.getSegment().getMidpoint();
+                double angleAtTextPoint = segment.getSegment().getAngleAtPoint(textPoint);
                 String text;
                 if (directionText != null) {
                     text = String.format("%d.%d (%s)", toolpathIndex, segmentIndex, directionText);
@@ -712,20 +717,13 @@ public class ToolpathGenerator {
                 } else {
                     text = String.format("%d.%d", toolpathIndex, segmentIndex);
                 }
-                drawText(ctx, textPoint, text, segment.getSegment().getFromAngle());
+                drawText(ctx, textPoint, text, angleAtTextPoint);
 
                 if (!closed) {
                     ctx.setLineDashes(pointRadius, pointRadius);
                 }
-                Point2D connectionPoint = segment.getFromConnection().getConnectionPoint();
-                if (!isSamePoint(segment.getFrom(), connectionPoint)) {
-                    // draw an arc to join outside corner segments
-                    drawArc(ctx, connectionPoint, prevSegment.getTo(), segment.getFrom());
-                }
                 drawToolpathSegment(ctx, segment);
                 ctx.setLineDashes();
-
-                prevSegment = segment;
             }
 
             if (toolpath.hasNext()) {
