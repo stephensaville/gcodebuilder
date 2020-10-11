@@ -28,7 +28,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ToolpathGenerator {
     private static final Logger log = LogManager.getLogger(ToolpathGenerator.class);
@@ -99,8 +101,9 @@ public class ToolpathGenerator {
                 current.setFromConnection(connection);
                 prev.setToConnection(connection);
             } else {
-                List<PathSegment.IntersectionPoint> intersectionPoints = current.intersect(prev).stream()
+                List<Point2D> intersectionPoints = current.intersect(prev).stream()
                         .filter(PathSegment.IntersectionPoint::isOnSegments)
+                        .map(PathSegment.IntersectionPoint::getPoint)
                         .collect(Collectors.toList());
 
                 if (intersectionPoints.isEmpty()) {
@@ -120,15 +123,12 @@ public class ToolpathGenerator {
                     Toolpath.Segment segmentBetween = new Toolpath.Segment(between, toolRadius, current.isLeftSide(),
                             prevConnection, currentConnection);
                     connectedSegments.add(segmentBetween);
-                } else if (intersectionPoints.size() == 1) {
-                    Point2D intersectionPoint = intersectionPoints.get(0).getPoint();
+                } else {
+                    Point2D intersectionPoint = intersectionPoints.stream()
+                            .sorted(Math2D.distanceComparator(prev.getTo())).findFirst().get();
                     Toolpath.Connection connection = new Toolpath.Connection(intersectionPoint);
                     prev.split(intersectionPoint, true, false, connection);
                     current.split(intersectionPoint, false, true, connection);
-                } else {
-                    log.error("Connected segments {} -> {} intersect multiple times: {}",
-                            prev, current, intersectionPoints);
-                    throw new RuntimeException("too many intersection points");
                 }
             }
 
@@ -165,19 +165,42 @@ public class ToolpathGenerator {
         return Math.abs(Math2D.subtractAngle(towardsAngle, angleTowardsTo)) <= Math.PI/2;
     }
 
+    private static Stream<Toolpath.Connection> getConnections(Toolpath.Segment current, Toolpath.Segment other) {
+        Stream.Builder<Toolpath.Connection> connectionsBuilder = Stream.builder();
+        if (current.getFromConnection().equals(other.getToConnection())) {
+            connectionsBuilder.add(current.getFromConnection());
+        }
+        if (current.getToConnection().equals(other.getFromConnection())) {
+            connectionsBuilder.add(current.getToConnection());
+        }
+        return connectionsBuilder.build();
+    }
+
+    private static Stream<Point2D> getConnectionPoints(Toolpath.Segment current, Toolpath.Segment other) {
+        return getConnections(current, other).map(Toolpath.Connection::getConnectionPoint);
+    }
+
+    private static boolean isConnectionPoint(Toolpath.Segment current, Toolpath.Segment other, Point2D point) {
+        return getConnectionPoints(current, other)
+                .filter(connectionPoint -> Math2D.samePoints(point, connectionPoint))
+                .findFirst().isPresent();
+    }
+
     private void intersectToolpathSegments(Toolpath.Segment current, List<Toolpath.Segment> others) {
         for (Toolpath.Segment other : others) {
             List<PathSegment.IntersectionPoint> intersectionPoints = current.intersect(other);
             for (PathSegment.IntersectionPoint intersection : intersectionPoints) {
                 if (intersection.isOnSegments()) {
                     Point2D intersectionPoint = intersection.getPoint();
-                    Toolpath.Connection connection = new Toolpath.Connection(intersectionPoint);
+                    if (!isConnectionPoint(current, other, intersectionPoint)) {
+                        Toolpath.Connection connection = new Toolpath.Connection(intersectionPoint);
 
-                    boolean currentFromSideValid = isFromSideValid(other, intersectionPoint, current);
-                    current.split(intersectionPoint, currentFromSideValid, !currentFromSideValid, connection);
+                        boolean currentFromSideValid = isFromSideValid(other, intersectionPoint, current);
+                        current.split(intersectionPoint, currentFromSideValid, !currentFromSideValid, connection);
 
-                    boolean otherFromSideValid = isFromSideValid(current, intersectionPoint, other);
-                    other.split(intersectionPoint, otherFromSideValid, !otherFromSideValid, connection);
+                        boolean otherFromSideValid = isFromSideValid(current, intersectionPoint, other);
+                        other.split(intersectionPoint, otherFromSideValid, !otherFromSideValid, connection);
+                    }
                 }
             }
         }

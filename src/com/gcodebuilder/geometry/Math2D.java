@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 
+import java.util.Comparator;
 import java.util.List;
 
 public class Math2D {
@@ -177,6 +178,14 @@ public class Math2D {
 
     public static boolean samePoints(Point2D p1, Point2D p2) {
         return samePoints(p1, p2, SAME_POINT_DISTANCE);
+    }
+
+    public static Comparator<Point2D> distanceComparator(Point2D reference) {
+        return (left, right) -> {
+            double distanceToLeft = left.distance(reference);
+            double distanceToRight = right.distance(reference);
+            return Double.compare(distanceToLeft, distanceToRight);
+        };
     }
 
     public static boolean sameAngles(double a1, double a2, double maxAngleDiff) {

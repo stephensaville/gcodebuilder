@@ -66,7 +66,20 @@ public class ArcSegment implements PathSegment {
                 if (LEFT_ANGLE_RANGE.includes(startAngle)) {
                     if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
                         // arc starts and stops in left half of circle
-                        if (-extentAngle <= Math.PI) {
+                        if (extentAngle == -Math.PI) {
+                            // arc is exactly half of circle
+                            if (startAngle < Math.PI) {
+                                // arc is right half of circle
+                                this.leftWindingRanges = Collections.emptyList();
+                                this.rightWindingRanges = Collections.singletonList(
+                                        Range.inclusiveMinExclusiveMax(minY, maxY));
+                            } else {
+                                // arc is left half of circle
+                                this.leftWindingRanges = Collections.singletonList(
+                                        Range.inclusiveMinExclusiveMax(minY, maxY));
+                                this.rightWindingRanges = Collections.emptyList();
+                            }
+                        } else if (-extentAngle < Math.PI) {
                             // arc contained within left half of circle
                             this.leftWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(from.getY(), to.getY()));
@@ -116,7 +129,20 @@ public class ArcSegment implements PathSegment {
                 if (LEFT_ANGLE_RANGE.includes(startAngle)) {
                     if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
                         // arc starts and stops in left half of circle
-                        if (extentAngle <= Math.PI) {
+                        if (extentAngle == Math.PI) {
+                            // arc is exactly half of circle
+                            if (startAngle < Math.PI) {
+                                // arc is left half of circle
+                                this.leftWindingRanges = Collections.singletonList(
+                                        Range.inclusiveMinExclusiveMax(minY, maxY));
+                                this.rightWindingRanges = Collections.emptyList();
+                            } else {
+                                // arc is right half of circle
+                                this.leftWindingRanges = Collections.emptyList();
+                                this.rightWindingRanges = Collections.singletonList(
+                                        Range.inclusiveMinExclusiveMax(minY, maxY));
+                            }
+                        } else if (extentAngle < Math.PI) {
                             // arc contained within left half of circle
                             this.leftWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(to.getY(), from.getY()));
@@ -168,6 +194,7 @@ public class ArcSegment implements PathSegment {
         this.toDirection = clockwise
                 ? centerToTo.getToDirection().rightNormal()
                 : centerToTo.getToDirection().leftNormal();
+        log.info("Created new: {} with windings: left={} right={}", this, leftWindingRanges, rightWindingRanges);
     }
 
     public double getRadiusSquared() {
@@ -197,23 +224,19 @@ public class ArcSegment implements PathSegment {
 
     @Override
     public Toolpath.Segment computeToolpathSegment(double toolRadius, boolean leftSide) {
-        log.debug("computeToolpathSegment(this={}, toolRadius={}, leftSide={}", this, toolRadius, leftSide);
         UnitVector awayFromFrom, awayFromTo;
         if (isToolpathSegmentOutside(leftSide)) {
             // computing outside arc segment
-            log.debug("Segment is inside arc");
             awayFromFrom = UnitVector.from(center, from);
             awayFromTo = UnitVector.from(center, to);
         } else {
             // computing inside arc segment
-            log.debug("Segment is outside arc");
             awayFromFrom = UnitVector.from(from, center);
             awayFromTo = UnitVector.from(to, center);
         }
         Point2D toolpathFrom = from.add(awayFromFrom.multiply(toolRadius));
         Point2D toolpathTo = to.add(awayFromTo.multiply(toolRadius));
         ArcSegment toolpathSegment = new ArcSegment(toolpathFrom, center, toolpathTo, clockwise);
-        log.debug("Result: {}", toolpathSegment);
         return new Toolpath.Segment(toolpathSegment, toolRadius, leftSide,
                 new Toolpath.Connection(getFrom()), new Toolpath.Connection(getTo()));
     }
