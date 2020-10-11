@@ -42,12 +42,20 @@ public interface PathSegment {
         return getFromDirection();
     }
 
+    default UnitVector getDirectionAtPoint(Point2D point) {
+        return getFromDirection();
+    }
+
     default double getFromAngle() {
         return getFromDirection().getAngle();
     }
 
     default double getToAngle() {
         return getToDirection().getAngle();
+    }
+
+    default double getAngleAtPoint(Point2D point) {
+        return getDirectionAtPoint(point).getAngle();
     }
 
     PathSegment move(Point2D offset);

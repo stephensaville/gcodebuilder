@@ -223,6 +223,12 @@ public class ArcSegment implements PathSegment {
     }
 
     @Override
+    public UnitVector getDirectionAtPoint(Point2D point) {
+        UnitVector centerToPoint = UnitVector.from(center, point);
+        return clockwise ? centerToPoint.rightNormal() : centerToPoint.leftNormal();
+    }
+
+    @Override
     public Toolpath.Segment computeToolpathSegment(double toolRadius, boolean leftSide) {
         UnitVector awayFromFrom, awayFromTo;
         if (isToolpathSegmentOutside(leftSide)) {

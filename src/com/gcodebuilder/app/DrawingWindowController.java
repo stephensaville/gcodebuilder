@@ -654,11 +654,11 @@ public class DrawingWindowController {
         canvas.getDrawables().add(newDrawing);
         toolpathDrawable.setDrawing(newDrawing);
 
-        shapesTableController.syncShapes(newDrawing);
-
         recipeEditorController.clearCurrentRecipe();
         recipeEditorController.getRecipes().clear();
         recipeEditorController.getRecipes().addAll(newDrawing.getRecipes());
+
+        shapesTableController.syncShapes(newDrawing);
 
         gCodeFileOperations.setCurrentFile(null);
         gCodeProgram = null;
