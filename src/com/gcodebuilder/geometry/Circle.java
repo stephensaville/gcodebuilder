@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 @JsonTypeName("CIRCLE")
 @Getter
-public class Circle extends Shape<Circle.Handle> {
+public class Circle extends Shape<Circle.Handle> implements PathConvertible {
     private static final Logger log = LogManager.getLogger(Circle.class);
 
     @Getter
@@ -132,6 +132,15 @@ public class Circle extends Shape<Circle.Handle> {
                 return Circle.this;
             }
         };
+    }
+
+    @Override
+    public Path convertToPath() {
+        Path path = new Path();
+        path.addPoint(center.getX() - radius, center.getY());
+        path.addPoint(center.asPoint2D(), Point.Type.CW_CENTER);
+        path.setClosed(true);
+        return path;
     }
 
     @Override

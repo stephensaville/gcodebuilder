@@ -19,6 +19,7 @@ import com.gcodebuilder.changelog.ChangeLog;
 import com.gcodebuilder.changelog.SelectionChange;
 import com.gcodebuilder.changelog.ShapeListChange;
 import com.gcodebuilder.changelog.Snapshot;
+import com.gcodebuilder.generator.DrawingGCodeGenerator;
 import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.generator.toolpath.ToolpathDrawable;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
@@ -763,33 +764,7 @@ public class DrawingWindowController {
     }
 
     public void generateGCode() {
-        GCodeBuilder builder = new GCodeBuilder();
-        builder .unitMode(drawing.getLengthUnit().getMode())
-                .distanceMode(DistanceMode.ABSOLUTE)
-                .arcDistanceMode(ArcDistanceMode.INCREMENTAL)
-                .feedRateMode(FeedRateMode.UNITS_PER_MIN);
-
-        for (Shape<?> shape : drawing.getShapes()) {
-            int recipeId = shape.getRecipeId();
-            if (recipeId <= 0) {
-                continue;
-            }
-
-            GCodeRecipe recipe = drawing.getRecipe(recipeId).getRecipeForUnit(drawing.getLengthUnit());
-            GCodeGenerator generator = recipe.getGCodeGenerator(shape);
-            builder.emptyLine();
-            if (generator != null) {
-                builder.comment(String.format("shape:%s recipe:%s",
-                        shape.getClass().getSimpleName(), recipe.getName()));
-                generator.generateGCode(builder);
-            } else {
-                log.warn("Recipe:{} returned null generator for shape:{}", recipe, shape);
-                builder.comment(String.format("shape:%s recipe:%s - no generator available",
-                        shape.getClass().getSimpleName(), recipe.getName()));
-            }
-        }
-
-        setGCodeProgram(builder.build());
+        setGCodeProgram(new DrawingGCodeGenerator(drawing).generateGCode());
     }
 
     public void saveGCode() {

@@ -205,12 +205,20 @@ public class Path extends Shape<Path.Handle> implements PathConvertible {
         segments = null;
     }
 
+    public void addPoint(double x, double y, Point.Type type) {
+        addPoint(new Point(x, y, type));
+    }
+
     public void addPoint(double x, double y) {
-        addPoint(new Point(x, y));
+        addPoint(x, y, null);
+    }
+
+    public void addPoint(Point2D point2D, Point.Type type) {
+        addPoint(new Point(point2D, type));
     }
 
     public void addPoint(Point2D point2D) {
-        addPoint(new Point(point2D));
+        addPoint(point2D, null);
     }
 
     public boolean updatePoint(int pointIndex, Point newPoint) {

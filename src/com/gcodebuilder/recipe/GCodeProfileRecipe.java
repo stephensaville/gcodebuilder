@@ -1,13 +1,9 @@
 package com.gcodebuilder.recipe;
 
-import com.gcodebuilder.generator.GCodeCircleProfileGenerator;
 import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.generator.GCodePathProfileGenerator;
-import com.gcodebuilder.generator.GCodeRectangleProfileGenerator;
-import com.gcodebuilder.geometry.Circle;
-import com.gcodebuilder.geometry.Path;
+import com.gcodebuilder.geometry.PathConvertible;
 import com.gcodebuilder.geometry.PathGroup;
-import com.gcodebuilder.geometry.Rectangle;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.LengthUnit;
@@ -59,12 +55,8 @@ public class GCodeProfileRecipe extends GCodeRecipe {
 
     @Override
     public GCodeGenerator getGCodeGenerator(Shape<?> shape) {
-        if (shape instanceof Rectangle) {
-            return new GCodeRectangleProfileGenerator(this, (Rectangle)shape);
-        } else if (shape instanceof Circle) {
-            return new GCodeCircleProfileGenerator(this, (Circle)shape);
-        } else if (shape instanceof Path) {
-            return new GCodePathProfileGenerator(this, (Path) shape);
+        if (shape instanceof PathConvertible) {
+            return new GCodePathProfileGenerator(this, ((PathConvertible)shape).convertToPath());
         } else if (shape instanceof PathGroup) {
             return new GCodePathProfileGenerator(this, ((PathGroup)shape).getPaths());
         } else {

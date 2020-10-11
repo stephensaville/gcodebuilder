@@ -1,13 +1,9 @@
 package com.gcodebuilder.recipe;
 
-import com.gcodebuilder.generator.GCodeCirclePocketGenerator;
 import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.generator.GCodePathPocketGenerator;
-import com.gcodebuilder.generator.GCodeRectanglePocketGenerator;
-import com.gcodebuilder.geometry.Circle;
-import com.gcodebuilder.geometry.Path;
+import com.gcodebuilder.geometry.PathConvertible;
 import com.gcodebuilder.geometry.PathGroup;
-import com.gcodebuilder.geometry.Rectangle;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.LengthUnit;
@@ -58,12 +54,8 @@ public class GCodePocketRecipe extends GCodeRecipe {
 
     @Override
     public GCodeGenerator getGCodeGenerator(Shape<?> shape) {
-        if (shape instanceof Rectangle) {
-            return new GCodeRectanglePocketGenerator(this, (Rectangle)shape);
-        } else if (shape instanceof Circle) {
-            return new GCodeCirclePocketGenerator(this, (Circle)shape);
-        } else if (shape instanceof Path) {
-            return new GCodePathPocketGenerator(this, (Path) shape);
+        if (shape instanceof PathConvertible) {
+            return new GCodePathPocketGenerator(this, ((PathConvertible)shape).convertToPath());
         } else if (shape instanceof PathGroup) {
             return new GCodePathPocketGenerator(this, ((PathGroup)shape).getPaths());
         } else {
