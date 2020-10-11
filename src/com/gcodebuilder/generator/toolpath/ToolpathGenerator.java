@@ -142,27 +142,32 @@ public class ToolpathGenerator {
     }
 
     private static boolean isFromSideValid(Toolpath.Segment other, Point2D intersectionPoint, Toolpath.Segment current) {
-        double towardsAngle;
+        double otherTowardsAngle;
         if (other.getSegment() instanceof ArcSegment) {
             ArcSegment otherArc = (ArcSegment)other.getSegment();
-            LineSegment towardsOtherCenter = LineSegment.of(intersectionPoint, otherArc.getCenter());
-            towardsAngle = towardsOtherCenter.getFromAngle();
+            if (otherArc.isToolpathSegmentOutside(other.isLeftSide())) {
+                // toolpath is outside original arc segment
+                otherTowardsAngle = UnitVector.from(intersectionPoint, otherArc.getCenter()).getAngle();
+            } else {
+                // toolpath is inside original arc segment
+                otherTowardsAngle = UnitVector.from(otherArc.getCenter(), intersectionPoint).getAngle();
+            }
         } else {
-            towardsAngle = other.getTowards().getAngle();
+            otherTowardsAngle = other.getTowards().getAngle();
         }
 
-        double angleTowardsTo;
+        double currentSegmentAngle;
         if (current.getSegment() instanceof ArcSegment) {
             ArcSegment currentArc = (ArcSegment)current.getSegment();
-            LineSegment centerToIntersection = LineSegment.of(currentArc.getCenter(), intersectionPoint);
-            angleTowardsTo = currentArc.isClockwise()
-                    ? centerToIntersection.getDirection().rightNormal().getAngle()
-                    : centerToIntersection.getDirection().leftNormal().getAngle();
+            UnitVector centerToIntersection = UnitVector.from(currentArc.getCenter(), intersectionPoint);
+            currentSegmentAngle = currentArc.isClockwise()
+                    ? centerToIntersection.rightNormal().getAngle()
+                    : centerToIntersection.leftNormal().getAngle();
         } else {
-            angleTowardsTo = current.getSegment().getFromAngle();
+            currentSegmentAngle = current.getSegment().getFromAngle();
         }
 
-        return Math.abs(Math2D.subtractAngle(towardsAngle, angleTowardsTo)) <= Math.PI/2;
+        return Math.abs(Math2D.subtractAngle(otherTowardsAngle, currentSegmentAngle)) <= Math.PI/2;
     }
 
     private static Stream<Toolpath.Connection> getConnections(Toolpath.Segment current, Toolpath.Segment other) {

@@ -89,8 +89,8 @@ public class Toolpath {
         }
 
         public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid, Connection connection) {
-            log.debug("Adding splitPoint={} fromSideValid={} toSideValid={} connection={} segment={}",
-                    splitPoint, fromSideValid, toSideValid, connection, segment);
+            log.debug("Adding splitPoint={} with fromSideValid={} and toSideValid={} to segment={}",
+                    splitPoint, fromSideValid, toSideValid, segment);
             splitPoints.add(new SplitPoint(splitPoint, fromSideValid, toSideValid, connection));
             splitPointsSorted = false;
         }

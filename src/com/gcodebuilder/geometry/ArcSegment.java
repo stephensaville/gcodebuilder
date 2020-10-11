@@ -218,7 +218,7 @@ public class ArcSegment implements PathSegment {
         return new ArcSegment(to, center, from, !clockwise);
     }
 
-    private boolean isToolpathSegmentOutside(boolean leftSide) {
+    public boolean isToolpathSegmentOutside(boolean leftSide) {
         return clockwise == leftSide;
     }
 
