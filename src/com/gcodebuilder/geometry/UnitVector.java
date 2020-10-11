@@ -7,6 +7,11 @@ import lombok.Getter;
 public class UnitVector extends Point2D {
     private final double angle;
 
+    private UnitVector(double unitX, double unitY, double angle) {
+        super(unitX, unitY);
+        this.angle = angle;
+    }
+
     public static UnitVector from(double x, double y) {
         double magnitude = Math.sqrt(x*x + y*y);
         double unitX = x / magnitude;
@@ -43,9 +48,15 @@ public class UnitVector extends Point2D {
         return new UnitVector(-getX(), -getY(), Math2D.addAngle(angle, Math.PI));
     }
 
-    private UnitVector(double unitX, double unitY, double angle) {
-        super(unitX, unitY);
-        this.angle = angle;
+    public double angleDiff(UnitVector other) {
+        return Math2D.subtractAngle(other.getAngle(), getAngle(), -Math.PI, Math.PI, false);
     }
 
+    public double absAngleDiff(UnitVector other) {
+        return Math.abs(angleDiff(other));
+    }
+
+    public boolean isSame(UnitVector other) {
+        return absAngleDiff(other) < Math2D.SAME_ANGLE_DIFFERENCE;
+    }
 }

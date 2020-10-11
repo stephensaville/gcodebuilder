@@ -9,6 +9,9 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +20,8 @@ import java.util.List;
 
 @Data
 public class Toolpath {
+    private static final Logger log = LogManager.getLogger(Toolpath.class);
+
     @Data
     public static class SplitPoint {
         private final Point2D point;
@@ -39,6 +44,7 @@ public class Toolpath {
 
     @Getter
     @RequiredArgsConstructor
+    @ToString
     public static class Connection {
         private final Point2D connectionPoint;
 
@@ -54,11 +60,11 @@ public class Toolpath {
     }
 
     @Getter
+    @ToString
     public static class Segment {
         private final PathSegment segment;
         private final double toolRadius;
-        private final UnitVector towards;
-        private final UnitVector away;
+        private final boolean leftSide;
 
         @Setter
         private Connection fromConnection;
@@ -69,12 +75,11 @@ public class Toolpath {
         private final List<SplitPoint> splitPoints = new ArrayList<>();
         private boolean splitPointsSorted = true;
 
-        public Segment(PathSegment segment, double toolRadius, UnitVector towards, UnitVector away,
+        public Segment(PathSegment segment, double toolRadius, boolean leftSide,
                        Connection fromConnection, Connection toConnection) {
             this.segment = segment;
             this.toolRadius = toolRadius;
-            this.towards = towards;
-            this.away = away;
+            this.leftSide = leftSide;
             this.fromConnection = fromConnection;
             this.toConnection = toConnection;
         }
@@ -91,13 +96,17 @@ public class Toolpath {
             return segment.getTo();
         }
 
+        public UnitVector getTowards() {
+            return leftSide ? segment.getFromDirection().rightNormal() : segment.getFromDirection().leftNormal();
+        }
+
         public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid, Connection connection) {
             splitPoints.add(new SplitPoint(splitPoint, fromSideValid, toSideValid, connection));
             splitPointsSorted = false;
         }
 
         public Segment flip() {
-            return new Segment(segment.flip(), toolRadius, towards, away, toConnection, fromConnection);
+            return segment.flipToolpathSegment(this);
         }
 
         public void sortSplitPoints() {
@@ -121,7 +130,7 @@ public class Toolpath {
                 if (prevToSideValid && splitPoint.isFromSideValid()) {
                     Segment validSegment = new Segment(
                             splitSegments.getFromSegment(),
-                            toolRadius, towards, away,
+                            toolRadius, leftSide,
                             prevConnection, splitPoint.getConnection());
                     validSegments.add(validSegment);
                 }
@@ -132,7 +141,8 @@ public class Toolpath {
             if (prevToSideValid) {
                 Segment validSegment = new Segment(
                         remaining,
-                        toolRadius, towards, away,
+                        toolRadius,
+                        leftSide,
                         prevConnection, toConnection);
                 validSegments.add(validSegment);
             }
@@ -170,8 +180,8 @@ public class Toolpath {
             double totalAngleDiff = 0.0;
             Toolpath.Segment prevSegment = getLastSegment();
             for (Toolpath.Segment segment : segments) {
-                totalAngleDiff += Math2D.subtractAngle(segment.getSegment().getAngle(),
-                        prevSegment.getSegment().getAngle());
+                totalAngleDiff += Math2D.subtractAngle(segment.getSegment().getFromAngle(),
+                        prevSegment.getSegment().getFromAngle());
                 prevSegment = segment;
             }
             return (totalAngleDiff > 0) ? Direction.COUNTER_CLOCKWISE : Direction.CLOCKWISE;

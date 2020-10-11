@@ -35,25 +35,35 @@ public interface PathSegment {
 
     Point2D getTo();
 
-    UnitVector getDirection();
+    UnitVector getFromDirection();
 
-    default double getAngle() {
-        return getDirection().getAngle();
+    default UnitVector getToDirection() {
+        return getFromDirection();
+    }
+
+    default double getFromAngle() {
+        return getFromDirection().getAngle();
+    }
+
+    default double getToAngle() {
+        return getToDirection().getAngle();
     }
 
     PathSegment move(Point2D offset);
 
     PathSegment flip();
 
-    Toolpath.Segment computeToolpathSegment(double toolRadius, UnitVector towards, UnitVector away);
+    default Toolpath.Segment flipToolpathSegment(Toolpath.Segment original) {
+        return new Toolpath.Segment(flip(), original.getToolRadius(), !original.isLeftSide(),
+                original.getToConnection(), original.getFromConnection());
+    }
+
+    Toolpath.Segment computeToolpathSegment(double toolRadius, boolean leftSide);
 
     default Toolpath.SegmentPair computeToolpathSegments(double toolRadius) {
-        UnitVector left = getDirection().leftNormal();
-        UnitVector right = getDirection().rightNormal();
-
         return new Toolpath.SegmentPair(
-                computeToolpathSegment(toolRadius, right, left),
-                computeToolpathSegment(toolRadius, left, right));
+                computeToolpathSegment(toolRadius, true),
+                computeToolpathSegment(toolRadius, false));
     }
 
     @Data

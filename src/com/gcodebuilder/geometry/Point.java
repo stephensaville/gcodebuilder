@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.geometry.Point2D;
 
 public class Point {
-    public static final double DEFAULT_MAX_DISTANCE = 0.0001;
 
     public enum Type {
         CW_CENTER,
@@ -89,7 +88,7 @@ public class Point {
     }
 
     public boolean isSame(Point otherPoint) {
-        return isSame(otherPoint, DEFAULT_MAX_DISTANCE);
+        return isSame(otherPoint, Math2D.SAME_POINT_DISTANCE);
     }
 
     public boolean isSame(Point2D point2D, double maxDistance) {
@@ -101,21 +100,7 @@ public class Point {
     }
 
     public boolean isSame(Point2D point2D) {
-        return isSame(point2D, DEFAULT_MAX_DISTANCE);
-    }
-
-    public static boolean isSamePoints(Point2D p1, Point2D p2, double maxDistance) {
-        if (p1 == null || p2 == null) {
-            return false;
-        } else if (p1.equals(p2)) {
-            return true;
-        } else {
-            return p1.distance(p2) < maxDistance;
-        }
-    }
-
-    public static boolean isSamePoints(Point2D p1, Point2D p2) {
-        return isSamePoints(p1, p2, DEFAULT_MAX_DISTANCE);
+        return isSame(point2D, Math2D.SAME_POINT_DISTANCE);
     }
 
     public String toCoordinateString() {

@@ -267,20 +267,12 @@
                </accelerator>
             </MenuItem>
             <SeparatorMenuItem/>
-            <Menu text="Toolpath Preview" onAction="#displayToolpathNone">
+            <Menu text="Toolpath Preview" onAction="#clearToolpathDisplayMode" fx:id="toolpathPreviewMenu">
                <RadioMenuItem text="None">
                   <toggleGroup>
-                     <ToggleGroup fx:id="toolpathPreviewMode"/>
+                     <ToggleGroup fx:id="toolpathPreviewModeGroup"/>
                   </toggleGroup>
                </RadioMenuItem>
-               <RadioMenuItem text="Connected Toolpaths" onAction="#displayConnectedToolpaths" toggleGroup="$toolpathPreviewMode"/>
-               <RadioMenuItem text="Split Points" onAction="#displaySplitPoints" toggleGroup="$toolpathPreviewMode"/>
-               <RadioMenuItem text="Valid Segments" onAction="#displayValidSegments" toggleGroup="$toolpathPreviewMode"/>
-               <RadioMenuItem text="Inside/Outside" onAction="#displayInsideOutside" toggleGroup="$toolpathPreviewMode"/>
-               <RadioMenuItem text="Partitioned Toolpaths" onAction="#displayPartitionedToolpaths" toggleGroup="$toolpathPreviewMode"/>
-               <RadioMenuItem text="Oriented Toolpaths" onAction="#displayOrientedToolpaths" toggleGroup="$toolpathPreviewMode"/>
-               <RadioMenuItem text="Pockets" onAction="#displayPockets" toggleGroup="$toolpathPreviewMode"/>
-               <RadioMenuItem text="Connected Pockets" onAction="#displayConnectedPockets" toggleGroup="$toolpathPreviewMode"/>
             </Menu>
          </Menu>
       </MenuBar>

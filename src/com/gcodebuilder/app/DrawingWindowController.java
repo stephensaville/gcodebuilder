@@ -41,7 +41,9 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -143,6 +145,12 @@ public class DrawingWindowController {
 
     @FXML
     private MenuItem ungroupPathsItem;
+
+    @FXML
+    private Menu toolpathPreviewMenu;
+
+    @FXML
+    private ToggleGroup toolpathPreviewModeGroup;
 
     private final RectangleTool rectangleTool = new RectangleTool();
     private final CircleTool circleTool = new CircleTool();
@@ -340,6 +348,16 @@ public class DrawingWindowController {
         });
 
         updateClipboardMenuItems();
+
+        for (ToolpathGenerator.DisplayMode displayMode : ToolpathGenerator.DisplayMode.values()) {
+            RadioMenuItem menuItem = new RadioMenuItem(displayMode.getLabel());
+            menuItem.setToggleGroup(toolpathPreviewModeGroup);
+            final ToolpathGenerator.DisplayMode menuItemDisplayMode = displayMode;
+            menuItem.setOnAction(actionEvent -> {
+                setToolpathDisplayMode(menuItemDisplayMode);
+            });
+            toolpathPreviewMenu.getItems().add(menuItem);
+        }
     }
 
     private void updateScrollBars(Rectangle2D originArea) {
@@ -822,48 +840,12 @@ public class DrawingWindowController {
         checkForChanges();
     }
 
-    public void displayToolpathNone() {
-        toolpathDrawable.setDisplayMode(null);
+    public void setToolpathDisplayMode(ToolpathGenerator.DisplayMode displayMode) {
+        toolpathDrawable.setDisplayMode(displayMode);
         canvas.refresh();
     }
 
-    public void displayConnectedToolpaths() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.CONNECTED_TOOLPATHS);
-        canvas.refresh();
-    }
-
-    public void displaySplitPoints() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.SPLIT_POINTS);
-        canvas.refresh();
-    }
-
-    public void displayValidSegments() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.VALID_SEGMENTS);
-        canvas.refresh();
-    }
-
-    public void displayInsideOutside() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.INSIDE_OUTSIDE);
-        canvas.refresh();
-    }
-
-    public void displayPartitionedToolpaths() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.PARTITIONED_TOOLPATHS);
-        canvas.refresh();
-    }
-
-    public void displayOrientedToolpaths() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.ORIENTED_TOOLPATHS);
-        canvas.refresh();
-    }
-
-    public void displayPockets() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.POCKETS);
-        canvas.refresh();
-    }
-
-    public void displayConnectedPockets() {
-        toolpathDrawable.setDisplayMode(ToolpathGenerator.DisplayMode.CONNECTED_POCKETS);
-        canvas.refresh();
+    public void clearToolpathDisplayMode() {
+        setToolpathDisplayMode(null);
     }
 }

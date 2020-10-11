@@ -7,6 +7,9 @@ import javafx.geometry.Rectangle2D;
 import java.util.List;
 
 public class Math2D {
+    public static final double SAME_POINT_DISTANCE = 0.0001;
+    public static final double SAME_ANGLE_DIFFERENCE = 0.0001;
+
     /**
      * Calculates the determinant of the 2x2 matrix defined as:
      *
@@ -160,5 +163,31 @@ public class Math2D {
         return Math.max(
                 computeScaleFactor(center.getX(), original.getX(), updated.getX()),
                 computeScaleFactor(center.getY(), original.getY(), updated.getY()));
+    }
+
+    public static boolean samePoints(Point2D p1, Point2D p2, double maxDistance) {
+        if (p1 == null || p2 == null) {
+            return false;
+        } else if (p1.equals(p2)) {
+            return true;
+        } else {
+            return p1.distance(p2) < maxDistance;
+        }
+    }
+
+    public static boolean samePoints(Point2D p1, Point2D p2) {
+        return samePoints(p1, p2, SAME_POINT_DISTANCE);
+    }
+
+    public static boolean sameAngles(double a1, double a2, double maxAngleDiff) {
+        if (a1 == a2) {
+            return true;
+        } else {
+            return Math.abs(subtractAngle(a1, a2)) < maxAngleDiff;
+        }
+    }
+
+    public static boolean sameAngles(double a1, double a2) {
+        return sameAngles(a1, a2, SAME_ANGLE_DIFFERENCE);
     }
 }

@@ -44,6 +44,10 @@ public class LineSegment extends Line implements PathSegment {
         this.length = length;
     }
 
+    public UnitVector getFromDirection() {
+        return getDirection();
+    }
+
     public double getLengthSquared() {
         return length * length;
     }
@@ -59,16 +63,15 @@ public class LineSegment extends Line implements PathSegment {
     }
 
     @Override
-    public Toolpath.Segment computeToolpathSegment(double toolRadius, UnitVector towards, UnitVector away) {
-        return new Toolpath.Segment(move(away.multiply(toolRadius)), toolRadius, towards, away,
+    public Toolpath.Segment computeToolpathSegment(double toolRadius, boolean leftSide) {
+        UnitVector away = leftSide ? getDirection().leftNormal() : getDirection().rightNormal();
+        return new Toolpath.Segment(move(away.multiply(toolRadius)), toolRadius, leftSide,
                 new Toolpath.Connection(getFrom()), new Toolpath.Connection(getTo()));
     }
 
     @Override
     public SplitSegments split(Point2D splitPoint) {
-        return new SplitSegments(
-                LineSegment.of(getFrom(), splitPoint),
-                LineSegment.of(splitPoint, getTo()));
+        return new SplitSegments(LineSegment.of(getFrom(), splitPoint), LineSegment.of(splitPoint, getTo()));
     }
 
     public List<IntersectionPoint> intersect(LineSegment other) {

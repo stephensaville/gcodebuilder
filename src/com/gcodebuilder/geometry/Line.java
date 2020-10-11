@@ -27,7 +27,7 @@ public class Line {
         return from.add(direction.multiply(distToProjection));
     }
 
-    public double getAngle() {
+    public double getFromAngle() {
         return getDirection().getAngle();
     }
 

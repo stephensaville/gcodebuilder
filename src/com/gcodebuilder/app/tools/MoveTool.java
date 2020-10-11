@@ -4,7 +4,7 @@ import com.gcodebuilder.changelog.Change;
 import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.changelog.UpdateShapeChange;
 import com.gcodebuilder.geometry.Drawing;
-import com.gcodebuilder.geometry.Point;
+import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Shape;
 import javafx.geometry.Point2D;
 
@@ -30,7 +30,7 @@ public class MoveTool implements Tool {
         if (original != null) {
             Point2D newDelta = event.getPoint().subtract(event.getStartPoint());
             boolean moved;
-            if (Point.isSamePoints(delta, newDelta)) {
+            if (Math2D.samePoints(delta, newDelta)) {
                 moved = false;
             } else {
                 Shape<?> shape = original.restore();
@@ -56,7 +56,7 @@ public class MoveTool implements Tool {
     public Supplier<Change> prepareChange(Drawing drawing, Shape<?> shape) {
         if (shape != null) {
             return () -> {
-                if (Point.isSamePoints(delta, Point2D.ZERO)) {
+                if (Math2D.samePoints(delta, Point2D.ZERO)) {
                     return null;
                 } else {
                     return new UpdateShapeChange("Move", drawing, original, shape.save());

@@ -4,9 +4,7 @@ import com.gcodebuilder.generator.toolpath.Toolpath;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.ArcType;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,18 +13,18 @@ import java.util.Collections;
 import java.util.List;
 
 @Getter
-@RequiredArgsConstructor(access=AccessLevel.PROTECTED)
 public class ArcSegment implements PathSegment {
     private static final Logger log = LogManager.getLogger(ArcSegment.class);
 
-    private static Range leftAngleRange = Range.exclusiveMinInclusiveMax(Math.PI/2, 2*Math.PI/2);
+    private static final Range LEFT_ANGLE_RANGE = Range.inclusiveMinAndMax(Math.PI/2, 3*Math.PI/2);
 
     private final Point2D from;
     private final Point2D center;
     private final Point2D to;
     private final boolean clockwise;
     private final double radius;
-    private final UnitVector direction;
+    private final UnitVector fromDirection;
+    private final UnitVector toDirection;
     private final double startAngle;
     private final double extentAngle;
     private final List<Range> leftWindingRanges;
@@ -49,24 +47,24 @@ public class ArcSegment implements PathSegment {
         this.center = center;
         this.clockwise = clockwise;
         LineSegment centerToFrom = LineSegment.of(center, from);
+        LineSegment centerToTo = LineSegment.of(center, to);
         this.radius = centerToFrom.getLength();
-        this.startAngle = centerToFrom.getAngle();
+        this.startAngle = centerToFrom.getFromAngle();
         double minY = center.getY() - radius;
         double maxY = center.getY() + radius;
-        if (Point.isSamePoints(from, to)) {
+        if (Math2D.samePoints(from, to)) {
             this.extentAngle = clockwise ? -2*Math.PI : 2*Math.PI;
             this.to = from;
             this.leftWindingRanges = this.rightWindingRanges = Collections.singletonList(
                     Range.inclusiveMinExclusiveMax(minY, maxY));
         } else {
-            LineSegment centerToTo = LineSegment.of(center, to);
-            double stopAngle = centerToTo.getAngle();
+            double stopAngle = centerToTo.getFromAngle();
             this.to = to = center.add(centerToTo.getDirection().multiply(radius));
             if (clockwise) {
                 this.extentAngle = Math2D.subtractAngle(stopAngle, this.startAngle,
                         -2*Math.PI, 0, false);
-                if (leftAngleRange.includes(startAngle)) {
-                    if (leftAngleRange.includes(stopAngle)) {
+                if (LEFT_ANGLE_RANGE.includes(startAngle)) {
+                    if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
                         // arc starts and stops in left half of circle
                         if (-extentAngle <= Math.PI) {
                             // arc contained within left half of circle
@@ -89,7 +87,7 @@ public class ArcSegment implements PathSegment {
                                 Range.inclusiveMinExclusiveMax(to.getY(), maxY));
                     }
                 } else {
-                    if (leftAngleRange.includes(stopAngle)) {
+                    if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
                         // arc starts in right and stops in left half of circle
                         this.leftWindingRanges = Collections.singletonList(
                                 Range.inclusiveMinExclusiveMax(minY, to.getY()));
@@ -115,8 +113,8 @@ public class ArcSegment implements PathSegment {
             } else {
                 this.extentAngle = Math2D.subtractAngle(stopAngle, this.startAngle,
                         0, 2*Math.PI, true);
-                if (leftAngleRange.includes(startAngle)) {
-                    if (leftAngleRange.includes(stopAngle)) {
+                if (LEFT_ANGLE_RANGE.includes(startAngle)) {
+                    if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
                         // arc starts and stops in left half of circle
                         if (extentAngle <= Math.PI) {
                             // arc contained within left half of circle
@@ -139,7 +137,7 @@ public class ArcSegment implements PathSegment {
                                 Range.inclusiveMinExclusiveMax(minY, to.getY()));
                     }
                 } else {
-                    if (leftAngleRange.includes(stopAngle)) {
+                    if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
                         // arc starts in right and stops in left half of circle
                         this.leftWindingRanges = Collections.singletonList(
                                 Range.inclusiveMinExclusiveMax(to.getY(), maxY));
@@ -164,9 +162,12 @@ public class ArcSegment implements PathSegment {
                 }
             }
         }
-        this.direction = clockwise
+        this.fromDirection = clockwise
                 ? centerToFrom.getDirection().rightNormal()
                 : centerToFrom.getDirection().leftNormal();
+        this.toDirection = clockwise
+                ? centerToTo.getToDirection().rightNormal()
+                : centerToTo.getToDirection().leftNormal();
     }
 
     public double getRadiusSquared() {
@@ -190,28 +191,38 @@ public class ArcSegment implements PathSegment {
         return new ArcSegment(to, center, from, !clockwise);
     }
 
+    private boolean isToolpathSegmentOutside(boolean leftSide) {
+        return clockwise == leftSide;
+    }
+
     @Override
-    public Toolpath.Segment computeToolpathSegment(double toolRadius, UnitVector towards, UnitVector away) {
-        Point2D toolpathFrom = from.add(away.multiply(toolRadius));
-        UnitVector awayFromTo;
-        if (Math.abs(startAngle - away.getAngle()) < Math.abs(startAngle - towards.getAngle())) {
+    public Toolpath.Segment computeToolpathSegment(double toolRadius, boolean leftSide) {
+        log.debug("computeToolpathSegment(this={}, toolRadius={}, leftSide={}", this, toolRadius, leftSide);
+        UnitVector awayFromFrom, awayFromTo;
+        if (isToolpathSegmentOutside(leftSide)) {
             // computing outside arc segment
+            log.debug("Segment is inside arc");
+            awayFromFrom = UnitVector.from(center, from);
             awayFromTo = UnitVector.from(center, to);
         } else {
             // computing inside arc segment
+            log.debug("Segment is outside arc");
+            awayFromFrom = UnitVector.from(from, center);
             awayFromTo = UnitVector.from(to, center);
         }
+        Point2D toolpathFrom = from.add(awayFromFrom.multiply(toolRadius));
         Point2D toolpathTo = to.add(awayFromTo.multiply(toolRadius));
         ArcSegment toolpathSegment = new ArcSegment(toolpathFrom, center, toolpathTo, clockwise);
-        return new Toolpath.Segment(toolpathSegment, toolRadius, towards, away,
+        log.debug("Result: {}", toolpathSegment);
+        return new Toolpath.Segment(toolpathSegment, toolRadius, leftSide,
                 new Toolpath.Connection(getFrom()), new Toolpath.Connection(getTo()));
     }
 
     @Override
     public SplitSegments split(Point2D splitPoint) {
-        return new SplitSegments(
-                ArcSegment.of(from, center, splitPoint, clockwise),
-                ArcSegment.of(splitPoint, center, to, clockwise));
+        ArcSegment fromSegment = new ArcSegment(from, center, splitPoint, clockwise);
+        ArcSegment toSegment = new ArcSegment(splitPoint, center, to, clockwise);
+        return new SplitSegments(fromSegment, toSegment);
     }
 
     private boolean isAngleInArcSegment(double angle) {
@@ -227,7 +238,7 @@ public class ArcSegment implements PathSegment {
     }
 
     private boolean isPointOnArcSegment(Point2D point) {
-        return isAngleInArcSegment(LineSegment.of(center, point).getAngle());
+        return isAngleInArcSegment(LineSegment.of(center, point).getFromAngle());
     }
 
     @Override
@@ -237,7 +248,7 @@ public class ArcSegment implements PathSegment {
         Point2D projectionPoint = other.getFrom().add(other.getDirection().multiply(fromToProjectionDistance));
 
         LineSegment centerToProjection = LineSegment.of(getCenter(), projectionPoint);
-        if (centerToProjection.getLength() > radius - Point.DEFAULT_MAX_DISTANCE) {
+        if (centerToProjection.getLength() > radius - Math2D.SAME_POINT_DISTANCE) {
             // segment too far away to intersection arc
             return Collections.emptyList();
         }
@@ -271,7 +282,7 @@ public class ArcSegment implements PathSegment {
     @Override
     public List<IntersectionPoint> intersect(ArcSegment other) {
         LineSegment centerToCenter = LineSegment.of(center, other.getCenter());
-        if (centerToCenter.getLength() >= radius + other.getRadius() - Point.DEFAULT_MAX_DISTANCE) {
+        if (centerToCenter.getLength() >= radius + other.getRadius() - Math2D.SAME_POINT_DISTANCE) {
             // arc too far away to intersect
             return Collections.emptyList();
         }
@@ -310,7 +321,7 @@ public class ArcSegment implements PathSegment {
     @Override
     public Point2D project(Point2D point) {
         LineSegment centerToPoint = LineSegment.of(center, point);
-        if (isAngleInArcSegment(centerToPoint.getAngle())) {
+        if (isAngleInArcSegment(centerToPoint.getFromAngle())) {
             return center.add(centerToPoint.getDirection().multiply(radius));
         } else {
             return null;
@@ -349,9 +360,10 @@ public class ArcSegment implements PathSegment {
 
     @Override
     public String toString() {
-        return String.format("ArcSegment((%s,%s), (%s,%s), (%s,%s))",
+        return String.format("ArcSegment((%s,%s), (%s,%s), (%s,%s), %s)",
                 getFrom().getX(), getFrom().getY(),
                 getCenter().getX(), getCenter().getY(),
-                getTo().getX(), getTo().getY());
+                getTo().getX(), getTo().getY(),
+                clockwise ? "CW" : "CCW");
     }
 }
