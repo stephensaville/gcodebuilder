@@ -2,6 +2,7 @@ package com.gcodebuilder.generator;
 
 import com.gcodebuilder.generator.toolpath.Toolpath;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
+import com.gcodebuilder.geometry.ArcSegment;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.UnitVector;
@@ -76,24 +77,10 @@ public class GCodePathProfileGenerator implements GCodeGenerator {
                 // cut profile in XY plane
                 for (Toolpath.Segment segment : toolpath.getSegments()) {
                     if (!ToolpathGenerator.isSamePoint(currentPoint, segment.getFrom())) {
-                        // join segments with corner arc
-                        Point2D arcCenter = segment.getFromConnection().getConnectionPoint();
-
-                        // determine if arc is CW or CCW
-                        UnitVector centerToStart = UnitVector.from(arcCenter, currentPoint);
-                        UnitVector centerToEnd = UnitVector.from(arcCenter, segment.getFrom());
-                        double arcAngle = Math2D.subtractAngle(centerToEnd.getAngle(), centerToStart.getAngle());
-                        MotionMode arcMode = (arcAngle > 0) ? MotionMode.CCW_ARC : MotionMode.CW_ARC;
-
-                        builder.motionMode(arcMode).feedRate(recipe.getFeedRate())
-                                .XY(segment.getFrom().getX(), segment.getFrom().getY())
-                                .IJ(arcCenter.getX() - currentPoint.getX(), arcCenter.getY() - currentPoint.getY())
-                                .endLine();
+                        throw new IllegalStateException("toolpath segments are not connected!");
                     }
 
-                    builder.motionMode(MotionMode.LINEAR).feedRate(recipe.getFeedRate())
-                            .XY(segment.getTo().getX(), segment.getTo().getY())
-                            .endLine();
+                    segment.generateGCode(builder, recipe.getFeedRate());
 
                     currentPoint = segment.getTo();
                 }

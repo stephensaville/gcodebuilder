@@ -512,6 +512,7 @@ public class ToolpathGenerator {
         while (currentPocket != null) {
             allConnectedPockets.add(currentPocket);
             Point2D currentPoint = currentPocket.getLastSegment().getTo();
+            log.info("Searching for a connection from {} to next toolpath.", currentPoint);
 
             Toolpath nextPocket = null;
             double nextPocketDistance = Double.MAX_VALUE;
@@ -519,10 +520,17 @@ public class ToolpathGenerator {
             ListIterator<Toolpath> toolpathIterator = remainingPockets.listIterator();
             while (toolpathIterator.hasNext()) {
                 Toolpath otherPocket = toolpathIterator.next();
-                Point2D startPoint = otherPocket.getLastSegment().getTo();
+                Point2D startPoint = otherPocket.getFirstSegment().getFrom();
                 LineSegment connection = LineSegment.of(currentPoint, startPoint);
-                if (allPocketPathSegments.stream().allMatch(segment -> segment.intersect(connection) == null)) {
+                List<Point2D> intersectionPoints = allPocketPathSegments.stream()
+                        .flatMap(segment -> segment.intersect(connection).stream())
+                        .filter(PathSegment.IntersectionPoint::isOnSegments)
+                        .map(PathSegment.IntersectionPoint::getPoint)
+                        .filter(p -> !(isSamePoint(p, currentPoint) || isSamePoint(p, startPoint)))
+                        .collect(Collectors.toList());
+                if (intersectionPoints.isEmpty()) {
                     double pocketDistance = currentPoint.distance(startPoint);
+                    log.info("Found valid connection {} with length {}", connection, pocketDistance);
                     if (pocketDistance < nextPocketDistance) {
                         if (nextPocket != null) {
                             toolpathIterator.set(nextPocket);
@@ -532,13 +540,18 @@ public class ToolpathGenerator {
                         nextPocket = otherPocket;
                         nextPocketDistance = pocketDistance;
                     }
+                } else {
+                    log.info("Potential connection: {} intersects other paths at: {}",
+                            connection, intersectionPoints);
                 }
             }
 
             if (nextPocket != null) {
+                log.info("Current path is connected to: " + nextPocket);
                 currentPocket.setNext(nextPocket);
                 currentPocket = nextPocket;
             } else {
+                log.info("Found path to connect with current path.");
                 currentPocket = remainingPockets.pollFirst();
             }
         }
@@ -728,7 +741,7 @@ public class ToolpathGenerator {
 
             if (toolpath.hasNext()) {
                 drawLine(ctx, toolpath.getLastSegment().getTo(),
-                        toolpath.getNext().getLastSegment().getTo());
+                        toolpath.getNext().getFirstSegment().getFrom());
             }
         }
     }

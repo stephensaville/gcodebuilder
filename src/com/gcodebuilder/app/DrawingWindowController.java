@@ -232,7 +232,7 @@ public class DrawingWindowController {
 
         SpinnerValueFactory<Integer> minorGridValueFactory =
                 new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                        1, 100, canvas.getSettings().getMinorGridDivision(), 1);
+                        1, 1000, canvas.getSettings().getMinorGridDivision(), 1);
         minorGridCtl.setValueFactory(minorGridValueFactory);
         minorGridCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
             if (newValue != canvas.getSettings().getMinorGridDivision()) {

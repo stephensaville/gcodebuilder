@@ -1,9 +1,12 @@
 package com.gcodebuilder.generator.toolpath;
 
+import com.gcodebuilder.geometry.ArcSegment;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.PathSegment;
 import com.gcodebuilder.geometry.UnitVector;
 import com.gcodebuilder.model.Direction;
+import com.gcodebuilder.model.GCodeBuilder;
+import com.gcodebuilder.model.MotionMode;
 import javafx.geometry.Point2D;
 import lombok.Data;
 import lombok.Getter;
@@ -82,6 +85,26 @@ public class Toolpath {
 
         public Point2D getTo() {
             return segment.getTo();
+        }
+
+        public void generateGCode(GCodeBuilder builder, int feedRate) {
+            if (segment instanceof ArcSegment) {
+                ArcSegment arcSegment = (ArcSegment)segment;
+                if (arcSegment.isClockwise()) {
+                    builder.motionMode(MotionMode.CW_ARC);
+                } else {
+                    builder.motionMode(MotionMode.CCW_ARC);
+                }
+                Point2D centerOffset = arcSegment.getCenter().subtract(arcSegment.getFrom());
+                builder.feedRate(feedRate)
+                        .XY(arcSegment.getTo().getX(), arcSegment.getTo().getY())
+                        .IJ(centerOffset.getX(), centerOffset.getY())
+                        .endLine();
+            } else {
+                builder.motionMode(MotionMode.LINEAR).feedRate(feedRate)
+                        .XY(segment.getTo().getX(), segment.getTo().getY())
+                        .endLine();
+            }
         }
 
         public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid, Connection connection) {
