@@ -1,1 +1,5 @@
 /out/
+/dist/lib/
+/dist/*/out/
+/.idea
+.DS_Store
