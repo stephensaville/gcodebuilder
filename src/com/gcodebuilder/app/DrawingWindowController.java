@@ -335,7 +335,7 @@ public class DrawingWindowController {
 
         recipeEditorController.getRecipes().addListener((ListChangeListener<GCodeRecipe>) change -> {
             while (change.next()) {
-                if (change.wasRemoved()) {
+                if (change.wasRemoved() && drawing != null) {
                     for (GCodeRecipe removed : change.getRemoved()) {
                         drawing.removeRecipe(removed);
                     }
@@ -649,19 +649,20 @@ public class DrawingWindowController {
 
     public void setDrawing(Drawing newDrawing) {
         canvas.getDrawables().remove(drawing);
-        drawing = newDrawing;
-        unitCtl.setValue(newDrawing.getLengthUnit());
-        canvas.getDrawables().add(newDrawing);
-        toolpathDrawable.setDrawing(newDrawing);
+        drawing = null;
 
         recipeEditorController.clearCurrentRecipe();
         recipeEditorController.getRecipes().clear();
         recipeEditorController.getRecipes().addAll(newDrawing.getRecipes());
 
+        drawing = newDrawing;
+        unitCtl.setValue(newDrawing.getLengthUnit());
+        canvas.getDrawables().add(newDrawing);
+        toolpathDrawable.setDrawing(newDrawing);
+
         shapesTableController.syncShapes(newDrawing);
 
-        gCodeFileOperations.setCurrentFile(null);
-        gCodeProgram = null;
+        setGCodeProgram(null);
 
         canvas.refresh();
     }
@@ -682,6 +683,7 @@ public class DrawingWindowController {
     public void openDrawing() {
         Drawing newDrawing = drawingFileOperations.open();
         if (newDrawing != null) {
+            log.info("Opened drawing from file: {}", drawingFileOperations.getCurrentFile());
             setDrawing(newDrawing);
             updateInitialGCodeFileName(drawingFileOperations.getCurrentFile());
         }
@@ -689,17 +691,22 @@ public class DrawingWindowController {
 
     public void saveDrawing() {
         drawingFileOperations.save(drawing);
+        log.info("Saved current drawing as: {}", drawingFileOperations.getCurrentFile());
         updateInitialGCodeFileName(drawingFileOperations.getCurrentFile());
     }
 
     public void saveDrawingAs() {
         drawingFileOperations.saveAs(drawing);
+        log.info("Saved current drawing as: {}", drawingFileOperations.getCurrentFile());
+        updateInitialGCodeFileName(drawingFileOperations.getCurrentFile());
     }
 
     public void newDrawing() {
         Drawing newDrawing = new Drawing();
         newDrawing.setLengthUnit(unitCtl.getValue());
         setDrawing(newDrawing);
+        drawingFileOperations.setCurrentFile(null);
+        drawingFileOperations.getChooser().setInitialFileName(DEFAULT_DRAWING_FILENAME);
         updateInitialGCodeFileName(null);
     }
 
