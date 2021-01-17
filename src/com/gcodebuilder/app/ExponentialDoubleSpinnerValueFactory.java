@@ -4,16 +4,16 @@ import javafx.scene.control.SpinnerValueFactory;
 import lombok.Getter;
 import lombok.Setter;
 
-class ExponentialSpinnerValueFactory extends SpinnerValueFactory.DoubleSpinnerValueFactory {
+class ExponentialDoubleSpinnerValueFactory extends SpinnerValueFactory.DoubleSpinnerValueFactory {
     @Getter @Setter
     private double base;
 
-    public ExponentialSpinnerValueFactory(double minValue, double maxValue, double value, double base) {
+    public ExponentialDoubleSpinnerValueFactory(double minValue, double maxValue, double value, double base) {
         super(minValue, maxValue, value, 1);
         this.base = base;
     }
 
-    public ExponentialSpinnerValueFactory(double minValue, double maxValue, double value) {
+    public ExponentialDoubleSpinnerValueFactory(double minValue, double maxValue, double value) {
         this(minValue, maxValue, value, 2);
     }
 

@@ -36,17 +36,31 @@
             </padding>
          </Label>
          <Spinner fx:id="majorGridCtl" editable="true" prefWidth="100.0"/>
-         <Label layoutX="288.0" layoutY="15.0" text="Minor Grid:">
+         <Label text="Minor Grid:">
             <padding>
                <Insets left="10.0" top="4.0"/>
             </padding>
          </Label>
-         <Spinner fx:id="minorGridCtl" editable="true" layoutX="431.0" layoutY="15.0" prefWidth="100.0"/>
+         <Spinner fx:id="minorGridCtl" editable="true" prefWidth="100.0"/>
+         <Label alignment="CENTER_RIGHT" fx:id="statusLabel" HBox.hgrow="ALWAYS"
+                maxHeight="Infinity" maxWidth="Infinity">
+             <style>
+                -fx-border-style: solid;
+                -fx-border-width: 1;
+                -fx-border-color: #a0a0a0;
+                -fx-background-color: #f8f8f8;
+                -fx-font-size: 14;
+             </style>
+            <padding>
+               <Insets left="2.0" top="4.0" right="2.0" bottom="2.0"/>
+            </padding>
+         </Label>
       </HBox>
    </bottom>
    <center>
       <AnchorPane BorderPane.alignment="CENTER">
-         <GCodeCanvas fx:id="canvas" height="640.0" width="640.0" onMouseDragged="#mouseDragOnCanvas"
+         <GCodeCanvas fx:id="canvas" height="640.0" width="640.0"
+                      onMouseMoved="#mouseMoveOnCanvas" onMouseDragged="#mouseDragOnCanvas"
                       onMousePressed="#mousePressOnCanvas" onMouseReleased="#mouseReleaseOnCanvas"
                       AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0"/>
          <ScrollBar fx:id="hScrollBar" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"

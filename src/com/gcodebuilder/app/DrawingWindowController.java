@@ -23,7 +23,6 @@ import com.gcodebuilder.generator.DrawingGCodeGenerator;
 import com.gcodebuilder.generator.toolpath.ToolpathDrawable;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.geometry.Drawing;
-import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.Group;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.GCodeProgram;
@@ -37,6 +36,7 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
@@ -63,6 +63,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
+import java.util.Formatter;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -96,6 +97,9 @@ public class DrawingWindowController {
 
     @FXML
     private Spinner<Integer> minorGridCtl;
+
+    @FXML
+    private Label statusLabel;
 
     @FXML
     private ScrollBar hScrollBar;
@@ -202,12 +206,14 @@ public class DrawingWindowController {
             if (newValue != drawing.getLengthUnit()) {
                 drawing.setLengthUnit(newValue);
                 canvas.getSettings().setUnits(newValue);
+                majorGridCtl.getValueFactory().setValue(canvas.getSettings().getMajorGridSpacing());
+                minorGridCtl.getValueFactory().setValue(canvas.getSettings().getMinorGridDivision());
                 canvas.refresh();
             }
         });
 
         SpinnerValueFactory<Double> zoomValueFactory =
-                new ExponentialSpinnerValueFactory(MIN_ZOOM, MAX_ZOOM, canvas.getZoom()*100);
+                new ExponentialDoubleSpinnerValueFactory(MIN_ZOOM, MAX_ZOOM, canvas.getZoom()*100);
         zoomValueFactory.setConverter(new DoubleStringConverterWithPrecision(4));
         zoomCtl.setValueFactory(zoomValueFactory);
         zoomCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
@@ -219,7 +225,7 @@ public class DrawingWindowController {
         });
 
         SpinnerValueFactory<Double> gridSpacingValueFactory =
-                new ExponentialSpinnerValueFactory(MIN_GRID_SPACING, MAX_GRID_SPACING,
+                new ExponentialDoubleSpinnerValueFactory(MIN_GRID_SPACING, MAX_GRID_SPACING,
                         canvas.getSettings().getMajorGridSpacing());
         gridSpacingValueFactory.setConverter(new DoubleStringConverterWithPrecision(4));
         majorGridCtl.setValueFactory(gridSpacingValueFactory);
@@ -231,8 +237,8 @@ public class DrawingWindowController {
         });
 
         SpinnerValueFactory<Integer> minorGridValueFactory =
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                        1, 1000, canvas.getSettings().getMinorGridDivision(), 1);
+                new ExponentialIntegerSpinnerValueFactory(
+                        1, 1024, canvas.getSettings().getMinorGridDivision());
         minorGridCtl.setValueFactory(minorGridValueFactory);
         minorGridCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
             if (newValue != canvas.getSettings().getMinorGridDivision()) {
@@ -590,6 +596,11 @@ public class DrawingWindowController {
         refreshDrawingWhenDirty();
     }
 
+    public void mouseMoveOnCanvas(MouseEvent event) {
+        InteractionEvent toolEvent = makeToolEvent(event, false);
+        refreshStatusText(toolEvent);
+    }
+
     public void mousePressOnCanvas(MouseEvent event) {
         InteractionEvent toolEvent = makeToolEvent(event, true);
         if (currentTool != null) {
@@ -615,6 +626,7 @@ public class DrawingWindowController {
                 }
             }
         }
+        refreshStatusText(toolEvent);
         refreshDrawingWhenDirty();
     }
 
@@ -627,6 +639,7 @@ public class DrawingWindowController {
                 checkSelectedShapes();
             }
         }
+        refreshStatusText(toolEvent);
         refreshDrawingWhenDirty();
     }
 
@@ -644,7 +657,22 @@ public class DrawingWindowController {
                 checkSelectedShapes();
             }
         }
+        refreshStatusText(toolEvent);
         refreshDrawingWhenDirty();
+    }
+
+    private void refreshStatusText(InteractionEvent toolEvent) {
+        Formatter statusFormatter = new Formatter(new StringBuilder());
+        statusFormatter.format("  x: %.4f  y: %.4f",
+                toolEvent.getPoint().getX(), toolEvent.getPoint().getY());
+        if (currentTool != null) {
+            currentTool.addStatusText(toolEvent, statusFormatter);
+        }
+        setStatusText(statusFormatter.toString());
+    }
+
+    public void setStatusText(String statusText) {
+        statusLabel.setText(statusText);
     }
 
     public void setDrawing(Drawing newDrawing) {

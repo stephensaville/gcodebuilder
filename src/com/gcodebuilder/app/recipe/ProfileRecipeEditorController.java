@@ -47,7 +47,7 @@ public class ProfileRecipeEditorController extends AbstractRecipeTypeController<
     @FXML
     public void initialize() {
         configuredChoiceBox(unitCtl, GCodeProfileRecipe::getUnit,
-                GCodeProfileRecipe::setUnit, LengthUnit.values());
+                unitSetter, LengthUnit.values());
         configureTextField(toolWidthCtl, doubleFormatter(),
                 GCodeProfileRecipe::getToolWidth, GCodeProfileRecipe::setToolWidth);
         configureTextField(depthCtl, doubleFormatter(),

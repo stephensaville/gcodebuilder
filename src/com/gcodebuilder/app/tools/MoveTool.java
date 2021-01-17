@@ -8,6 +8,7 @@ import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Shape;
 import javafx.geometry.Point2D;
 
+import java.util.Formatter;
 import java.util.function.Supplier;
 
 public class MoveTool implements Tool {
@@ -65,5 +66,11 @@ public class MoveTool implements Tool {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void addStatusText(InteractionEvent event, Formatter statusFormatter) {
+        Point2D delta = event.getPoint().subtract(event.getStartPoint());
+        statusFormatter.format("  dx: %.4f  dy: %.4f", delta.getX(), delta.getY());
     }
 }

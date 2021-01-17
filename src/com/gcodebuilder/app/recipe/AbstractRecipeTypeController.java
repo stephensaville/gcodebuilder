@@ -1,5 +1,6 @@
 package com.gcodebuilder.app.recipe;
 
+import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import com.gcodebuilder.recipe.GCodeRecipeType;
 import javafx.scene.control.ChoiceBox;
@@ -45,6 +46,11 @@ public abstract class AbstractRecipeTypeController<T extends GCodeRecipe> implem
     private Consumer<GCodeRecipe> onRecipeUpdate;
 
     private final List<Consumer<T>> settingAppliers = new ArrayList<>();
+
+    protected final BiConsumer<T, LengthUnit> unitSetter = (recipe, unit) -> {
+        recipe.convertToUnit(unit);
+        settingAppliers.forEach(applier -> applier.accept(recipe));
+    };
 
     protected <V> void configuredChoiceBox(ChoiceBox<V> choiceBox,
                                          Function<T, V> getter,

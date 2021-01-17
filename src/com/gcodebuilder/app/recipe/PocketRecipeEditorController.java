@@ -46,7 +46,7 @@ public class PocketRecipeEditorController extends AbstractRecipeTypeController<G
     @FXML
     public void initialize() {
         configuredChoiceBox(unitCtl, GCodePocketRecipe::getUnit,
-                GCodePocketRecipe::setUnit, LengthUnit.values());
+                unitSetter, LengthUnit.values());
         configureTextField(toolWidthCtl, doubleFormatter(),
                 GCodePocketRecipe::getToolWidth, GCodePocketRecipe::setToolWidth);
         configureTextField(depthCtl, doubleFormatter(),
