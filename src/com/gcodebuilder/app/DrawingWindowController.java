@@ -203,7 +203,7 @@ public class DrawingWindowController {
         unitCtl.getItems().addAll(LengthUnit.values());
         unitCtl.setValue(LengthUnit.INCH);
         unitCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != drawing.getLengthUnit()) {
+            if (drawing != null && newValue != drawing.getLengthUnit()) {
                 drawing.setLengthUnit(newValue);
                 canvas.getSettings().setUnits(newValue);
                 majorGridCtl.getValueFactory().setValue(canvas.getSettings().getMajorGridSpacing());
@@ -219,7 +219,7 @@ public class DrawingWindowController {
         zoomCtl.valueProperty().addListener((obs, oldValue, newValue) -> {
             double newZoom = newValue/100;
             if (newZoom != canvas.getZoom()) {
-                canvas.setZoom(newValue / 100);
+                canvas.setZoom(newZoom);
                 canvas.refresh();
             }
         });
@@ -250,8 +250,9 @@ public class DrawingWindowController {
         hScrollBar.setUnitIncrement(1);
         hScrollBar.setBlockIncrement(10);
         hScrollBar.valueProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue.doubleValue() != canvas.getOriginX()) {
-                canvas.setOriginX(canvas.getOriginArea().getMaxX() - newValue.doubleValue());
+            double newOriginX = canvas.getOriginArea().getMaxX() - newValue.doubleValue();
+            if (newOriginX != canvas.getOriginX()) {
+                canvas.setOriginX(newOriginX);
                 canvas.refresh();
             }
         });
@@ -259,8 +260,9 @@ public class DrawingWindowController {
         vScrollBar.setUnitIncrement(1);
         vScrollBar.setBlockIncrement(10);
         vScrollBar.valueProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue.doubleValue() != canvas.getOriginY()) {
-                canvas.setOriginY(canvas.getOriginArea().getMaxY() - newValue.doubleValue());
+            double newOriginY = canvas.getOriginArea().getMaxY() - newValue.doubleValue();
+            if (newOriginY != canvas.getOriginY()) {
+                canvas.setOriginY(newOriginY);
                 canvas.refresh();
             }
         });
@@ -385,16 +387,16 @@ public class DrawingWindowController {
                 .subtract(NodeSize.measureHeight(hScrollBar));
         canvas.heightProperty().bind(heightBinding);
 
-        updateScrollBars(canvas.getOriginArea());
-
         GridSettings settings = canvas.getSettings();
-        double minorGridWidth = canvas.getPixelsPerUnit() * settings.getMajorGridSpacing() / settings.getMinorGridDivision();
+        double minorGridWidth = canvas.getPixelsPerUnit() * settings.getMinorGridSpacing();
         double xOriginOffset = (canvas.getWidth() % minorGridWidth) / 2;
         double yOriginOffset = (canvas.getHeight() % minorGridWidth) / 2;
         log.info("minorGridWidth={}", minorGridWidth);
 
-        hScrollBar.setValue(canvas.getOriginArea().getMaxX() - xOriginOffset);
-        vScrollBar.setValue(canvas.getOriginArea().getMaxY() - canvas.getHeight() + yOriginOffset);
+        canvas.setOriginX(xOriginOffset);
+        canvas.setOriginY(canvas.getHeight() - yOriginOffset);
+
+        updateScrollBars(canvas.getOriginArea());
 
         canvas.heightProperty().addListener((obs, oldValue, newValue) -> {
             double heightChange = newValue.doubleValue() - oldValue.doubleValue();
@@ -675,6 +677,41 @@ public class DrawingWindowController {
         statusLabel.setText(statusText);
     }
 
+    public void zoomToDrawing(Drawing drawing) {
+        if (drawing.getShapes().isEmpty()) {
+            return;
+        }
+
+        double drawingMinX = Double.MAX_VALUE;
+        double drawingMaxX = Double.MIN_VALUE;
+        double drawingMinY = Double.MAX_VALUE;
+        double drawingMaxY = Double.MIN_VALUE;
+        double drawingMargin = canvas.getSettings().getMinorGridSpacing();
+        for (Shape<?> shape : drawing.getShapes()) {
+            Rectangle2D boundingBox = shape.getBoundingBox();
+            drawingMinX = Math.min(drawingMinX, boundingBox.getMinX() - drawingMargin);
+            drawingMaxX = Math.max(drawingMaxX, boundingBox.getMaxX() + drawingMargin);
+            drawingMinY = Math.min(drawingMinY, boundingBox.getMinY() - drawingMargin);
+            drawingMaxY = Math.max(drawingMaxY, boundingBox.getMaxY() + drawingMargin);
+        }
+
+        double drawingWidth = drawingMaxX - drawingMinX;
+        double drawingHeight = drawingMaxY - drawingMinY;
+        double maxPixelsPerUnit = Math.min(canvas.getWidth() / drawingWidth, canvas.getHeight() / drawingHeight);
+        double maxZoom = canvas.calculateZoom(maxPixelsPerUnit);
+        double zoomIndex = Math.floor(Math.log(maxZoom) / Math.log(2));
+
+        log.info("zoomToDrawing: minX={} minY={} maxX={} maxY={} zoomIndex={}",
+                drawingMinX, drawingMinY, drawingMaxX, drawingMaxY, zoomIndex);
+
+        zoomCtl.getValueFactory().setValue(100 * Math.pow(2, zoomIndex));
+
+        canvas.setOriginX(-drawingMinX * canvas.getPixelsPerUnit());
+        canvas.setOriginY(canvas.getHeight() + drawingMinY * canvas.getPixelsPerUnit());
+
+        updateScrollBars(canvas.getOriginArea());
+    }
+
     public void setDrawing(Drawing newDrawing) {
         canvas.getDrawables().remove(drawing);
         drawing = null;
@@ -683,8 +720,16 @@ public class DrawingWindowController {
         recipeEditorController.getRecipes().clear();
         recipeEditorController.getRecipes().addAll(newDrawing.getRecipes());
 
+        LengthUnit newUnits = newDrawing.getLengthUnit();
+        unitCtl.setValue(newUnits);
+        canvas.getSettings().setUnits(newUnits);
+        canvas.getSettings().setDefaultGridSpacing();
+        majorGridCtl.getValueFactory().setValue(canvas.getSettings().getMajorGridSpacing());
+        minorGridCtl.getValueFactory().setValue(canvas.getSettings().getMinorGridDivision());
+
+        zoomToDrawing(newDrawing);
+
         drawing = newDrawing;
-        unitCtl.setValue(newDrawing.getLengthUnit());
         canvas.getDrawables().add(newDrawing);
         toolpathDrawable.setDrawing(newDrawing);
 

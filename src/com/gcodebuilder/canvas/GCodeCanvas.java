@@ -7,6 +7,7 @@ import javafx.beans.property.adapter.ReadOnlyJavaBeanObjectPropertyBuilder;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
@@ -87,6 +88,10 @@ public class GCodeCanvas extends Canvas {
         return zoom * Screen.getPrimary().getDpi() / settings.getUnits().getUnitsPerInch();
     }
 
+    public double calculateZoom(double pixelsPerUnit) {
+        return pixelsPerUnit * settings.getUnits().getUnitsPerInch() / Screen.getPrimary().getDpi();
+    }
+
     private boolean applyGridLineSettings(GraphicsContext ctx, int gridIndex, double pixelsPerUnit,
                                           double pixelsPerGridLine) {
         if (gridIndex % settings.getMinorGridDivision() == 0) {
@@ -130,15 +135,12 @@ public class GCodeCanvas extends Canvas {
         canvasHeight = getHeight();
         updateOriginArea(getPixelsPerUnit(), canvasWidth, canvasHeight);
 
-        double gridSpacing = settings.getMajorGridSpacing() / settings.getMinorGridDivision();
+        double gridSpacing = settings.getMinorGridSpacing();
         double pixelsPerGridLine = pixelsPerUnit * gridSpacing;
         int xGridMinIndex = -(int)(originX / pixelsPerGridLine);
         int xGridMaxIndex = (int)((canvasWidth - originX) / pixelsPerGridLine);
         int yGridMinIndex = -(int)((canvasHeight - originY) / pixelsPerGridLine);
         int yGridMaxIndex = (int)(originY / pixelsPerGridLine);
-
-        log.debug("refresh(pixelsPerUnit={} canvasWidth={} canvasHeight={} pixelsPerGridLine={} hGrid=[{},{}] vGrid=[{},{}])",
-                pixelsPerUnit, canvasWidth, canvasHeight, pixelsPerGridLine, xGridMinIndex, xGridMaxIndex, yGridMinIndex, yGridMaxIndex);
 
         // clear screen
         GraphicsContext ctx = getGraphicsContext2D();

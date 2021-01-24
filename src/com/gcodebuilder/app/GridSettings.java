@@ -71,6 +71,15 @@ public class GridSettings implements Cloneable {
         }
     }
 
+    public void setDefaultGridSpacing() {
+        majorGridSpacing = MAJOR_GRID_SPACING_DEFAULTS.get(units);
+        minorGridDivision = MINOR_GRID_DIVISION_DEFAULTS.get(units);
+    }
+
+    public double getMinorGridSpacing() {
+        return majorGridSpacing / minorGridDivision;
+    }
+
     @Override
     protected GridSettings clone() {
         try {
