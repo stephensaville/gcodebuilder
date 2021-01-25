@@ -378,6 +378,17 @@ public class DrawingWindowController {
             });
             toolpathPreviewMenu.getItems().add(menuItem);
         }
+
+        canvas.widthProperty().addListener((obs, oldValue, newValue) -> {
+            if (!oldValue.equals(newValue)) {
+                updateStatusTextOnResize();
+            }
+        });
+        canvas.heightProperty().addListener((obs, oldValue, newValue) -> {
+            if (!oldValue.equals(newValue)) {
+                updateStatusTextOnResize();
+            }
+        });
     }
 
     private void updateScrollBars(Rectangle2D originArea) {
@@ -691,6 +702,11 @@ public class DrawingWindowController {
 
     public void setStatusText(String statusText) {
         statusLabel.setText(statusText);
+    }
+
+    public void updateStatusTextOnResize() {
+        setStatusText(String.format("canvas w: %.0f h: %.0f",
+                canvas.getWidth(), canvas.getHeight()));
     }
 
     public void zoomToDrawing(Drawing drawing) {
