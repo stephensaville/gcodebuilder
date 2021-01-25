@@ -1,9 +1,23 @@
+![GCB Icon](src/com/gcodebuilder/app/images/gcb_icon_128.png)
+
 ## Introduction to GCodeBuilder
 
-GCodeBuilder is a simple cross-platform tool that makes it easy to generate GCode for hobby 2.5d CNC routers. The
-interface allows users to draw shapes (rectangles, circles and paths) in a 2D plane, and then apply recipes
-(pocket, profile) to these shapes to specify cutting operations. Finally, users can Generate GCode to turn shapes
-and recipes into GCode to save and send to a CNC router.
+GCodeBuilder is a simple cross-platform GUI tool that makes it easy to generate GCode for hobby 2.5d CNC routers. The
+interface allows users to draw Shapes (rectangles, circles and paths) in a 2D plane, apply Recipes (pocket, profile) to
+these shapes to specify cutting operations, and finally Generate GCode to turn Shapes and Recipes into GCode
+instructions that can be saved to a file and sent to a CNC router to make things IRL.
+
+## Installation
+
+GCodeBuilder binary distributions are not available yet, but the application can be built and run from source using
+Gradle on any platform supported by OpenJDK by following these simple instructions:
+
+1. Install one of the following OpenJDK 11 distributions:
+    * [Amazon Coretto](https://aws.amazon.com/corretto/)
+    * [AdoptOpenJDK](https://adoptopenjdk.net/installation.html)
+2. Install the [Gradle](https://gradle.org/install/) build tool.
+3. Clone the gcodebuilder repository: ```git clone https://github.com/stephensaville/gcodebuilder.git```
+4. Build and run using gradle: ```gradle run```
 
 ## History
 
@@ -21,5 +35,5 @@ year GCodeBuilder was a functional application ready to be released to the Open 
 
 GCodeBuilder is written in Java using the OpenJFX version of the JavaFX GUI framework. GCodeBuilder *should* run on all
 platforms supported by Java and OpenJFX, but the primary developer uses Linux and MacOSX systems, so these will have the
-best support. In addition to OpenJFX, GCodeBuilder also depends on Jackson, Log4j, JUnit and Lombok. The primary
-developer uses IntelliJ IDEA Community Edition for Java development.
+best support. In addition to OpenJFX, GCodeBuilder also depends on Jackson, Google Guava, Log4j, JUnit and Project
+Lombok. The primary developer uses IntelliJ IDEA Community Edition for Java development.
