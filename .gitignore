@@ -1,5 +1,7 @@
-/out/
+/build
+/out
 /dist/lib/
 /dist/*/out/
 /.idea
+/.gradle
 .DS_Store
