@@ -871,7 +871,11 @@ public class DrawingWindowController {
     }
 
     public void generateGCode() {
-        setGCodeProgram(new DrawingGCodeGenerator(drawing).generateGCode());
+        setGCodeProgram(new DrawingGCodeGenerator(drawing, false).generateGCode());
+    }
+
+    public void generateGCodeForSelectedShapes() {
+        setGCodeProgram(new DrawingGCodeGenerator(drawing, true).generateGCode());
     }
 
     public void saveGCode() {

@@ -32,6 +32,7 @@ public class DrawingGCodeGenerator implements GCodeGenerator {
     private static final Logger log = LogManager.getLogger(DrawingGCodeGenerator.class);
 
     private final Drawing drawing;
+    private final boolean selectedShapesOnly;
 
     @Override
     public void generateGCode(GCodeBuilder builder) {
@@ -41,6 +42,12 @@ public class DrawingGCodeGenerator implements GCodeGenerator {
                 .feedRateMode(FeedRateMode.UNITS_PER_MIN);
 
         for (Shape<?> shape : drawing.getShapes()) {
+            if (selectedShapesOnly && !shape.isSelected()) {
+                log.info(String.format("Not generating GCode for unselected shape:%s",
+                        shape.getClass().getSimpleName()));
+                continue;
+            }
+
             int recipeId = shape.getRecipeId();
             if (recipeId <= 0) {
                 continue;
@@ -49,6 +56,7 @@ public class DrawingGCodeGenerator implements GCodeGenerator {
             GCodeRecipe recipe = drawing.getRecipe(recipeId).getRecipeForUnit(drawing.getLengthUnit());
             GCodeGenerator generator = recipe.getGCodeGenerator(shape);
             builder.emptyLine();
+            builder.resetMotionMode();
             if (generator != null) {
                 builder.comment(String.format("shape:%s recipe:%s",
                         shape.getClass().getSimpleName(), recipe.getName()));

@@ -50,7 +50,7 @@ public class ToolpathDrawable implements Drawable {
             int recipeId = shape.getRecipeId();
             GCodeRecipe recipe;
             if (recipeId > 0) {
-                recipe = drawing.getRecipe(recipeId);
+                recipe = drawing.getRecipe(recipeId).getRecipeForUnit(drawing.getLengthUnit());
             } else {
                 continue;
             }

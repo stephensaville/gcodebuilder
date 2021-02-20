@@ -103,7 +103,8 @@ public class GCodePathPocketGenerator implements GCodeGenerator {
                 // move between connected toolpaths
                 if (toolpath.hasNext()) {
                     Point2D nextStartPoint = toolpath.getNext().getLastSegment().getTo();
-                    builder.XY(nextStartPoint.getX(), nextStartPoint.getY()).endLine();
+                    builder.motionMode(MotionMode.LINEAR).feedRate(recipe.getFeedRate())
+                            .XY(nextStartPoint.getX(), nextStartPoint.getY()).endLine();
                     currentPoint = nextStartPoint;
                 }
             }

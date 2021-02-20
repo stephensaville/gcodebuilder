@@ -45,7 +45,9 @@ public class GCodeBuilder {
     private List<GCodeWord> currentLine = new ArrayList<>();
 
     public GCodeBuilder add(GCodeWord word) {
-        currentLine.add(word);
+        if (word != null) {
+            currentLine.add(word);
+        }
         return this;
     }
 
@@ -101,6 +103,10 @@ public class GCodeBuilder {
             this.feedRate = null;
         }
         return this;
+    }
+
+    public GCodeBuilder resetMotionMode() {
+        return motionMode(null);
     }
 
     public GCodeBuilder unitMode(UnitMode unitMode) {

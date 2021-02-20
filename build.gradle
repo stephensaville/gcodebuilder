@@ -21,7 +21,7 @@ plugins {
 }
 
 group "com.gcodebuilder"
-version "2021-SNAPSHOT"
+version "2021.SNAPSHOT"
 
 sourceSets {
     main {

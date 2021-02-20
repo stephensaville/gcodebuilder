@@ -281,9 +281,14 @@
             </MenuItem>
          </Menu>
          <Menu text="_GCode">
-            <MenuItem onAction="#generateGCode" text="Generate GCode">
+            <MenuItem onAction="#generateGCode" text="Generate GCode for All">
                <accelerator>
                   <KeyCodeCombination alt="UP" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+               </accelerator>
+            </MenuItem>
+            <MenuItem onAction="#generateGCodeForSelectedShapes" text="Generate GCode for Selected">
+               <accelerator>
+                  <KeyCodeCombination alt="DOWN" code="G" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
                </accelerator>
             </MenuItem>
             <MenuItem fx:id="saveGCodeItem" disable="true" onAction="#saveGCode" text="Save GCode">
