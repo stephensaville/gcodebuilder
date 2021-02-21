@@ -33,6 +33,12 @@ public enum GCodeRecipeType {
         public GCodeRecipe newRecipe(int id) {
             return new GCodePocketRecipe(id);
         }
+    },
+    FOLLOW_PATH("Follow Path", GCodeFollowPathRecipe.class) {
+        @Override
+        public GCodeRecipe newRecipe(int id) {
+            return new GCodeFollowPathRecipe(id);
+        }
     };
 
     private final String label;

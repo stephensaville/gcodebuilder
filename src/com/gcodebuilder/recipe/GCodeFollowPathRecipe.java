@@ -16,15 +16,15 @@
 
 package com.gcodebuilder.recipe;
 
+import com.gcodebuilder.generator.GCodeFollowPathGenerator;
 import com.gcodebuilder.generator.GCodeGenerator;
-import com.gcodebuilder.generator.GCodePathProfileGenerator;
+import com.gcodebuilder.generator.GCodePathPocketGenerator;
 import com.gcodebuilder.generator.toolpath.Toolpath;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.model.LengthUnitConverter;
-import com.gcodebuilder.model.Side;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,8 +35,8 @@ import java.util.List;
 
 @Getter
 @Setter
-public class GCodeProfileRecipe extends GCodeRecipe {
-    private static final Logger log = LogManager.getLogger(GCodeProfileRecipe.class);
+public class GCodeFollowPathRecipe extends GCodeRecipe {
+    private static final Logger log = LogManager.getLogger(GCodeFollowPathRecipe.class);
 
     private LengthUnit unit = LengthUnit.INCH;
     private double toolWidth = 0.25;
@@ -46,17 +46,16 @@ public class GCodeProfileRecipe extends GCodeRecipe {
     private double stepDown = 0.1;
     private int feedRate = 30;
     private int plungeRate = 30;
-    private Side side = Side.OUTSIDE;
-    private Direction direction = Direction.CLOCKWISE;
+    private Direction direction = Direction.ORIGINAL;
 
-    public GCodeProfileRecipe(int id) {
-        super(id, GCodeRecipeType.PROFILE);
-        setName(String.format("profile%d", id));
+    public GCodeFollowPathRecipe(int id) {
+        super(id, GCodeRecipeType.FOLLOW_PATH);
+        setName(String.format("followPath%d", id));
     }
 
     @Override
-    public GCodeProfileRecipe clone() {
-        return (GCodeProfileRecipe)super.clone();
+    public GCodeFollowPathRecipe clone() {
+        return (GCodeFollowPathRecipe)super.clone();
     }
 
     @Override
@@ -74,13 +73,13 @@ public class GCodeProfileRecipe extends GCodeRecipe {
 
     @Override
     public GCodeGenerator getGCodeGenerator(Shape<?> shape) {
-        return new GCodePathProfileGenerator(this, shape);
+        return new GCodeFollowPathGenerator(this, shape);
     }
 
     @Override
     public List<Toolpath> computeToolpaths(ToolpathGenerator generator, GraphicsContext ctx,
                                            ToolpathGenerator.DisplayMode displayMode) {
         generator.setToolRadius(getToolWidth()/2);
-        return generator.computeProfileToolpaths(getSide(), getDirection(), ctx, displayMode);
+        return generator.computeFollowPathToolpaths(getDirection(), ctx, displayMode);
     }
 }

@@ -177,6 +177,11 @@ public class RecipeEditorController {
                 GCodeRecipeType.POCKET,
                 PocketRecipeEditorController.class,
                 "pocketRecipeEditor.fxml");
+
+        addRecipeTypeEditor(
+                GCodeRecipeType.FOLLOW_PATH,
+                FollowPathRecipeEditorController.class,
+                "followPathRecipeEditor.fxml");
     }
 
     public static RecipeEditorController attach(TitledPane parent) throws IOException {

@@ -20,8 +20,6 @@ import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.canvas.Drawable;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
-import com.gcodebuilder.recipe.GCodePocketRecipe;
-import com.gcodebuilder.recipe.GCodeProfileRecipe;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.text.Font;
@@ -61,23 +59,8 @@ public class ToolpathDrawable implements Drawable {
             generator.setPointRadius(settings.getShapePointRadius() / pixelsPerUnit);
             generator.addAllPaths(shape.convertToPaths());
 
-            // draw toolpaths
-            if (recipe instanceof GCodeProfileRecipe) {
-                GCodeProfileRecipe profileRecipe = (GCodeProfileRecipe)recipe;
-                generator.setToolRadius(profileRecipe.getToolWidth()/2);
-                if (displayMode != null && displayMode.compareTo(ToolpathGenerator.DisplayMode.ORIENTED_TOOLPATHS) > 0) {
-                    generator.computeProfileToolpaths(profileRecipe.getSide(), profileRecipe.getDirection(),
-                            ctx, ToolpathGenerator.DisplayMode.ORIENTED_TOOLPATHS);
-                } else {
-                    generator.computeProfileToolpaths(profileRecipe.getSide(), profileRecipe.getDirection(),
-                            ctx, displayMode);
-                }
-            } else if (recipe instanceof GCodePocketRecipe) {
-                GCodePocketRecipe pocketRecipe = (GCodePocketRecipe)recipe;
-                generator.setToolRadius(pocketRecipe.getToolWidth()/2);
-                generator.setStepOver(pocketRecipe.getStepOver()/100.0);
-                generator.computePocketToolpaths(pocketRecipe.getDirection(), ctx, displayMode);
-            }
+            // compute (and draw) toolpaths
+            recipe.computeToolpaths(generator, ctx, displayMode);
         }
     }
 }

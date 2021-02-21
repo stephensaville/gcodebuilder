@@ -414,13 +414,8 @@ public class ToolpathGenerator {
                 .map(toolpath -> toolpath.orient(direction))
                 .collect(Collectors.toList());
 
-            if (ctx != null && displayMode == DisplayMode.ORIENTED_TOOLPATHS) {
+            if (ctx != null && displayMode != null && displayMode.compareTo(DisplayMode.ORIENTED_TOOLPATHS) >= 0) {
                 drawToolpaths(ctx, orientedToolpaths);
-            } else if (ctx != null && displayMode.compareTo(DisplayMode.ORIENTED_TOOLPATHS) >= 0) {
-                ctx.setStroke(VALID_PAINT);
-                orientedToolpaths.stream()
-                        .flatMap(toolpath -> toolpath.getSegments().stream())
-                        .forEach(segment -> drawToolpathSegment(ctx, segment));
             }
 
             return orientedToolpaths;
@@ -593,6 +588,30 @@ public class ToolpathGenerator {
 
     public List<Toolpath> computePocketToolpaths(Direction direction) {
         return computePocketToolpaths(direction, null, null);
+    }
+
+    public List<Toolpath> computeFollowPathToolpaths(Direction direction, GraphicsContext ctx, DisplayMode displayMode) {
+        List<Toolpath> toolpaths = paths.stream()
+                .map(path -> new Toolpath(path, getToolRadius(), true))
+                .collect(Collectors.toList());
+
+        if (ctx != null && displayMode != null && displayMode.compareTo(DisplayMode.TOOLPATHS) <= 0) {
+            drawToolpaths(ctx, toolpaths);
+        }
+
+        toolpaths = toolpaths.stream()
+                .map(toolpath -> toolpath.orient(direction))
+                .collect(Collectors.toList());
+
+        if (ctx != null && displayMode != null && displayMode.compareTo(DisplayMode.ORIENTED_TOOLPATHS) >= 0) {
+            drawToolpaths(ctx, toolpaths);
+        }
+
+        return toolpaths;
+    }
+
+    public List<Toolpath> computeFollowPathToolpaths(Direction direction) {
+        return computeFollowPathToolpaths(direction, null, null);
     }
 
     private static void drawCircle(GraphicsContext ctx, Point2D center, double radius) {

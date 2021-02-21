@@ -18,14 +18,19 @@ package com.gcodebuilder.recipe;
 
 import com.gcodebuilder.generator.GCodeGenerator;
 import com.gcodebuilder.generator.GCodePathPocketGenerator;
+import com.gcodebuilder.generator.toolpath.Toolpath;
+import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.model.LengthUnitConverter;
+import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -68,6 +73,14 @@ public class GCodePocketRecipe extends GCodeRecipe {
 
     @Override
     public GCodeGenerator getGCodeGenerator(Shape<?> shape) {
-        return new GCodePathPocketGenerator(this, shape.convertToPaths());
+        return new GCodePathPocketGenerator(this, shape);
+    }
+
+    @Override
+    public List<Toolpath> computeToolpaths(ToolpathGenerator generator, GraphicsContext ctx,
+                                           ToolpathGenerator.DisplayMode displayMode) {
+        generator.setToolRadius(getToolWidth()/2);
+        generator.setStepOver(getStepOver()/100.0);
+        return generator.computePocketToolpaths(getDirection(), ctx, displayMode);
     }
 }

@@ -18,9 +18,7 @@ package com.gcodebuilder.generator;
 
 import com.gcodebuilder.generator.toolpath.Toolpath;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
-import com.gcodebuilder.geometry.Math2D;
-import com.gcodebuilder.geometry.Path;
-import com.gcodebuilder.geometry.UnitVector;
+import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.ArcDistanceMode;
 import com.gcodebuilder.model.DistanceMode;
 import com.gcodebuilder.model.FeedRateMode;
@@ -32,7 +30,6 @@ import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Data
@@ -40,27 +37,20 @@ public class GCodePathPocketGenerator implements GCodeGenerator {
     private static final Logger log = LogManager.getLogger(GCodePathPocketGenerator.class);
 
     private final GCodePocketRecipe recipe;
-    private final List<Path> paths;
+    private final Shape<?> shape;
 
-    public GCodePathPocketGenerator(GCodePocketRecipe recipe, Path... paths) {
+    public GCodePathPocketGenerator(GCodePocketRecipe recipe, Shape<?> shape) {
         this.recipe = recipe;
-        this.paths = Arrays.asList(paths);
-    }
-
-    public GCodePathPocketGenerator(GCodePocketRecipe recipe, List<Path> paths) {
-        this.recipe = recipe;
-        this.paths = paths;
+        this.shape = shape;
     }
 
     @Override
     public void generateGCode(GCodeBuilder builder) {
-        log.info("Generating GCode for:{}", paths);
+        log.info("Generating GCode for:{}", shape);
 
         ToolpathGenerator generator = new ToolpathGenerator();
-        generator.setToolRadius(recipe.getToolWidth()/2);
-        generator.setStepOver(recipe.getStepOver()/100.0);
-        generator.addAllPaths(paths);
-        List<Toolpath> toolpaths = generator.computePocketToolpaths(recipe.getDirection());
+        generator.addAllPaths(shape.convertToPaths());
+        List<Toolpath> toolpaths = recipe.computeToolpaths(generator);
 
         builder .distanceMode(DistanceMode.ABSOLUTE)
                 .arcDistanceMode(ArcDistanceMode.INCREMENTAL)
@@ -76,7 +66,7 @@ public class GCodePathPocketGenerator implements GCodeGenerator {
             Point2D currentPoint = null;
             for (Toolpath toolpath : toolpaths) {
                 // move to start point (unless already at start point)
-                Point2D startPoint = toolpath.getLastSegment().getTo();
+                Point2D startPoint = toolpath.getFirstSegment().getFrom();
                 if (!ToolpathGenerator.isSamePoint(currentPoint, startPoint)) {
                     // move over starting point
                     builder.motionMode(MotionMode.RAPID_LINEAR)

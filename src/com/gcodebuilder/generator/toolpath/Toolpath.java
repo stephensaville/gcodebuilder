@@ -18,8 +18,8 @@ package com.gcodebuilder.generator.toolpath;
 
 import com.gcodebuilder.geometry.ArcSegment;
 import com.gcodebuilder.geometry.Math2D;
+import com.gcodebuilder.geometry.Path;
 import com.gcodebuilder.geometry.PathSegment;
-import com.gcodebuilder.geometry.UnitVector;
 import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.GCodeBuilder;
 import com.gcodebuilder.model.MotionMode;
@@ -36,8 +36,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
+@RequiredArgsConstructor
 public class Toolpath {
     private static final Logger log = LogManager.getLogger(Toolpath.class);
 
@@ -104,23 +106,7 @@ public class Toolpath {
         }
 
         public void generateGCode(GCodeBuilder builder, int feedRate) {
-            if (segment instanceof ArcSegment) {
-                ArcSegment arcSegment = (ArcSegment)segment;
-                if (arcSegment.isClockwise()) {
-                    builder.motionMode(MotionMode.CW_ARC);
-                } else {
-                    builder.motionMode(MotionMode.CCW_ARC);
-                }
-                Point2D centerOffset = arcSegment.getCenter().subtract(arcSegment.getFrom());
-                builder.feedRate(feedRate)
-                        .XY(arcSegment.getTo().getX(), arcSegment.getTo().getY())
-                        .IJ(centerOffset.getX(), centerOffset.getY())
-                        .endLine();
-            } else {
-                builder.motionMode(MotionMode.LINEAR).feedRate(feedRate)
-                        .XY(segment.getTo().getX(), segment.getTo().getY())
-                        .endLine();
-            }
+            Toolpath.generateGCode(builder, segment, feedRate);
         }
 
         public void split(Point2D splitPoint, boolean fromSideValid, boolean toSideValid, Connection connection) {
@@ -186,6 +172,18 @@ public class Toolpath {
 
     private Direction direction;
 
+    /**
+     * Creates a toolpath following the given path.
+     *
+     * @param path path to follow
+     */
+    public Toolpath(Path path, double toolRadius, boolean leftSide) {
+        segments = path.getSegments().stream()
+                .map(pathSegment -> new Segment(pathSegment, toolRadius, leftSide,
+                        new Connection(pathSegment.getFrom()), new Connection(pathSegment.getTo())))
+                .collect(Collectors.toList());
+    }
+
     public boolean hasNext() {
         return next != null;
     }
@@ -221,12 +219,34 @@ public class Toolpath {
     }
 
     public Toolpath orient(Direction direction) {
-        if (direction == getDirection()) {
+        if (direction == Direction.ORIGINAL) {
+            return this;
+        } else if (direction == getDirection()) {
             return this;
         } else {
             Toolpath oriented = reverse();
             oriented.direction = direction;
             return oriented;
+        }
+    }
+
+    public static void generateGCode(GCodeBuilder builder, PathSegment segment, int feedRate) {
+        if (segment instanceof ArcSegment) {
+            ArcSegment arcSegment = (ArcSegment)segment;
+            if (arcSegment.isClockwise()) {
+                builder.motionMode(MotionMode.CW_ARC);
+            } else {
+                builder.motionMode(MotionMode.CCW_ARC);
+            }
+            Point2D centerOffset = arcSegment.getCenter().subtract(arcSegment.getFrom());
+            builder.feedRate(feedRate)
+                    .XY(arcSegment.getTo().getX(), arcSegment.getTo().getY())
+                    .IJ(centerOffset.getX(), centerOffset.getY())
+                    .endLine();
+        } else {
+            builder.motionMode(MotionMode.LINEAR).feedRate(feedRate)
+                    .XY(segment.getTo().getX(), segment.getTo().getY())
+                    .endLine();
         }
     }
 }

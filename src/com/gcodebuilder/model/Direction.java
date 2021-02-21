@@ -22,8 +22,20 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Direction {
+    /**
+     * Visits points in a generally clockwise direction.
+     */
     CLOCKWISE("Clockwise"),
-    COUNTER_CLOCKWISE("Counter Clockwise");
+
+    /**
+     * Visits points in a generally counter-clockwise direction.
+     */
+    COUNTER_CLOCKWISE("Counter Clockwise"),
+
+    /**
+     * Visits points in the direction they were originally drawn.
+     */
+    ORIGINAL("Original");
 
     private final String label;
 }
