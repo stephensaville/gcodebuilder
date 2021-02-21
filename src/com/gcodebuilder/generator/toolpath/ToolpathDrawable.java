@@ -57,6 +57,7 @@ public class ToolpathDrawable implements Drawable {
             ToolpathGenerator generator = new ToolpathGenerator();
             ctx.setLineWidth(settings.getShapeLineWidth() / pixelsPerUnit / 2);
             generator.setPointRadius(settings.getShapePointRadius() / pixelsPerUnit);
+            generator.setToolRadius(recipe.getToolWidth() / 2);
             generator.addAllPaths(shape.convertToPaths());
 
             // compute (and draw) toolpaths

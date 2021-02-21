@@ -16,15 +16,9 @@
 
 package com.gcodebuilder.recipe;
 
-import com.gcodebuilder.generator.GCodeFollowPathGenerator;
-import com.gcodebuilder.generator.GCodeGenerator;
-import com.gcodebuilder.generator.GCodePathPocketGenerator;
 import com.gcodebuilder.generator.toolpath.Toolpath;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
-import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.Direction;
-import com.gcodebuilder.model.LengthUnit;
-import com.gcodebuilder.model.LengthUnitConverter;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,14 +32,6 @@ import java.util.List;
 public class GCodeFollowPathRecipe extends GCodeRecipe {
     private static final Logger log = LogManager.getLogger(GCodeFollowPathRecipe.class);
 
-    private LengthUnit unit = LengthUnit.INCH;
-    private double toolWidth = 0.25;
-    private double depth = 0.1;
-    private double stockSurface = 0;
-    private double safetyHeight = 0.5;
-    private double stepDown = 0.1;
-    private int feedRate = 30;
-    private int plungeRate = 30;
     private Direction direction = Direction.ORIGINAL;
 
     public GCodeFollowPathRecipe(int id) {
@@ -59,27 +45,8 @@ public class GCodeFollowPathRecipe extends GCodeRecipe {
     }
 
     @Override
-    public void convertToUnit(LengthUnit toUnit) {
-        LengthUnitConverter converter = unit.getConverterTo(toUnit);
-        setUnit(toUnit);
-        setToolWidth(converter.convert(toolWidth));
-        setDepth(converter.convert(depth));
-        setStockSurface(converter.convert(stockSurface));
-        setSafetyHeight(converter.convert(safetyHeight));
-        setStepDown(converter.convert(stepDown));
-        setFeedRate((int)Math.round(converter.convert(feedRate)));
-        setPlungeRate((int)Math.round(converter.convert(plungeRate)));
-    }
-
-    @Override
-    public GCodeGenerator getGCodeGenerator(Shape<?> shape) {
-        return new GCodeFollowPathGenerator(this, shape);
-    }
-
-    @Override
     public List<Toolpath> computeToolpaths(ToolpathGenerator generator, GraphicsContext ctx,
                                            ToolpathGenerator.DisplayMode displayMode) {
-        generator.setToolRadius(getToolWidth()/2);
         return generator.computeFollowPathToolpaths(getDirection(), ctx, displayMode);
     }
 }
