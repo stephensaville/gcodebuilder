@@ -46,6 +46,10 @@ public class ArcSegment implements PathSegment {
     private final double extentAngle;
     private final List<Range> leftWindingRanges;
     private final List<Range> rightWindingRanges;
+    private final double minX;
+    private final double maxX;
+    private final double minY;
+    private final double maxY;
 
     public static ArcSegment of(Point2D from, Point2D center, Point2D to, boolean clockwise) {
         return new ArcSegment(from, center, to, clockwise);
@@ -69,11 +73,18 @@ public class ArcSegment implements PathSegment {
         this.startAngle = centerToFrom.getFromAngle();
         double minY = center.getY() - radius;
         double maxY = center.getY() + radius;
+        double minX = center.getX() - radius;
+        double maxX = center.getX() + radius;
         if (Math2D.samePoints(from, to)) {
+            // arc is a complete circle
             this.extentAngle = clockwise ? -2*Math.PI : 2*Math.PI;
             this.to = from;
             this.leftWindingRanges = this.rightWindingRanges = Collections.singletonList(
                     Range.inclusiveMinExclusiveMax(minY, maxY));
+            this.minX = minX;
+            this.maxX = maxX;
+            this.minY = minY;
+            this.maxY = maxY;
         } else {
             double stopAngle = centerToTo.getFromAngle();
             this.to = to = center.add(centerToTo.getDirection().multiply(radius));
@@ -90,17 +101,32 @@ public class ArcSegment implements PathSegment {
                                 this.leftWindingRanges = Collections.emptyList();
                                 this.rightWindingRanges = Collections.singletonList(
                                         Range.inclusiveMinExclusiveMax(minY, maxY));
+                                this.minX = center.getX();
+                                this.maxX = maxX;
                             } else {
                                 // arc is left half of circle
                                 this.leftWindingRanges = Collections.singletonList(
                                         Range.inclusiveMinExclusiveMax(minY, maxY));
                                 this.rightWindingRanges = Collections.emptyList();
+                                this.minX = minX;
+                                this.maxX = center.getX();
                             }
+                            this.minY = minY;
+                            this.maxY = maxY;
                         } else if (-extentAngle < Math.PI) {
                             // arc contained within left half of circle
                             this.leftWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(from.getY(), to.getY()));
                             this.rightWindingRanges = Collections.emptyList();
+                            if (startAngle >= Math.PI && stopAngle <= Math.PI) {
+                                // arc crosses leftmost point in circle
+                                this.minX = minX;
+                            } else {
+                                this.minX = Math.min(from.getX(), to.getX());
+                            }
+                            this.maxX = Math.max(from.getX(), to.getX());
+                            this.minY = from.getY();
+                            this.maxY = to.getY();
                         } else {
                             // arc wraps around right half of circle
                             this.leftWindingRanges = Arrays.asList(
@@ -108,6 +134,15 @@ public class ArcSegment implements PathSegment {
                                     Range.inclusiveMinExclusiveMax(from.getY(), maxY));
                             this.rightWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(minY, maxY));
+                            if (startAngle <= Math.PI || stopAngle >= Math.PI) {
+                                // arc crosses leftmost point in circle
+                                this.minX = minX;
+                            } else {
+                                this.minX = Math.min(from.getY(), to.getX());
+                            }
+                            this.maxX = maxX;
+                            this.minY = minY;
+                            this.maxY = maxY;
                         }
                     } else {
                         // arc starts in left and stops in right half of circle
@@ -115,6 +150,20 @@ public class ArcSegment implements PathSegment {
                                 Range.inclusiveMinExclusiveMax(from.getY(), maxY));
                         this.rightWindingRanges = Collections.singletonList(
                                 Range.inclusiveMinExclusiveMax(to.getY(), maxY));
+                        if (startAngle >= Math.PI) {
+                            // arc crosses leftmost point in circle
+                            this.minX = minX;
+                        } else {
+                            this.minX = from.getX();
+                        }
+                        if (stopAngle >= Math.PI) {
+                            // arc crosses rightmost point in circle
+                            this.maxX = maxX;
+                        } else {
+                            this.maxX = to.getX();
+                        }
+                        this.minY = Math.min(from.getY(), to.getY());
+                        this.maxY = maxY;
                     }
                 } else {
                     if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
@@ -123,6 +172,20 @@ public class ArcSegment implements PathSegment {
                                 Range.inclusiveMinExclusiveMax(minY, to.getY()));
                         this.rightWindingRanges = Collections.singletonList(
                                 Range.inclusiveMinExclusiveMax(minY, from.getY()));
+                        if (stopAngle <= Math.PI) {
+                            // arc crosses leftmost point in circle
+                            this.minX = minX;
+                        } else {
+                            this.minX = to.getX();
+                        }
+                        if (startAngle <= Math.PI) {
+                            // arc crosses rightmost point in circle
+                            this.maxX = maxX;
+                        } else {
+                            this.maxX = from.getX();
+                        }
+                        this.minY = minY;
+                        this.maxY = Math.min(from.getY(), to.getY());
                     } else {
                         // arc starts and stops in right half of circle
                         if (-extentAngle <= Math.PI) {
@@ -130,6 +193,15 @@ public class ArcSegment implements PathSegment {
                             this.leftWindingRanges = Collections.emptyList();
                             this.rightWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(to.getY(), from.getY()));
+                            this.minX = Math.min(from.getX(), to.getX());
+                            if (startAngle <= Math.PI && stopAngle >= Math.PI) {
+                                // arc crosses rightmost point in circle
+                                this.maxX = maxX;
+                            } else {
+                                this.maxX = Math.max(from.getX(), to.getX());
+                            }
+                            this.minY = to.getY();
+                            this.maxY = from.getY();
                         } else {
                             // arc wraps around left half of circle
                             this.leftWindingRanges = Collections.singletonList(
@@ -137,10 +209,19 @@ public class ArcSegment implements PathSegment {
                             this.rightWindingRanges = Arrays.asList(
                                     Range.inclusiveMinExclusiveMax(minY, from.getY()),
                                     Range.inclusiveMinExclusiveMax(to.getY(), maxY));
+                            this.minX = minX;
+                            if (startAngle <= Math.PI || stopAngle >= Math.PI) {
+                                // arc crosses rightmost point in circle
+                                this.maxX = maxX;
+                            } else {
+                                this.maxX = Math.max(from.getY(), to.getX());
+                            }
+                            this.minY = minY;
+                            this.maxY = maxY;
                         }
                     }
                 }
-            } else {
+            } else { // counterclockwise
                 this.extentAngle = Math2D.subtractAngle(stopAngle, this.startAngle,
                         0, 2*Math.PI, true);
                 if (LEFT_ANGLE_RANGE.includes(startAngle)) {
@@ -153,17 +234,34 @@ public class ArcSegment implements PathSegment {
                                 this.leftWindingRanges = Collections.singletonList(
                                         Range.inclusiveMinExclusiveMax(minY, maxY));
                                 this.rightWindingRanges = Collections.emptyList();
+                                this.minX = minX;
+                                this.maxX = center.getX();
+                                this.minY = minY;
+                                this.maxY = maxY;
                             } else {
                                 // arc is right half of circle
                                 this.leftWindingRanges = Collections.emptyList();
                                 this.rightWindingRanges = Collections.singletonList(
                                         Range.inclusiveMinExclusiveMax(minY, maxY));
+                                this.minX = center.getX();
+                                this.maxX = maxX;
+                                this.minY = minY;
+                                this.maxY = maxY;
                             }
                         } else if (extentAngle < Math.PI) {
                             // arc contained within left half of circle
                             this.leftWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(to.getY(), from.getY()));
                             this.rightWindingRanges = Collections.emptyList();
+                            if (startAngle <= Math.PI && stopAngle >= Math.PI) {
+                                // arc crosses leftmost point in circle
+                                this.minX = minX;
+                            } else {
+                                this.minX = Math.min(from.getX(), to.getX());
+                            }
+                            this.maxX = Math.max(from.getX(), to.getX());
+                            this.minY = to.getY();
+                            this.maxY = from.getY();
                         } else {
                             // arc wraps around right half of circle
                             this.leftWindingRanges = Arrays.asList(
@@ -171,6 +269,15 @@ public class ArcSegment implements PathSegment {
                                     Range.inclusiveMinExclusiveMax(to.getY(), maxY));
                             this.rightWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(minY, maxY));
+                            if (startAngle <= Math.PI || stopAngle >= Math.PI) {
+                                // arc crosses leftmost point in circle
+                                this.minX = minX;
+                            } else {
+                                this.minX = Math.min(from.getX(), to.getX());
+                            }
+                            this.maxX = maxX;
+                            this.minY = minY;
+                            this.maxY = maxY;
                         }
                     } else {
                         // arc starts in left and stops in right half of circle
@@ -178,6 +285,20 @@ public class ArcSegment implements PathSegment {
                                 Range.inclusiveMinExclusiveMax(minY, from.getY()));
                         this.rightWindingRanges = Collections.singletonList(
                                 Range.inclusiveMinExclusiveMax(minY, to.getY()));
+                        if (startAngle <= Math.PI) {
+                            // arc crosses leftmost point in circle
+                            this.minX = minX;
+                        } else {
+                            this.minX = from.getX();
+                        }
+                        if (stopAngle <= Math.PI) {
+                            // arc crosses rightmost point in circle
+                            this.maxX = maxX;
+                        } else {
+                            this.maxX = to.getX();
+                        }
+                        this.minY = minY;
+                        this.maxY = Math.max(from.getY(), to.getY());
                     }
                 } else {
                     if (LEFT_ANGLE_RANGE.includes(stopAngle)) {
@@ -186,6 +307,20 @@ public class ArcSegment implements PathSegment {
                                 Range.inclusiveMinExclusiveMax(to.getY(), maxY));
                         this.rightWindingRanges = Collections.singletonList(
                                 Range.inclusiveMinExclusiveMax(from.getY(), maxY));
+                        if (stopAngle >= Math.PI) {
+                            // arc crosses leftmost point in circle
+                            this.minX = minX;
+                        } else {
+                            this.minX = to.getX();
+                        }
+                        if (startAngle >= Math.PI) {
+                            // arc crosses rightmost point in circle
+                            this.maxX = maxX;
+                        } else {
+                            this.maxX = from.getX();
+                        }
+                        this.minY = Math.min(from.getY(), to.getY());
+                        this.maxY = maxY;
                     } else {
                         // arc starts and stops in right half of circle
                         if (extentAngle <= Math.PI) {
@@ -193,6 +328,15 @@ public class ArcSegment implements PathSegment {
                             this.leftWindingRanges = Collections.emptyList();
                             this.rightWindingRanges = Collections.singletonList(
                                     Range.inclusiveMinExclusiveMax(from.getY(), to.getY()));
+                            this.minX = Math.min(from.getX(), to.getX());
+                            if (startAngle >= Math.PI && stopAngle <= Math.PI) {
+                                // arc crosses rightmost point in circle
+                                this.maxX = maxX;
+                            } else {
+                                this.maxX = Math.max(from.getX(), to.getX());
+                            }
+                            this.minY = from.getY();
+                            this.maxY = to.getY();
                         } else {
                             // arc wraps around left half of circle
                             this.leftWindingRanges = Collections.singletonList(
@@ -200,6 +344,15 @@ public class ArcSegment implements PathSegment {
                             this.rightWindingRanges = Arrays.asList(
                                     Range.inclusiveMinExclusiveMax(minY, to.getY()),
                                     Range.inclusiveMinExclusiveMax(from.getY(), maxY));
+                            this.minX = minX;
+                            if (startAngle >= Math.PI || stopAngle <= Math.PI) {
+                                // arc crosses rightmost point in circle
+                                this.maxX = maxX;
+                            } else {
+                                this.maxX = Math.max(from.getX(), to.getX());
+                            }
+                            this.minY = minY;
+                            this.maxY = maxY;
                         }
                     }
                 }

@@ -82,6 +82,22 @@ public interface PathSegment {
 
     PathSegment flip();
 
+    default double getMinX() {
+        return Math.min(getFrom().getX(), getTo().getX());
+    }
+
+    default double getMaxX() {
+        return Math.max(getFrom().getX(), getTo().getX());
+    }
+
+    default double getMinY() {
+        return Math.min(getFrom().getY(), getTo().getY());
+    }
+
+    default double getMaxY() {
+        return Math.max(getFrom().getY(), getTo().getY());
+    }
+
     default Toolpath.Segment flipToolpathSegment(Toolpath.Segment original) {
         return new Toolpath.Segment(flip(), original.getToolRadius(), !original.isLeftSide(),
                 original.getToConnection(), original.getFromConnection());

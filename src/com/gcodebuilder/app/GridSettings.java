@@ -68,6 +68,10 @@ public class GridSettings implements Cloneable {
     private Paint shapePaint = Color.BLACK;
     private Paint selectedShapePaint = Color.BLUE;
 
+    private double boundingBoxLineWidth = 1;
+    private double boundingBoxCenterOffset = 10;
+    private Paint boundingBoxPaint = Color.PURPLE.deriveColor(0.0, 1.0, 1.0, 0.8);
+
     public void setUnits(LengthUnit units) {
         if (units != this.units) {
             log.info("Changing units from {} to {}", this.units, units);

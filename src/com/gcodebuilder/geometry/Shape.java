@@ -23,12 +23,14 @@ import com.gcodebuilder.app.GridSettings;
 import com.gcodebuilder.app.tools.InteractionEvent;
 import com.gcodebuilder.canvas.Drawable;
 import com.gcodebuilder.changelog.Snapshot;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
+import javafx.scene.paint.Color;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -113,13 +115,30 @@ public abstract class Shape<H> implements Drawable {
         return edit(handleClass.cast(handle), event);
     }
 
+    protected void drawBoundingBox(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
+        ctx.setStroke(settings.getBoundingBoxPaint());
+        ctx.setLineWidth(settings.getBoundingBoxLineWidth() / pixelsPerUnit);
+        Rectangle2D boundingBox = getBoundingBox();
+        ctx.strokeRect(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getWidth(), boundingBox.getHeight());
+        Point center = getCenter();
+        double centerOffset = settings.getBoundingBoxCenterOffset() / pixelsPerUnit;
+        double centerMinX = center.getX() - centerOffset;
+        double centerMaxX = center.getX() + centerOffset;
+        double centerMinY = center.getY() - centerOffset;
+        double centerMaxY = center.getY() + centerOffset;
+        ctx.strokeLine(centerMinX, centerMinY, centerMaxX, centerMaxY);
+        ctx.strokeLine(centerMinX, centerMaxY, centerMaxX, centerMinY);
+    }
+
     protected void prepareToDraw(GraphicsContext ctx, double pixelsPerUnit, GridSettings settings) {
-        ctx.setLineWidth(settings.getShapeLineWidth() / pixelsPerUnit);
         if (isSelected()) {
+            drawBoundingBox(ctx, pixelsPerUnit, settings);
             ctx.setStroke(settings.getSelectedShapePaint());
         } else {
             ctx.setStroke(settings.getShapePaint());
         }
+        ctx.setFill(settings.getShapePaint());
+        ctx.setLineWidth(settings.getShapeLineWidth() / pixelsPerUnit);
     }
 
     public void saveToClipboard(Clipboard clipboard) {

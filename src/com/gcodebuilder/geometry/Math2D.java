@@ -149,6 +149,9 @@ public class Math2D {
     }
 
     public static Rectangle2D computeBoundingBoxForPoints(List<Point> points) {
+        if (points.isEmpty()) {
+            return Rectangle2D.EMPTY;
+        }
         Point first = points.get(0);
         double minX = first.getX();
         double maxX = minX;
@@ -163,7 +166,28 @@ public class Math2D {
         return new Rectangle2D(minX, minY, maxX - minX, maxY - minY);
     }
 
+    public static Rectangle2D computeBoundingBoxForPathSegments(List<PathSegment> segments) {
+        if (segments.isEmpty()) {
+            return Rectangle2D.EMPTY;
+        }
+        PathSegment first = segments.get(0);
+        double minX = first.getMinX();
+        double maxX = first.getMaxX();
+        double minY = first.getMinY();
+        double maxY = first.getMaxY();
+        for (PathSegment segment : segments.subList(1, segments.size())) {
+            minX = Math.min(minX, segment.getMinX());
+            maxX = Math.max(maxX, segment.getMaxX());
+            minY = Math.min(minY, segment.getMinY());
+            maxY = Math.max(maxY, segment.getMaxY());
+        }
+        return new Rectangle2D(minX, minY, maxX - minX, maxY - minY);
+    }
+
     public static Rectangle2D computeBoundingBoxForShapes(List<Shape<?>> shapes) {
+        if (shapes.isEmpty()) {
+            return Rectangle2D.EMPTY;
+        }
         Rectangle2D firstBox = shapes.get(0).getBoundingBox();
         double minX = firstBox.getMinX();
         double maxX = firstBox.getMaxX();

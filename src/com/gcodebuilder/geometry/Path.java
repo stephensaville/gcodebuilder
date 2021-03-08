@@ -411,7 +411,7 @@ public class Path extends SimpleShape<Path.Handle> {
     @Override
     @JsonIgnore
     public Rectangle2D getBoundingBox() {
-        return Math2D.computeBoundingBoxForPoints(getPoints());
+        return Math2D.computeBoundingBoxForPathSegments(getSegments());
     }
 
     @Override
