@@ -16,6 +16,7 @@
 
 package com.gcodebuilder.recipe;
 
+import com.gcodebuilder.generator.GCodeDisplayMode;
 import com.gcodebuilder.generator.toolpath.Toolpath;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.model.Direction;
@@ -29,7 +30,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class GCodePocketRecipe extends GCodeRecipe {
+public class GCodePocketRecipe extends GCodeToolpathRecipe {
     private static final Logger log = LogManager.getLogger(GCodePocketRecipe.class);
 
     private double stepOver = 40;
@@ -47,7 +48,7 @@ public class GCodePocketRecipe extends GCodeRecipe {
 
     @Override
     public List<Toolpath> computeToolpaths(ToolpathGenerator generator, GraphicsContext ctx,
-                                           ToolpathGenerator.DisplayMode displayMode) {
+                                           GCodeDisplayMode displayMode) {
         generator.setStepOver(getStepOver()/100.0);
         return generator.computePocketToolpaths(getDirection(), ctx, displayMode);
     }

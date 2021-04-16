@@ -24,7 +24,7 @@ import com.gcodebuilder.model.DistanceMode;
 import com.gcodebuilder.model.FeedRateMode;
 import com.gcodebuilder.model.GCodeBuilder;
 import com.gcodebuilder.model.MotionMode;
-import com.gcodebuilder.recipe.GCodeRecipe;
+import com.gcodebuilder.recipe.GCodeToolpathRecipe;
 import javafx.geometry.Point2D;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -33,13 +33,13 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 
 @Data
-public class GCodeRecipeGenerator implements GCodeGenerator {
-    private static final Logger log = LogManager.getLogger(GCodeRecipeGenerator.class);
+public class GCodeToolpathRecipeGenerator implements GCodeGenerator {
+    private static final Logger log = LogManager.getLogger(GCodeToolpathRecipeGenerator.class);
 
-    private final GCodeRecipe recipe;
+    private final GCodeToolpathRecipe recipe;
     private final Shape<?> shape;
 
-    public GCodeRecipeGenerator(GCodeRecipe recipe, Shape<?> shape) {
+    public GCodeToolpathRecipeGenerator(GCodeToolpathRecipe recipe, Shape<?> shape) {
         this.recipe = recipe;
         this.shape = shape;
     }

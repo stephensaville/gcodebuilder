@@ -16,6 +16,7 @@
 
 package com.gcodebuilder.recipe;
 
+import com.gcodebuilder.generator.GCodeDisplayMode;
 import com.gcodebuilder.generator.toolpath.Toolpath;
 import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.model.Direction;
@@ -29,7 +30,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class GCodeFollowPathRecipe extends GCodeRecipe {
+public class GCodeFollowPathRecipe extends GCodeToolpathRecipe {
     private static final Logger log = LogManager.getLogger(GCodeFollowPathRecipe.class);
 
     private Direction direction = Direction.ORIGINAL;
@@ -46,7 +47,7 @@ public class GCodeFollowPathRecipe extends GCodeRecipe {
 
     @Override
     public List<Toolpath> computeToolpaths(ToolpathGenerator generator, GraphicsContext ctx,
-                                           ToolpathGenerator.DisplayMode displayMode) {
+                                           GCodeDisplayMode displayMode) {
         return generator.computeFollowPathToolpaths(getDirection(), ctx, displayMode);
     }
 }

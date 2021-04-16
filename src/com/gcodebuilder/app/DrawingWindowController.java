@@ -36,8 +36,8 @@ import com.gcodebuilder.changelog.SelectionChange;
 import com.gcodebuilder.changelog.ShapeListChange;
 import com.gcodebuilder.changelog.Snapshot;
 import com.gcodebuilder.generator.DrawingGCodeGenerator;
-import com.gcodebuilder.generator.toolpath.ToolpathDrawable;
-import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
+import com.gcodebuilder.generator.DrawingGCodeDrawable;
+import com.gcodebuilder.generator.GCodeDisplayMode;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Group;
 import com.gcodebuilder.geometry.Shape;
@@ -179,7 +179,7 @@ public class DrawingWindowController {
     private Tool currentTool = selectionTool;
 
     private Drawing drawing = new Drawing();
-    private ToolpathDrawable toolpathDrawable = new ToolpathDrawable();
+    private DrawingGCodeDrawable drawingGCodeDrawable = new DrawingGCodeDrawable();
 
     private Point2D startPoint = Point2D.ZERO;
     private Point2D mouseStartPoint = Point2D.ZERO;
@@ -284,8 +284,8 @@ public class DrawingWindowController {
         });
 
         canvas.getDrawables().add(drawing);
-        canvas.getDrawables().add(toolpathDrawable);
-        toolpathDrawable.setDrawing(drawing);
+        canvas.getDrawables().add(drawingGCodeDrawable);
+        drawingGCodeDrawable.setDrawing(drawing);
 
         drawingFileOperations = new FileOperations<>(
                 rootPane, Drawing::load, Drawing::save,
@@ -369,10 +369,10 @@ public class DrawingWindowController {
 
         updateClipboardMenuItems();
 
-        for (ToolpathGenerator.DisplayMode displayMode : ToolpathGenerator.DisplayMode.values()) {
+        for (GCodeDisplayMode displayMode : GCodeDisplayMode.values()) {
             RadioMenuItem menuItem = new RadioMenuItem(displayMode.getLabel());
             menuItem.setToggleGroup(toolpathPreviewModeGroup);
-            final ToolpathGenerator.DisplayMode menuItemDisplayMode = displayMode;
+            final GCodeDisplayMode menuItemDisplayMode = displayMode;
             menuItem.setOnAction(actionEvent -> {
                 setToolpathDisplayMode(menuItemDisplayMode);
             });
@@ -763,7 +763,7 @@ public class DrawingWindowController {
 
         drawing = newDrawing;
         canvas.getDrawables().add(newDrawing);
-        toolpathDrawable.setDrawing(newDrawing);
+        drawingGCodeDrawable.setDrawing(newDrawing);
 
         shapesTableController.syncShapes(newDrawing);
 
@@ -926,8 +926,8 @@ public class DrawingWindowController {
         checkForChanges();
     }
 
-    public void setToolpathDisplayMode(ToolpathGenerator.DisplayMode displayMode) {
-        toolpathDrawable.setDisplayMode(displayMode);
+    public void setToolpathDisplayMode(GCodeDisplayMode displayMode) {
+        drawingGCodeDrawable.setDisplayMode(displayMode);
         canvas.refresh();
     }
 

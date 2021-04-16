@@ -18,18 +18,13 @@ package com.gcodebuilder.recipe;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.gcodebuilder.generator.GCodeDrawable;
 import com.gcodebuilder.generator.GCodeGenerator;
-import com.gcodebuilder.generator.GCodeRecipeGenerator;
-import com.gcodebuilder.generator.toolpath.Toolpath;
-import com.gcodebuilder.generator.toolpath.ToolpathGenerator;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.model.LengthUnitConverter;
 import com.google.common.base.Preconditions;
-import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 public abstract class GCodeRecipe implements Cloneable {
@@ -88,16 +83,9 @@ public abstract class GCodeRecipe implements Cloneable {
         }
     }
 
-    public GCodeGenerator getGCodeGenerator(Shape<?> shape) {
-        return new GCodeRecipeGenerator(this, shape);
-    }
+    public abstract GCodeGenerator getGCodeGenerator(Shape<?> shape);
 
-    public abstract List<Toolpath> computeToolpaths(ToolpathGenerator generator, GraphicsContext ctx,
-                                                    ToolpathGenerator.DisplayMode displayMode);
-
-    public List<Toolpath> computeToolpaths(ToolpathGenerator generator) {
-        return computeToolpaths(generator, null, null);
-    }
+    public abstract GCodeDrawable getGCodeDrawable(Shape<?> shape);
 
     @Override
     public String toString() {

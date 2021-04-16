@@ -16,6 +16,7 @@
 
 package com.gcodebuilder.generator.toolpath;
 
+import com.gcodebuilder.generator.GCodeDisplayMode;
 import com.gcodebuilder.geometry.ArcSegment;
 import com.gcodebuilder.geometry.Math2D;
 import com.gcodebuilder.geometry.Path;
@@ -28,12 +29,10 @@ import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +43,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,25 +57,6 @@ public class ToolpathGenerator {
     private static final Paint OUTSIDE_PAINT = Color.DARKORANGE;
     private static final Paint FROM_PAINT = Color.CYAN;
     private static final Paint TO_PAINT = Color.MAGENTA;
-
-    @Getter
-    @RequiredArgsConstructor
-    public enum DisplayMode {
-        CONNECTED_SEGMENTS("Connected Segments"),
-        SPLIT_POINTS("Split Points"),
-        VALID_SEGMENTS("Valid Segments"),
-        INSIDE_OUTSIDE("Inside/Outside"),
-        TOOLPATHS("Profile Toolpaths"),
-        ORIENTED_TOOLPATHS("Oriented Toolpaths"),
-        POCKET_CONNECTED_SEGMENTS("Pocket Connected Segments"),
-        POCKET_SPLIT_POINTS("Pocket Split Points"),
-        POCKET_VALID_SEGMENTS("Pocket Valid Segments"),
-        POCKET_INSIDE_OUTSIDE("Pocket Inside/Outside"),
-        POCKET_TOOLPATHS("Pocket Toolpaths"),
-        CONNECTED_TOOLPATHS("Connected Toolpaths");
-
-        private final String label;
-    }
 
     @Getter @Setter
     private double pointRadius = 5;
@@ -354,11 +333,11 @@ public class ToolpathGenerator {
     }
 
     public List<Toolpath> computeProfileToolpaths(Side side, Direction direction, GraphicsContext ctx,
-                                                  DisplayMode displayMode) {
+                                                  GCodeDisplayMode displayMode) {
         List<PathSegment> connectedEdges = new ArrayList<>();
         List<List<Toolpath.Segment>> connectedToolpathSides = computeConnectedToolpathSides(connectedEdges);
 
-        if (ctx != null && displayMode == DisplayMode.CONNECTED_SEGMENTS) {
+        if (ctx != null && displayMode == GCodeDisplayMode.CONNECTED_SEGMENTS) {
             ctx.setStroke(SEGMENT_PAINT);
             for (List<Toolpath.Segment> toolpathSide : connectedToolpathSides) {
                 toolpathSide.forEach(segment -> drawToolpathSegment(ctx, segment));
@@ -370,13 +349,13 @@ public class ToolpathGenerator {
             connectedToolpathSides.forEach(allSegments::addAll);
             intersectAllToolpathSegments(allSegments);
 
-            if (ctx != null && displayMode == DisplayMode.SPLIT_POINTS) {
+            if (ctx != null && displayMode == GCodeDisplayMode.SPLIT_POINTS) {
                 allSegments.forEach(segment -> drawSplitPoints(ctx, segment));
             }
 
             List<Toolpath.Segment> allValidSegments = getAllValidSegments(allSegments);
 
-            if (ctx != null && displayMode == DisplayMode.VALID_SEGMENTS) {
+            if (ctx != null && displayMode == GCodeDisplayMode.VALID_SEGMENTS) {
                 allValidSegments.forEach(segment -> drawValidSegment(ctx, segment));
             }
 
@@ -387,7 +366,7 @@ public class ToolpathGenerator {
                     .filter(segment -> isOutsideSegment(connectedEdges, segment))
                     .collect(Collectors.toList());
 
-            if (ctx != null && displayMode == DisplayMode.INSIDE_OUTSIDE) {
+            if (ctx != null && displayMode == GCodeDisplayMode.INSIDE_OUTSIDE) {
                 drawInsideOutsideSegments(ctx, connectedEdges, allValidSegments, insideSegments, outsideSegments);
             }
 
@@ -406,7 +385,7 @@ public class ToolpathGenerator {
 
             List<Toolpath> partitionedToolpaths = partitionToolpaths(sideSegments);
 
-            if (ctx != null && displayMode == DisplayMode.TOOLPATHS) {
+            if (ctx != null && displayMode == GCodeDisplayMode.TOOLPATHS) {
                 drawToolpaths(ctx, partitionedToolpaths);
             }
 
@@ -414,7 +393,7 @@ public class ToolpathGenerator {
                 .map(toolpath -> toolpath.orient(direction))
                 .collect(Collectors.toList());
 
-            if (ctx != null && displayMode != null && displayMode.compareTo(DisplayMode.ORIENTED_TOOLPATHS) >= 0) {
+            if (ctx != null && displayMode != null && displayMode.compareTo(GCodeDisplayMode.ORIENTED_TOOLPATHS) >= 0) {
                 drawToolpaths(ctx, orientedToolpaths);
             }
 
@@ -445,7 +424,7 @@ public class ToolpathGenerator {
         return connectToolpathSegments(pocketSegments);
     }
 
-    private List<Toolpath> computePockets(List<Toolpath> insideToolpaths, GraphicsContext ctx, DisplayMode displayMode) {
+    private List<Toolpath> computePockets(List<Toolpath> insideToolpaths, GraphicsContext ctx, GCodeDisplayMode displayMode) {
 
         List<Toolpath.Segment> allSegments = new ArrayList<>();
         insideToolpaths.forEach(toolpath -> allSegments.addAll(toolpath.getSegments()));
@@ -464,7 +443,7 @@ public class ToolpathGenerator {
 
                 List<Toolpath.Segment> pocketSegments = computePocketSegments(toolpath);
 
-                if (ctx != null && displayMode == DisplayMode.POCKET_CONNECTED_SEGMENTS) {
+                if (ctx != null && displayMode == GCodeDisplayMode.POCKET_CONNECTED_SEGMENTS) {
                     ctx.setStroke(SEGMENT_PAINT);
                     pocketSegments.forEach(segment -> drawToolpathSegment(ctx, segment));
                 }
@@ -480,13 +459,13 @@ public class ToolpathGenerator {
                 intersectToolpathSegments(allSegments.get(i), allSegments.subList(i + 1, allSegments.size()));
             }
 
-            if (ctx != null && displayMode == DisplayMode.POCKET_SPLIT_POINTS) {
+            if (ctx != null && displayMode == GCodeDisplayMode.POCKET_SPLIT_POINTS) {
                 allSegments.forEach(segment -> drawSplitPoints(ctx, segment));
             }
 
             List<Toolpath.Segment> validPocketSegments = getAllValidSegments(layerSegments);
 
-            if (ctx != null && displayMode == DisplayMode.POCKET_VALID_SEGMENTS) {
+            if (ctx != null && displayMode == GCodeDisplayMode.POCKET_VALID_SEGMENTS) {
                 ctx.setStroke(VALID_PAINT);
                 validPocketSegments.forEach(segment -> drawToolpathSegment(ctx, segment));
             }
@@ -495,7 +474,7 @@ public class ToolpathGenerator {
                     .filter(segment -> isInsideSegment(connectedPath, segment))
                     .collect(Collectors.toList());
 
-            if (ctx != null && displayMode == DisplayMode.POCKET_INSIDE_OUTSIDE) {
+            if (ctx != null && displayMode == GCodeDisplayMode.POCKET_INSIDE_OUTSIDE) {
                 List<Toolpath.Segment> outsidePocketSegments = validPocketSegments.stream()
                         .filter(segment -> isOutsideSegment(connectedPath, segment))
                         .collect(Collectors.toList());
@@ -569,17 +548,17 @@ public class ToolpathGenerator {
         return allConnectedPockets;
     }
 
-    public List<Toolpath> computePocketToolpaths(Direction direction, GraphicsContext ctx, DisplayMode displayMode) {
+    public List<Toolpath> computePocketToolpaths(Direction direction, GraphicsContext ctx, GCodeDisplayMode displayMode) {
         List<Toolpath> insideToolpaths = computeProfileToolpaths(Side.INSIDE, direction, ctx, displayMode);
         List<Toolpath> pocketToolpaths = computePockets(insideToolpaths, ctx, displayMode);
 
-        if (ctx != null && displayMode == DisplayMode.POCKET_TOOLPATHS) {
+        if (ctx != null && displayMode == GCodeDisplayMode.POCKET_TOOLPATHS) {
             drawToolpaths(ctx, pocketToolpaths);
         }
 
         List<Toolpath> connectedPocketToolpaths = connectPockets(pocketToolpaths);
 
-        if (ctx != null && displayMode == DisplayMode.CONNECTED_TOOLPATHS) {
+        if (ctx != null && displayMode == GCodeDisplayMode.CONNECTED_TOOLPATHS) {
             drawToolpaths(ctx, connectedPocketToolpaths);
         }
 
@@ -590,12 +569,12 @@ public class ToolpathGenerator {
         return computePocketToolpaths(direction, null, null);
     }
 
-    public List<Toolpath> computeFollowPathToolpaths(Direction direction, GraphicsContext ctx, DisplayMode displayMode) {
+    public List<Toolpath> computeFollowPathToolpaths(Direction direction, GraphicsContext ctx, GCodeDisplayMode displayMode) {
         List<Toolpath> toolpaths = paths.stream()
                 .map(path -> new Toolpath(path, getToolRadius(), true))
                 .collect(Collectors.toList());
 
-        if (ctx != null && displayMode != null && displayMode.compareTo(DisplayMode.TOOLPATHS) <= 0) {
+        if (ctx != null && displayMode != null && displayMode.compareTo(GCodeDisplayMode.TOOLPATHS) <= 0) {
             drawToolpaths(ctx, toolpaths);
         }
 
@@ -603,7 +582,7 @@ public class ToolpathGenerator {
                 .map(toolpath -> toolpath.orient(direction))
                 .collect(Collectors.toList());
 
-        if (ctx != null && displayMode != null && displayMode.compareTo(DisplayMode.ORIENTED_TOOLPATHS) >= 0) {
+        if (ctx != null && displayMode != null && displayMode.compareTo(GCodeDisplayMode.ORIENTED_TOOLPATHS) >= 0) {
             drawToolpaths(ctx, toolpaths);
         }
 

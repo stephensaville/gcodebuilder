@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package com.gcodebuilder.generator.toolpath;
+package com.gcodebuilder.generator;
 
 import com.gcodebuilder.app.GridSettings;
-import com.gcodebuilder.canvas.Drawable;
 import com.gcodebuilder.geometry.Drawing;
 import com.gcodebuilder.geometry.Shape;
 import com.gcodebuilder.recipe.GCodeRecipe;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.text.Font;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class ToolpathDrawable implements Drawable {
-    private ToolpathGenerator.DisplayMode displayMode;
+@EqualsAndHashCode(callSuper = true)
+public class DrawingGCodeDrawable extends GCodeDrawable {
     private Drawing drawing;
 
     @Override
     public boolean isVisible() {
-        return displayMode != null && drawing != null;
+        return super.isVisible() && drawing != null;
     }
 
     @Override
@@ -53,15 +53,9 @@ public class ToolpathDrawable implements Drawable {
                 continue;
             }
 
-            // create toolpath generator
-            ToolpathGenerator generator = new ToolpathGenerator();
-            ctx.setLineWidth(settings.getShapeLineWidth() / pixelsPerUnit / 2);
-            generator.setPointRadius(settings.getShapePointRadius() / pixelsPerUnit);
-            generator.setToolRadius(recipe.getToolWidth() / 2);
-            generator.addAllPaths(shape.convertToPaths());
-
-            // compute (and draw) toolpaths
-            recipe.computeToolpaths(generator, ctx, displayMode);
+            GCodeDrawable drawable = recipe.getGCodeDrawable(shape);
+            drawable.setDisplayMode(getDisplayMode());
+            drawable.draw(ctx, pixelsPerUnit, settings);
         }
     }
 }
