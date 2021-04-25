@@ -73,6 +73,6 @@ public class UnitVector extends Point2D {
     }
 
     public boolean isSame(UnitVector other) {
-        return absAngleDiff(other) < Math2D.SAME_ANGLE_DIFFERENCE;
+        return absAngleDiff(other) < Math2D.MIN_ANGLE_DIFF;
     }
 }

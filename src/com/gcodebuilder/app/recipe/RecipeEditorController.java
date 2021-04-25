@@ -187,6 +187,11 @@ public class RecipeEditorController {
                 GCodeRecipeType.CENTER_DRILL,
                 CenterDrillRecipeEditorController.class,
                 "centerDrillRecipeEditor.fxml");
+
+        addRecipeTypeEditor(
+                GCodeRecipeType.DRILL_ALONG_PATH,
+                DrillAlongPathRecipeEditorController.class,
+                "drillAlongPathRecipeEditor.fxml");
     }
 
     public static RecipeEditorController attach(TitledPane parent) throws IOException {

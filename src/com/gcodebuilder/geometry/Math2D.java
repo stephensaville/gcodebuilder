@@ -24,8 +24,8 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Math2D {
-    public static final double SAME_POINT_DISTANCE = 0.0001;
-    public static final double SAME_ANGLE_DIFFERENCE = 0.0001;
+    public static final double MIN_DISTANCE_DIFF = 0.0001;
+    public static final double MIN_ANGLE_DIFF = 0.0001;
 
     /**
      * Calculates the determinant of the 2x2 matrix defined as:
@@ -227,6 +227,15 @@ public class Math2D {
                 computeScaleFactor(center.getY(), original.getY(), updated.getY()));
     }
 
+    public static boolean sameDistance(double d1, double d2, double maxDistance) {
+        double distanceDiff = d1 - d2;
+        return -maxDistance < distanceDiff && distanceDiff < maxDistance;
+    }
+
+    public static boolean sameDistance(double d1, double d2) {
+        return sameDistance(d1, d2, MIN_DISTANCE_DIFF);
+    }
+
     public static boolean samePoints(Point2D p1, Point2D p2, double maxDistance) {
         if (p1 == null || p2 == null) {
             return false;
@@ -238,7 +247,7 @@ public class Math2D {
     }
 
     public static boolean samePoints(Point2D p1, Point2D p2) {
-        return samePoints(p1, p2, SAME_POINT_DISTANCE);
+        return samePoints(p1, p2, MIN_DISTANCE_DIFF);
     }
 
     public static Comparator<Point2D> distanceComparator(Point2D reference) {
@@ -258,6 +267,6 @@ public class Math2D {
     }
 
     public static boolean sameAngles(double a1, double a2) {
-        return sameAngles(a1, a2, SAME_ANGLE_DIFFERENCE);
+        return sameAngles(a1, a2, MIN_ANGLE_DIFF);
     }
 }

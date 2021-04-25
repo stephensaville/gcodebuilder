@@ -104,7 +104,7 @@ public class Point {
     }
 
     public boolean isSame(Point otherPoint) {
-        return isSame(otherPoint, Math2D.SAME_POINT_DISTANCE);
+        return isSame(otherPoint, Math2D.MIN_DISTANCE_DIFF);
     }
 
     public boolean isSame(Point2D point2D, double maxDistance) {
@@ -116,7 +116,7 @@ public class Point {
     }
 
     public boolean isSame(Point2D point2D) {
-        return isSame(point2D, Math2D.SAME_POINT_DISTANCE);
+        return isSame(point2D, Math2D.MIN_DISTANCE_DIFF);
     }
 
     public String toCoordinateString() {

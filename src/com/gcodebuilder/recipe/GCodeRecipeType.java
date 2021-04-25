@@ -45,6 +45,12 @@ public enum GCodeRecipeType {
         public GCodeRecipe newRecipe(int id) {
             return new GCodeCenterDrillRecipe(id);
         }
+    },
+    DRILL_ALONG_PATH("Drill Along Path", GCodeDrillAlongPathRecipe.class) {
+        @Override
+        public GCodeRecipe newRecipe(int id) {
+            return new GCodeDrillAlongPathRecipe(id);
+        }
     };
 
     private final String label;

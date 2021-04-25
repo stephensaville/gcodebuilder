@@ -16,7 +16,6 @@
 
 package com.gcodebuilder.app.recipe;
 
-import com.gcodebuilder.model.Direction;
 import com.gcodebuilder.model.LengthUnit;
 import com.gcodebuilder.recipe.GCodeCenterDrillRecipe;
 import com.gcodebuilder.recipe.GCodeRecipeType;
@@ -46,11 +45,8 @@ public class CenterDrillRecipeEditorController extends AbstractRecipeTypeControl
     @FXML
     private TextField plungeRateCtl;
 
-    @FXML
-    private ChoiceBox<Direction> directionCtl;
-
     public CenterDrillRecipeEditorController() {
-        super(GCodeRecipeType.FOLLOW_PATH, GCodeCenterDrillRecipe.class);
+        super(GCodeRecipeType.CENTER_DRILL, GCodeCenterDrillRecipe.class);
     }
 
     @FXML

@@ -22,10 +22,14 @@ import javafx.scene.canvas.GraphicsContext;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.checker.nullness.Opt;
 
+import javax.swing.text.html.Option;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Getter
 public class LineSegment extends Line implements PathSegment {
@@ -126,6 +130,25 @@ public class LineSegment extends Line implements PathSegment {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Optional<Point2D> nextPointOnPath(Point2D prevPoint, double distance, boolean prevPointOnSegment) {
+        if (prevPointOnSegment || Math2D.samePoints(prevPoint, getFrom())) {
+            Point2D nextPoint = prevPoint.add(getDirection().multiply(distance));
+            if (getFrom().distance(nextPoint) <= getLength()) {
+                return Optional.of(nextPoint);
+            }
+        } else {
+            return Triangle.find(prevPoint, getFrom(), getDirection(), distance).stream()
+                    .map(t -> LineSegment.of(getFrom(), t.getPointC()))
+                    .filter(line -> line.getLength() < Math2D.MIN_DISTANCE_DIFF ||
+                            (Math2D.sameAngles(getFromAngle(), line.getFromAngle()) && line.getLength() <= getLength()))
+                    .sorted(Comparator.comparingDouble(LineSegment::getLength))
+                    .findFirst()
+                    .map(LineSegment::getTo);
+        }
+        return Optional.empty();
     }
 
     @Override

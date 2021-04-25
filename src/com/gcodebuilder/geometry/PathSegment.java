@@ -23,9 +23,11 @@ import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.swing.text.html.Option;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 public interface PathSegment {
     Logger log = LogManager.getLogger(PathSegment.class);
@@ -76,6 +78,10 @@ public interface PathSegment {
 
     default Point2D getMidpoint() {
         return getFrom().midpoint(getTo());
+    }
+
+    default double getLength() {
+        return getFrom().distance(getTo());
     }
 
     PathSegment move(Point2D offset);
@@ -143,6 +149,14 @@ public interface PathSegment {
     }
 
     Point2D project(Point2D point);
+
+    default Point2D pointOnSegment(double distanceFromStart) {
+        return getFrom().add(getFromDirection().multiply(distanceFromStart));
+    }
+
+    default Optional<Point2D> nextPointOnPath(Point2D prevPoint, double distance, boolean prevPointOnSegment) {
+        return Optional.empty();
+    }
 
     /**
      * Returns true if the horizontal line passing through point intersects this segment, and the x coordinate of

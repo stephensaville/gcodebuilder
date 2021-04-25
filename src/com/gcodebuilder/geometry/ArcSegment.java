@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 public class ArcSegment implements PathSegment {
@@ -405,6 +406,11 @@ public class ArcSegment implements PathSegment {
     }
 
     @Override
+    public double getLength() {
+        return Math.abs(extentAngle) * radius;
+    }
+
+    @Override
     public Toolpath.Segment computeToolpathSegment(double toolRadius, boolean leftSide) {
         UnitVector awayFromFrom, awayFromTo;
         if (isToolpathSegmentOutside(leftSide)) {
@@ -451,20 +457,31 @@ public class ArcSegment implements PathSegment {
         };
     }
 
-    private boolean isAngleInArcSegment(double angle) {
+    private double getAngleFromStart(double angle) {
         if (clockwise) {
-            double angleToPoint = Math2D.subtractAngle(angle, startAngle,
+            return Math2D.subtractAngle(angle, startAngle,
                     -2*Math.PI, 0, false);
-            return angleToPoint > extentAngle && angleToPoint < 0;
         } else {
-            double angleToPoint = Math2D.subtractAngle(angle, startAngle,
+            return Math2D.subtractAngle(angle, startAngle,
                     0, 2*Math.PI, true);
-            return angleToPoint > 0 && angleToPoint < extentAngle;
         }
     }
 
+    private boolean isAngleInArcSegment(double angle, boolean inclusive) {
+        double absAngleFromStart = Math.abs(getAngleFromStart(angle));
+        if (inclusive) {
+            return absAngleFromStart >= 0 && absAngleFromStart <= Math.abs(extentAngle);
+        } else {
+            return absAngleFromStart > 0 && absAngleFromStart < Math.abs(extentAngle);
+        }
+    }
+
+    private boolean isAngleInArcSegment(double angle) {
+        return isAngleInArcSegment(angle, false);
+    }
+
     private boolean isPointOnArcSegment(Point2D point) {
-        return isAngleInArcSegment(LineSegment.of(center, point).getFromAngle());
+        return isAngleInArcSegment(UnitVector.from(center, point).getAngle());
     }
 
     @Override
@@ -474,7 +491,7 @@ public class ArcSegment implements PathSegment {
         Point2D projectionPoint = other.getFrom().add(other.getDirection().multiply(fromToProjectionDistance));
 
         LineSegment centerToProjection = LineSegment.of(getCenter(), projectionPoint);
-        if (centerToProjection.getLength() > radius - Math2D.SAME_POINT_DISTANCE) {
+        if (centerToProjection.getLength() > radius - Math2D.MIN_DISTANCE_DIFF) {
             // segment too far away to intersection arc
             return Collections.emptyList();
         }
@@ -508,7 +525,7 @@ public class ArcSegment implements PathSegment {
     @Override
     public List<IntersectionPoint> intersect(ArcSegment other) {
         LineSegment centerToCenter = LineSegment.of(center, other.getCenter());
-        if (centerToCenter.getLength() >= radius + other.getRadius() - Math2D.SAME_POINT_DISTANCE) {
+        if (centerToCenter.getLength() >= radius + other.getRadius() - Math2D.MIN_DISTANCE_DIFF) {
             // arc too far away to intersect
             return Collections.emptyList();
         }
@@ -552,6 +569,70 @@ public class ArcSegment implements PathSegment {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Point2D pointOnSegment(double distanceFromStart) {
+        double angleFromStart = distanceFromStart / radius;
+        double angle;
+        if (clockwise) {
+            angle = Math2D.subtractAngle(startAngle, angleFromStart);
+        } else {
+            angle = Math2D.addAngle(startAngle, angleFromStart);
+        }
+        return getCenter().add(UnitVector.from(angle).multiply(radius));
+    }
+
+    @Override
+    public Optional<Point2D> nextPointOnPath(Point2D prevPoint, double distance, boolean prevPointOnSegment) {
+        if (prevPointOnSegment || Math2D.samePoints(prevPoint, getFrom())) {
+            double angleToNext = Math.acos(1 - distance*distance / (2*radius*radius));
+            double prevAngle = UnitVector.from(center, prevPoint).getAngle();
+            double angleFromStart = getAngleFromStart(prevAngle);
+            if (clockwise) {
+                angleFromStart -= angleToNext;
+            } else {
+                angleFromStart += angleToNext;
+            }
+            if (Math.abs(angleFromStart) <= Math.abs(extentAngle)) {
+                UnitVector centerToNext = UnitVector.from(startAngle + angleFromStart);
+                return Optional.of(center.add(centerToNext.multiply(radius)));
+            }
+            /*
+            if (clockwise) {
+                double angleFromStart = Math2D.subtractAngle(prevAngle, startAngle,
+                        -2*Math.PI, 0, false) - angleToNext;
+                if (angleFromStart > extentAngle) {
+                    UnitVector centerToNext = UnitVector.from(startAngle + angleFromStart);
+                    return Optional.of(center.add(centerToNext.multiply(radius)));
+                }
+            } else {
+                double angleFromStart = Math2D.subtractAngle(prevAngle, startAngle,
+                        0, 2*Math.PI, true) + angleToNext;
+                if (angleFromStart < extentAngle) {
+                    UnitVector centerToNext = UnitVector.from(startAngle + angleFromStart);
+                    return Optional.of(center.add(centerToNext.multiply(radius)));
+                }
+            }
+             */
+        } else {
+            return Triangle.find(center, distance, prevPoint, radius).stream()
+                    .map(Triangle::getPointC)
+                    .map(p -> LineSegment.of(center, p))
+                    .filter(line -> isAngleInArcSegment(line.getFromAngle()))
+                    .sorted(Comparator.comparingDouble(line -> {
+                        if (clockwise) {
+                            return Math.abs(Math2D.subtractAngle(line.getFromAngle(), startAngle,
+                                    -2*Math.PI, 0, false));
+                        } else {
+                            return Math.abs(Math2D.subtractAngle(line.getFromAngle(), startAngle,
+                                    0, 2*Math.PI, true));
+                        }
+                    }))
+                    .findFirst()
+                    .map(LineSegment::getTo);
+        }
+        return Optional.empty();
     }
 
     @Override
