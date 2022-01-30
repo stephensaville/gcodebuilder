@@ -27,6 +27,7 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.StrokeLineCap;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonTypeName("PATH")
+@EqualsAndHashCode(callSuper = false)
 public class Path extends SimpleShape<Path.Handle> {
     private static final Logger log = LogManager.getLogger(Path.class);
 

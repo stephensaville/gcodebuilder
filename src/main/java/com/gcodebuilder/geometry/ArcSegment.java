@@ -20,6 +20,7 @@ import com.gcodebuilder.generator.toolpath.Toolpath;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.ArcType;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Getter
+@EqualsAndHashCode
 public class ArcSegment implements PathSegment {
     private static final Logger log = LogManager.getLogger(ArcSegment.class);
 

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 
 public class DrawingTest {
@@ -71,7 +72,7 @@ public class DrawingTest {
 
     @Test
     public void testOpenDrawingFromFile() throws IOException {
-        try (FileInputStream in = new FileInputStream(new File("/home/zampire/Documents/drawing2.json"))) {
+        try (InputStream in = getClass().getResourceAsStream("test_all_shapes.json")) {
             Drawing loaded = Drawing.load(in);
             Assertions.assertNotNull(loaded);
             log.info("loaded from file: {}", loaded);

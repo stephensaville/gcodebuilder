@@ -1,0 +1,4 @@
+--add-reads
+com.gcodebuilder.app=org.junit.jupiter.api
+--add-reads
+com.gcodebuilder.app=org.junit.jupiter.params

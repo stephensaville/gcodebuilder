@@ -20,7 +20,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.geometry.Point2D;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode
 public class Point {
 
     public enum Type {

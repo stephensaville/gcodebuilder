@@ -27,11 +27,13 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @JsonTypeName("RECTANGLE")
+@EqualsAndHashCode(callSuper = false)
 public class Rectangle extends SimpleShape<Rectangle.Handle> {
     private static final Logger log = LogManager.getLogger(Rectangle.class);
 
@@ -237,18 +239,6 @@ public class Rectangle extends SimpleShape<Rectangle.Handle> {
         updated = updateWidth(newWidth) || updated;
         updated = updateHeight(newHeight) || updated;
         return updated;
-    }
-
-    public boolean scale(double scaleFactor) {
-        if (scaleFactor != 1.0) {
-            double newWidth = getWidth() * scaleFactor;
-            double newHeight = getHeight() * scaleFactor;
-            double newMinX = minX + (getWidth() - newWidth) / 2;
-            double newMinY = minY + (getHeight() - newHeight) / 2;
-            return update(newMinX, newMinY, newWidth, newHeight);
-        } else {
-            return false;
-        }
     }
 
     @Override

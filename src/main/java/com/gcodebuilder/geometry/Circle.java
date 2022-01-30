@@ -28,12 +28,14 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @JsonTypeName("CIRCLE")
 @Getter
+@EqualsAndHashCode(callSuper = false)
 public class Circle extends SimpleShape<Circle.Handle> {
     private static final Logger log = LogManager.getLogger(Circle.class);
 

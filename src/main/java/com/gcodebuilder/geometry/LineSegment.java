@@ -19,19 +19,18 @@ package com.gcodebuilder.geometry;
 import com.gcodebuilder.generator.toolpath.Toolpath;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.nullness.Opt;
 
-import javax.swing.text.html.Option;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Getter
+@EqualsAndHashCode(callSuper = true)
 public class LineSegment extends Line implements PathSegment {
     private static final Logger log = LogManager.getLogger(LineSegment.class);
 

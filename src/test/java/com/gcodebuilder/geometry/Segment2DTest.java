@@ -27,7 +27,12 @@ import java.util.stream.Stream;
 public class Segment2DTest {
     private static double DELTA = 1e-6;
 
-    private static void assertEquals(Point2D expected, Point2D actual, double delta) {
+    private static void assertSamePoint(Point2D expected, Point2D actual, double delta) {
+        if (expected == actual) {
+            return;
+        }
+        Assertions.assertNotNull(expected);
+        Assertions.assertNotNull(actual);
         Assertions.assertEquals(expected.getX(), actual.getX(), delta);
         Assertions.assertEquals(expected.getY(), actual.getY(), delta);
     }
@@ -36,7 +41,7 @@ public class Segment2DTest {
     @MethodSource("projectPointTestArgs")
     public void testProjectPoint(PathSegment segment, Point2D point, Point2D expected) {
         Point2D actual = segment.project(point);
-        assertEquals(expected, actual, DELTA);
+        assertSamePoint(expected, actual, DELTA);
     }
 
     private static Arguments projectPointTestArgs(double fromX, double fromY, double toX, double toY, double x,
@@ -47,14 +52,14 @@ public class Segment2DTest {
 
     public static Stream<Arguments> projectPointTestArgs() {
         return Stream.of(
-                projectPointTestArgs(0, 0, 0, 2, 1, 1, 0, 1),
-                projectPointTestArgs(0, 0, 0, 2, -1, 1, 0, 1),
-                projectPointTestArgs(0, 0, 0, 2, 1, -1, 0, -1),
-                projectPointTestArgs(0, 0, 0, 2, -1, -1, 0, -1),
-                projectPointTestArgs(0, 0, 2, 0, 1, 1, 1, 0),
-                projectPointTestArgs(0, 0, 2, 0, 1, -1, 1, 0),
-                projectPointTestArgs(0, 0, 2, 0, -1, 1, -1, 0),
-                projectPointTestArgs(0, 0, 2, 0, -1, -1, -1, 0),
+                projectPointTestArgs(0, -2, 0, 2, 1, 1, 0, 1),
+                projectPointTestArgs(0, -2, 0, 2, -1, 1, 0, 1),
+                projectPointTestArgs(0, -2, 0, 2, 1, -1, 0, -1),
+                projectPointTestArgs(0, -2, 0, 2, -1, -1, 0, -1),
+                projectPointTestArgs(-2, 0, 2, 0, 1, 1, 1, 0),
+                projectPointTestArgs(-2, 0, 2, 0, 1, -1, 1, 0),
+                projectPointTestArgs(-2, 0, 2, 0, -1, 1, -1, 0),
+                projectPointTestArgs(-2, 0, 2, 0, -1, -1, -1, 0),
                 projectPointTestArgs(1, 1, 3, 3, 1, 3, 2, 2),
                 projectPointTestArgs(1, 1, 3, 3, 3, 1, 2, 2),
                 projectPointTestArgs(1, 1, 3, 3, 1, 2, 1.5, 1.5),
